@@ -48,109 +48,122 @@ export default function VerseAidApp() {
     "How should I handle conflict with a family member?"
   ];
 
- // Load Stripe.js
-useEffect(() => {
-  const script = document.createElement('script');
-  script.src = 'https://js.stripe.com/v3/';
-  script.async = true;
-  document.body.appendChild(script);
-  
-  return () => {
-    if (document.body.contains(script)) {
-      document.body.removeChild(script);
+  // Auth Functions
+  const handleAuth = () => {
+    if (!authUsername.trim() || !authPassword.trim()) {
+      setError('Please enter username and password');
+      return;
+    }
+    setUsername(authUsername);
+    setIsLoggedIn(true);
+    setShowAuthModal(false);
+    setAuthUsername('');
+    setAuthPassword('');
+    setError('');
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUsername('');
+    setUserTier('free');
+    setQuestionsToday(0);
+    setCurrentView('home');
+  };
+
+  // Daily Limit Check
+  const checkDailyLimit = () => {
+    const today = new Date().toDateString();
+    if (lastQuestionDate !== today) {
+      setQuestionsToday(0);
+      setLastQuestionDate(today);
+      return true;
+    }
+    if (userTier === 'premium' || userTier === 'church') {
+      return true;
+    }
+    if (questionsToday >= 3) {
+      setShowUpgradeModal(true);
+      return false;
+    }
+    return true;
+  };
+
+  // Submit Question
+  const handleSubmit = async () => {
+    if (!question.trim()) {
+      setError('Please enter a question');
+      return;
+    }
+
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (!checkDailyLimit()) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setResponse(null);
+
+    try {
+      const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `You are a compassionate spiritual guide. Answer this: "${question}"
+            
+            Provide: 1) compassionate response, 2) 2-3 Bible verses (NLT), 3) WWJD guidance, 4) encouragement
+            
+            Format as JSON: {"compassionateResponse": "", "verses": [{"reference": "", "text": ""}], "wwjd": "", "encouragement": ""}`
+          }]
+        })
+      });
+
+      const data = await apiResponse.json();
+      
+      if (data.content && data.content[0]) {
+        let text = data.content[0].text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const parsed = JSON.parse(text);
+        setResponse({ ...parsed, question, timestamp: new Date().toISOString() });
+        setQuestionsToday(questionsToday + 1);
+      } else {
+        setError('Unable to get a response. Please try again.');
+      }
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
-}, []);
 
-// Check for payment success on load
-useEffect(() => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const paymentStatus = urlParams.get('payment');
-  
-  if (paymentStatus === 'success') {
-    setUserTier('premium');
-    alert('🎉 Payment successful! Welcome to Premium!');
-    window.history.replaceState({}, '', window.location.pathname);
-  } else if (paymentStatus === 'cancel') {
-    alert('Payment cancelled. Your subscription was not activated.');
-    window.history.replaceState({}, '', window.location.pathname);
-  }
-}, []);
-
-// Auth Functions
-const handleAuth = () => {
-  if (!authUsername.trim() || !authPassword.trim()) {
-    setError('Please enter username and password');
-    return;
-  }
-  setUsername(authUsername);
-  setIsLoggedIn(true);
-  setShowAuthModal(false);
-  setAuthUsername('');
-  setAuthPassword('');
-  setError('');
-};
-
-const handleLogout = () => {
-  setIsLoggedIn(false);
-  setUsername('');
-  setUserTier('free');
-  setQuestionsToday(0);
-  setCurrentView('home');
-};
-
-// Daily Limit Check
-const checkDailyLimit = () => {
-  const today = new Date().toDateString();
-  if (lastQuestionDate !== today) {
-    setQuestionsToday(0);
-    setLastQuestionDate(today);
-    return true;
-  }
-  if (userTier === 'premium' || userTier === 'church') {
-    return true;
-  }
-  if (questionsToday >= 3) {
-    setShowUpgradeModal(true);
-    return false;
-  }
-  return true;
-};
-
-// Stripe Checkout - UPDATED
-const handleStripeCheckout = async () => {
-  // Check if Stripe is loaded
-  if (!window.Stripe) {
-    alert('Payment system is loading. Please try again in a moment.');
-    return;
-  }
-
-  setStripeLoading(true);
-  
-  try {
-    const stripe = window.Stripe(STRIPE_PUBLISHABLE_KEY);
-    const priceId = selectedPlan === 'annual' ? STRIPE_PRICE_ID_ANNUAL : STRIPE_PRICE_ID_MONTHLY;
-    
-    const { error } = await stripe.redirectToCheckout({
-      lineItems: [{ price: priceId, quantity: 1 }],
-      mode: 'subscription',
-      successUrl: `${window.location.origin}?payment=success&plan=${selectedPlan}`,
-      cancelUrl: `${window.location.origin}?payment=cancel`,
-      customerEmail: username + '@example.com',
-      clientReferenceId: username
-    });
-    
-    if (error) {
-      console.error('Stripe error:', error);
-      alert('Payment error: ' + error.message);
+  // Stripe Checkout
+  const handleStripeCheckout = async () => {
+    setStripeLoading(true);
+    try {
+      const stripe = window.Stripe(STRIPE_PUBLISHABLE_KEY);
+      const priceId = selectedPlan === 'annual' ? STRIPE_PRICE_ID_ANNUAL : STRIPE_PRICE_ID_MONTHLY;
+      
+      await stripe.redirectToCheckout({
+        lineItems: [{ price: priceId, quantity: 1 }],
+        mode: 'subscription',
+        successUrl: `${window.location.origin}?payment=success&plan=${selectedPlan}`,
+        cancelUrl: `${window.location.origin}?payment=cancel`,
+        customerEmail: username + '@example.com',
+        clientReferenceId: username
+      });
+    } catch (err) {
+      alert('Unable to process payment. Please try again.');
+    } finally {
+      setStripeLoading(false);
     }
-  } catch (err) {
-    console.error('Checkout error:', err);
-    alert('Unable to process payment. Please try again.');
-  } finally {
-    setStripeLoading(false);
-  }
-};
+  };
 
   // Free Trial Activation
   const upgradeToPremium = () => {
@@ -209,7 +222,8 @@ const handleStripeCheckout = async () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-           
+      <script src="https://js.stripe.com/v3/"></script>
+      
       {/* Header */}
       <div className="bg-white shadow-md sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
