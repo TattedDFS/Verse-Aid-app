@@ -22,6 +22,16 @@ export default function VerseAidApp() {
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [stripeLoading, setStripeLoading] = useState(false);
   
+  // Church Contact Form
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactInfo, setContactInfo] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    churchName: '',
+    message: ''
+  });
+  
   // Navigation
   const [currentView, setCurrentView] = useState('home');
   const [showMenu, setShowMenu] = useState(false);
@@ -160,6 +170,39 @@ export default function VerseAidApp() {
     setUserTier('premium');
     setShowUpgradeModal(false);
     alert('Premium activated! You now have unlimited questions and advanced features.');
+  };
+
+  // Church Contact Form Submit
+  const submitContactForm = async () => {
+    if (!contactInfo.name || !contactInfo.email) {
+      alert('Please fill in your name and email');
+      return;
+    }
+    
+    try {
+      await window.storage.set(
+        `contact_request_${Date.now()}`,
+        JSON.stringify({
+          ...contactInfo,
+          timestamp: new Date().toISOString()
+        }),
+        true
+      );
+      
+      alert('Thank you! We will contact you within 24 hours to discuss the Church Edition.');
+      setShowContactForm(false);
+      setShowUpgradeModal(false);
+      setContactInfo({
+        name: '',
+        email: '',
+        phone: '',
+        churchName: '',
+        message: ''
+      });
+    } catch (err) {
+      console.error('Error submitting contact form:', err);
+      alert('There was an error. Please email us directly at contact@verseaid.ai');
+    }
   };
 
   // Check for payment success on load
@@ -433,109 +476,318 @@ export default function VerseAidApp() {
         </div>
       )}
 
-      {/* Upgrade Modal */}
+      {/* Upgrade Modal with Church Edition */}
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full my-8">
+          <div className="bg-white rounded-2xl p-6 max-w-4xl w-full my-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">Upgrade to Premium</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Upgrade Your Experience</h2>
               <button onClick={() => setShowUpgradeModal(false)} className="text-gray-500 hover:text-gray-700">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="mb-6">
-              <div className="flex items-center justify-center gap-4 mb-4">
-                <button
-                  onClick={() => setSelectedPlan('monthly')}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                    selectedPlan === 'monthly'
-                      ? 'bg-purple-600 text-white shadow-lg scale-105'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">$4.99</div>
-                    <div className="text-sm">per month</div>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Premium Plan */}
+              <div className="border-2 border-purple-200 rounded-2xl p-6 bg-gradient-to-br from-purple-50 to-blue-50">
+                <div className="flex items-center gap-2 mb-4">
+                  <Crown className="w-8 h-8 text-purple-600" />
+                  <h3 className="text-2xl font-bold text-gray-800">Premium</h3>
+                </div>
+                
+                <div className="mb-6">
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <button
+                      onClick={() => setSelectedPlan('monthly')}
+                      className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                        selectedPlan === 'monthly'
+                          ? 'bg-purple-600 text-white shadow-lg scale-105'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">$4.99</div>
+                        <div className="text-sm">per month</div>
+                      </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => setSelectedPlan('annual')}
+                      className={`px-6 py-3 rounded-lg font-medium transition-all relative ${
+                        selectedPlan === 'annual'
+                          ? 'bg-purple-600 text-white shadow-lg scale-105'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                        SAVE 17%
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">$49.99</div>
+                        <div className="text-sm">per year</div>
+                        <div className="text-xs opacity-75">($4.17/month)</div>
+                      </div>
+                    </button>
                   </div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700"><strong>Unlimited questions</strong> daily</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700"><strong>Community Prayer Wall</strong> access</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700"><strong>Prayer Journal</strong> with tracking</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700"><strong>Bible-in-a-Year</strong> reading plan</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Priority AI responses</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Advanced study tools (coming soon)</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Audio Bible (coming soon)</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Multiple translations (coming soon)</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleStripeCheckout}
+                  disabled={stripeLoading}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-purple-400 disabled:to-blue-400 text-white font-semibold py-4 rounded-lg transition-all flex items-center justify-center gap-2 mb-2 text-lg"
+                >
+                  {stripeLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      💳 Subscribe Now - {selectedPlan === 'monthly' ? '$4.99/month' : '$49.99/year'}
+                    </>
+                  )}
                 </button>
                 
                 <button
-                  onClick={() => setSelectedPlan('annual')}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all relative ${
-                    selectedPlan === 'annual'
-                      ? 'bg-purple-600 text-white shadow-lg scale-105'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  onClick={upgradeToPremium}
+                  className="w-full border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-semibold py-3 rounded-lg transition-all mb-2"
                 >
-                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                    SAVE 17%
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">$49.99</div>
-                    <div className="text-sm">per year</div>
-                    <div className="text-xs opacity-75">($4.17/month)</div>
-                  </div>
+                  🎁 Activate 7-Day Free Trial
                 </button>
+                
+                <p className="text-xs text-center text-gray-500">
+                  Cancel anytime • No commitment
+                </p>
               </div>
-            </div>
 
-            <div className="space-y-3 mb-6">
-              <div className="flex items-start gap-2">
-                <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs">✓</span>
+              {/* Church Plan */}
+              <div className="border-2 border-green-200 rounded-2xl p-6 bg-gradient-to-br from-green-50 to-teal-50">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="w-8 h-8 text-green-600" />
+                  <h3 className="text-2xl font-bold text-gray-800">Church Edition</h3>
                 </div>
-                <p className="text-sm text-gray-700"><strong>Unlimited questions</strong> daily</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs">✓</span>
+                
+                <div className="mb-6">
+                  <p className="text-lg text-gray-700 font-medium mb-2">For Churches & Ministries</p>
+                  <p className="text-sm text-gray-600">
+                    Equip your entire congregation with premium Biblical guidance tools, custom branding, and powerful engagement features.
+                  </p>
                 </div>
-                <p className="text-sm text-gray-700">Priority AI responses</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs">✓</span>
-                </div>
-                <p className="text-sm text-gray-700">Advanced features (coming soon)</p>
-              </div>
-            </div>
 
-            <button
-              onClick={handleStripeCheckout}
-              disabled={stripeLoading}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-purple-400 disabled:to-blue-400 text-white font-semibold py-4 rounded-lg transition-all flex items-center justify-center gap-2 mb-2 text-lg"
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700"><strong>All Premium features</strong> for unlimited members</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Custom branding with church logo & colors</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Private church prayer wall</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Admin dashboard with engagement analytics</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Pastor devotional & sermon integration</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Small group discussion tools</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Priority support & onboarding</p>
+                  </div>
+                </div>
+                <button
+              onClick={() => setShowContactForm(true)}
+              className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold py-4 rounded-lg transition-all text-lg mb-3"
             >
-              {stripeLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  💳 Subscribe Now - {selectedPlan === 'monthly' ? '$4.99/month' : '$49.99/year'}
-                </>
-              )}
+              Request Information
             </button>
             
-            <button
-              onClick={upgradeToPremium}
-              className="w-full border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-semibold py-3 rounded-lg transition-all mb-2"
-            >
-              🎁 Activate 7-Day Free Trial
-            </button>
-            
-            <p className="text-xs text-center text-gray-500">
-              Cancel anytime • No commitment
+            <p className="text-xs text-center text-gray-600">
+              We'll contact you within 24 hours to discuss custom pricing for your ministry
             </p>
           </div>
         </div>
-      )}
 
-      {/* Footer */}
-      <div className="text-center py-8 text-sm text-gray-500">
-        <p>© 2025 VerseAid.ai - Biblical guidance powered by AI</p>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Questions? Email us at <a href="mailto:support@verseaid.ai" className="text-purple-600 hover:underline">support@verseaid.ai</a>
+          </p>
+        </div>
       </div>
     </div>
-  );
-}
+  )}
+
+  {/* Church Contact Form Modal */}
+  {showContactForm && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-2xl p-6 max-w-lg w-full my-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Church Edition Inquiry</h2>
+            <p className="text-sm text-gray-600 mt-1">We'll contact you within 24 hours</p>
+          </div>
+          <button onClick={() => setShowContactForm(false)} className="text-gray-500 hover:text-gray-700">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Your Name *</label>
+            <input
+              type="text"
+              value={contactInfo.name}
+              onChange={(e) => setContactInfo({...contactInfo, name: e.target.value})}
+              placeholder="John Smith"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+            <input
+              type="email"
+              value={contactInfo.email}
+              onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
+              placeholder="john@church.com"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+            <input
+              type="tel"
+              value={contactInfo.phone}
+              onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
+              placeholder="(555) 123-4567"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Church/Ministry Name</label>
+            <input
+              type="text"
+              value={contactInfo.churchName}
+              onChange={(e) => setContactInfo({...contactInfo, churchName: e.target.value})}
+              placeholder="Grace Community Church"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Message (Optional)</label>
+            <textarea
+              value={contactInfo.message}
+              onChange={(e) => setContactInfo({...contactInfo, message: e.target.value})}
+              placeholder="Tell us about your church and how you'd like to use this app..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-none"
+              rows="3"
+            />
+          </div>
+
+          <div className="pt-4">
+            <button
+              onClick={submitContactForm}
+              className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold py-3 rounded-lg transition-all mb-2"
+            >
+              Submit Request
+            </button>
+            <button
+              onClick={() => setShowContactForm(false)}
+              className="w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 rounded-lg transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-500 text-center pt-2">
+            By submitting, you agree to be contacted about the Church Edition. We respect your privacy and will not share your information.
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* Footer */}
+  <div className="text-center py-8 text-sm text-gray-500">
+    <p>© 2025 VerseAid.ai - Biblical guidance powered by AI</p>
+  </div>
+</div>
+);
+}    
