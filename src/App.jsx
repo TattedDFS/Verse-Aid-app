@@ -1685,3 +1685,41 @@ export default function BiblicalGuidanceApp() {
     </div>
   );
 }
+<function_calls>
+<invoke name="bash_tool">
+<parameter name="command">cd /mnt/user-data/outputs && cat >> BiblicalGuidanceApp.jsx << 'ENDOFFILE'
+contactInfo, churchName: e.target.value})}
+placeholder="Grace Community Church"
+className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+/>
+</div>
+  <div>
+            <label className="block text-sm font-semibold text-yellow-500 mb-2">Message (Optional)</label>
+            <textarea
+              value={contactInfo.message}
+              onChange={(e) => setContactInfo({...contactInfo, message: e.target.value})}
+              placeholder="Tell us about your church..."
+              className="w-full px-4 py-3 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 resize-none focus:ring-2 focus:ring-yellow-500/20"
+              rows="3"
+            />
+          </div>
+
+          <button
+            onClick={submitContactForm}
+            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
+          >
+            Submit Request
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <footer className="border-t border-yellow-500/10 py-12 mt-20">
+    <div className="max-w-7xl mx-auto px-6 text-center">
+      <p className="text-gray-500 text-sm">© 2025 VerseAid.ai - Premium Biblical guidance powered by AI</p>
+    </div>
+  </footer>
+</div>
+);
+}
