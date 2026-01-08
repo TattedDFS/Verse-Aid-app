@@ -17,6 +17,7 @@ export default function BiblicalGuidanceApp() {
   const [questionsToday, setQuestionsToday] = useState(0);
   const [lastQuestionDate, setLastQuestionDate] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [churchCode, setChurchCode] = useState('');
   const [churchName, setChurchName] = useState('');
   const [showContactForm, setShowContactForm] = useState(false);
@@ -27,6 +28,7 @@ export default function BiblicalGuidanceApp() {
   
   const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SmIS3BrYJWG1fHoknt8tWaPGaKTxxOI9YRkXgce6fjHzZfQam3MiRAGxW0dwkhkoNT1xXVGPEeYFuvz1SqY7HB200waXtmSzp';
   const STRIPE_PRICE_ID_MONTHLY = 'price_1SmKbEBrYJWG1fHopEY2owKh';
+  const STRIPE_PRICE_ID_ANNUAL = 'price_1SmKbEBrYJWG1fHo3DZ8Kw9L';
   
   const [currentView, setCurrentView] = useState('home');
   const [showMenu, setShowMenu] = useState(false);
