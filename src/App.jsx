@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Clock, Crown, Users, TrendingUp } from 'lucide-react';
+import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users } from 'lucide-react';
 
 export default function BiblicalGuidanceApp() {
   const [question, setQuestion] = useState('');
@@ -7,42 +7,30 @@ export default function BiblicalGuidanceApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // User & Auth State
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
-  const [userTier, setUserTier] = useState('free'); // 'free', 'premium', 'church'
+  const [userTier, setUserTier] = useState('free');
   const [questionsToday, setQuestionsToday] = useState(0);
   const [lastQuestionDate, setLastQuestionDate] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [churchCode, setChurchCode] = useState('');
   const [churchName, setChurchName] = useState('');
-  const [showChurchAdmin, setShowChurchAdmin] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactInfo, setContactInfo] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    churchName: '',
-    message: ''
+    name: '', email: '', phone: '', churchName: '', message: ''
   });
   const [stripeLoading, setStripeLoading] = useState(false);
   
-  // STRIPE CONFIGURATION
-  // Your Stripe keys are configured and ready to use!
   const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SmIS3BrYJWG1fHoknt8tWaPGaKTxxOI9YRkXgce6fjHzZfQam3MiRAGxW0dwkhkoNT1xXVGPEeYFuvz1SqY7HB200waXtmSzp';
-  const STRIPE_PRICE_ID_MONTHLY = 'price_1SmKbEBrYJWG1fHopEY2owKh'; // Monthly: $4.99/month
-  const STRIPE_PRICE_ID_ANNUAL = 'price_YOUR_ANNUAL_PRICE_ID'; // Annual: $49.99/year (create this in Stripe)
-  const STRIPE_CUSTOMER_PORTAL_URL = 'https://billing.stripe.com/p/login/test_XXXXX'; // Get from Stripe Dashboard
+  const STRIPE_PRICE_ID_MONTHLY = 'price_1SmKbEBrYJWG1fHopEY2owKh';
   
-  // Navigation State
   const [currentView, setCurrentView] = useState('home');
   const [showMenu, setShowMenu] = useState(false);
   
-  // Saved Items State
   const [savedResponses, setSavedResponses] = useState([]);
   const [prayerJournal, setPrayerJournal] = useState([]);
   const [newPrayerEntry, setNewPrayerEntry] = useState('');
@@ -50,7 +38,6 @@ export default function BiblicalGuidanceApp() {
   const [shareToCommunity, setShareToCommunity] = useState(false);
   const [prayerCategory, setPrayerCategory] = useState('');
   
-  // Community Prayer State
   const [communityPrayers, setCommunityPrayers] = useState([]);
   const [filterCategory, setFilterCategory] = useState('all');
   const [prayedForIds, setPrayedForIds] = useState([]);
@@ -58,7 +45,6 @@ export default function BiblicalGuidanceApp() {
   const [sharedPrayerIds, setSharedPrayerIds] = useState([]);
   const [showVerseNotification, setShowVerseNotification] = useState(false);
   
-  // Bible Reading State
   const [bibleBook, setBibleBook] = useState('Genesis');
   const [bibleChapter, setBibleChapter] = useState(1);
   const [bibleText, setBibleText] = useState(null);
@@ -66,65 +52,8 @@ export default function BiblicalGuidanceApp() {
   const [readingPlan, setReadingPlan] = useState([]);
   const [completedReadings, setCompletedReadings] = useState([]);
   
-  // Daily Verse State
   const [dailyVerse, setDailyVerse] = useState(null);
   const [showDailyVerse, setShowDailyVerse] = useState(false);
-
-  // Load data from storage on mount
-  useEffect(() => {
-    loadUserData();
-    loadCommunityPrayers();
-    checkDailyVerse();
-    generateReadingPlan();
-  }, [isLoggedIn, username]);
-
-  const loadUserData = async () => {
-    if (!isLoggedIn || !username) return;
-    
-    try {
-      const savedKey = `saved_${username}`;
-      const journalKey = `journal_${username}`;
-      const readingsKey = `completed_readings_${username}`;
-      const userDataKey = `user_data_${username}`;
-      
-      const savedData = await window.storage.get(savedKey);
-      const journalData = await window.storage.get(journalKey);
-      const readingsData = await window.storage.get(readingsKey);
-      const userData = await window.storage.get(userDataKey);
-      
-      if (savedData) {
-        setSavedResponses(JSON.parse(savedData.value));
-      }
-      if (journalData) {
-        setPrayerJournal(JSON.parse(journalData.value));
-      }
-      if (readingsData) {
-        setCompletedReadings(JSON.parse(readingsData.value));
-      }
-      if (userData) {
-        const parsed = JSON.parse(userData.value);
-        setUserTier(parsed.tier || 'free');
-        setQuestionsToday(parsed.questionsToday || 0);
-        setLastQuestionDate(parsed.lastQuestionDate || '');
-        setChurchCode(parsed.churchCode || '');
-        setChurchName(parsed.churchName || '');
-      }
-    } catch (err) {
-      console.log('No saved data found or error loading:', err);
-    }
-  };
-
-  const loadCommunityPrayers = async () => {
-    try {
-      const result = await window.storage.get('community_prayers', true);
-      if (result) {
-        setCommunityPrayers(JSON.parse(result.value));
-      }
-    } catch (err) {
-      console.log('No community prayers found:', err);
-      setCommunityPrayers([]);
-    }
-  };
 
   const prayerCategories = [
     { value: 'health', label: 'Health & Healing', emoji: '🏥' },
@@ -138,7 +67,6 @@ export default function BiblicalGuidanceApp() {
   ];
 
   const bibleBooks = [
-    // Old Testament
     { name: 'Genesis', chapters: 50 }, { name: 'Exodus', chapters: 40 }, { name: 'Leviticus', chapters: 27 },
     { name: 'Numbers', chapters: 36 }, { name: 'Deuteronomy', chapters: 34 }, { name: 'Joshua', chapters: 24 },
     { name: 'Judges', chapters: 21 }, { name: 'Ruth', chapters: 4 }, { name: '1 Samuel', chapters: 31 },
@@ -152,7 +80,6 @@ export default function BiblicalGuidanceApp() {
     { name: 'Obadiah', chapters: 1 }, { name: 'Jonah', chapters: 4 }, { name: 'Micah', chapters: 7 },
     { name: 'Nahum', chapters: 3 }, { name: 'Habakkuk', chapters: 3 }, { name: 'Zephaniah', chapters: 3 },
     { name: 'Haggai', chapters: 2 }, { name: 'Zechariah', chapters: 14 }, { name: 'Malachi', chapters: 4 },
-    // New Testament
     { name: 'Matthew', chapters: 28 }, { name: 'Mark', chapters: 16 }, { name: 'Luke', chapters: 24 },
     { name: 'John', chapters: 21 }, { name: 'Acts', chapters: 28 }, { name: 'Romans', chapters: 16 },
     { name: '1 Corinthians', chapters: 16 }, { name: '2 Corinthians', chapters: 13 }, { name: 'Galatians', chapters: 6 },
@@ -164,8 +91,47 @@ export default function BiblicalGuidanceApp() {
     { name: '3 John', chapters: 1 }, { name: 'Jude', chapters: 1 }, { name: 'Revelation', chapters: 22 }
   ];
 
+  useEffect(() => {
+    loadUserData();
+    loadCommunityPrayers();
+    checkDailyVerse();
+    generateReadingPlan();
+  }, [isLoggedIn, username]);
+
+  const loadUserData = async () => {
+    if (!isLoggedIn || !username) return;
+    try {
+      const savedData = await window.storage.get(`saved_${username}`);
+      const journalData = await window.storage.get(`journal_${username}`);
+      const readingsData = await window.storage.get(`completed_readings_${username}`);
+      const userData = await window.storage.get(`user_data_${username}`);
+      
+      if (savedData) setSavedResponses(JSON.parse(savedData.value));
+      if (journalData) setPrayerJournal(JSON.parse(journalData.value));
+      if (readingsData) setCompletedReadings(JSON.parse(readingsData.value));
+      if (userData) {
+        const parsed = JSON.parse(userData.value);
+        setUserTier(parsed.tier || 'free');
+        setQuestionsToday(parsed.questionsToday || 0);
+        setLastQuestionDate(parsed.lastQuestionDate || '');
+        setChurchCode(parsed.churchCode || '');
+        setChurchName(parsed.churchName || '');
+      }
+    } catch (err) {
+      console.log('No saved data found');
+    }
+  };
+
+  const loadCommunityPrayers = async () => {
+    try {
+      const result = await window.storage.get('community_prayers', true);
+      if (result) setCommunityPrayers(JSON.parse(result.value));
+    } catch (err) {
+      setCommunityPrayers([]);
+    }
+  };
+
   const generateReadingPlan = () => {
-    // Simple Bible-in-a-Year plan: distribute chapters across 365 days
     const plan = [];
     let dayCount = 0;
     const totalChapters = bibleBooks.reduce((sum, book) => sum + book.chapters, 0);
@@ -183,7 +149,6 @@ export default function BiblicalGuidanceApp() {
       }
     });
     
-    // Add remaining chapters
     if (currentDay.length > 0) {
       dayCount++;
       plan.push({ day: dayCount, readings: currentDay });
@@ -203,19 +168,7 @@ export default function BiblicalGuidanceApp() {
           max_tokens: 4000,
           messages: [{
             role: 'user',
-            content: `Provide the full text of ${book} chapter ${chapter} from the Bible using the New Living Translation (NLT). 
-            
-Format your response as valid JSON only, with no markdown code blocks or extra text:
-{
-  "book": "${book}",
-  "chapter": ${chapter},
-  "verses": [
-    {"verse": 1, "text": "In the beginning God created the heavens and the earth."},
-    {"verse": 2, "text": "The earth was formless and empty..."}
-  ]
-}
-
-Provide all verses for the entire chapter in New Living Translation (NLT). Do not include any preamble or explanation, just the JSON.`
+            content: `Provide the full text of ${book} chapter ${chapter} from the Bible using the New Living Translation (NLT). Format as JSON: {"book": "${book}", "chapter": ${chapter}, "verses": [{"verse": 1, "text": "verse text"}]}. No markdown, just JSON.`
           }]
         })
       });
@@ -236,7 +189,6 @@ Provide all verses for the entire chapter in New Living Translation (NLT). Do no
   };
 
   const goToVerse = (reference) => {
-    // Parse reference like "John 3:16" or "Genesis 1:1"
     const match = reference.match(/^(.+?)\s+(\d+):(\d+)/);
     if (match) {
       const [, book, chapter] = match;
@@ -260,17 +212,12 @@ Provide all verses for the entire chapter in New Living Translation (NLT). Do no
 
   const saveUserData = async () => {
     if (!isLoggedIn || !username) return;
-    
     try {
       await window.storage.set(`saved_${username}`, JSON.stringify(savedResponses));
       await window.storage.set(`journal_${username}`, JSON.stringify(prayerJournal));
       await window.storage.set(`completed_readings_${username}`, JSON.stringify(completedReadings));
       await window.storage.set(`user_data_${username}`, JSON.stringify({
-        tier: userTier,
-        questionsToday,
-        lastQuestionDate,
-        churchCode,
-        churchName
+        tier: userTier, questionsToday, lastQuestionDate, churchCode, churchName
       }));
     } catch (err) {
       console.error('Error saving data:', err);
@@ -293,14 +240,9 @@ Provide all verses for the entire chapter in New Living Translation (NLT). Do no
         }
       }
     } catch (err) {
-      console.log('No daily verse found');
+      console.log('Will generate new verse');
     }
-    
-    // Generate new daily verse
     await generateDailyVerse();
-    // Show notification for new verse
-    setShowVerseNotification(true);
-    setTimeout(() => setShowVerseNotification(false), 5000);
   };
 
   const generateDailyVerse = async () => {
@@ -325,6 +267,8 @@ Provide all verses for the entire chapter in New Living Translation (NLT). Do no
         const dailyData = { ...verse, date: new Date().toDateString() };
         setDailyVerse(dailyData);
         await window.storage.set('daily_verse', JSON.stringify(dailyData), true);
+        setShowVerseNotification(true);
+        setTimeout(() => setShowVerseNotification(false), 5000);
       }
     } catch (err) {
       console.error('Error generating daily verse:', err);
@@ -337,21 +281,15 @@ Provide all verses for the entire chapter in New Living Translation (NLT). Do no
       return;
     }
 
+    setUsername(authUsername);
+    setIsLoggedIn(true);
     if (authMode === 'signup') {
-      setUsername(authUsername);
-      setIsLoggedIn(true);
       setUserTier('free');
       setQuestionsToday(0);
       setLastQuestionDate(new Date().toDateString());
-      setShowAuthModal(false);
-      setError('');
-    } else {
-      setUsername(authUsername);
-      setIsLoggedIn(true);
-      setShowAuthModal(false);
-      setError('');
     }
-    
+    setShowAuthModal(false);
+    setError('');
     setAuthUsername('');
     setAuthPassword('');
   };
@@ -368,154 +306,87 @@ Provide all verses for the entire chapter in New Living Translation (NLT). Do no
 
   const checkDailyLimit = () => {
     const today = new Date().toDateString();
-    
-    // Reset counter if it's a new day
     if (lastQuestionDate !== today) {
       setQuestionsToday(0);
       setLastQuestionDate(today);
       return true;
     }
-    
-    // Check limits based on tier
-    if (userTier === 'premium' || userTier === 'church') {
-      return true; // Unlimited
-    }
-    
+    if (userTier === 'premium' || userTier === 'church') return true;
     if (questionsToday >= 3) {
       setShowUpgradeModal(true);
       return false;
     }
-    
     return true;
   };
 
   const upgradeToPremium = () => {
-    // In production, this would integrate with Stripe/payment processor
     setUserTier('premium');
     setShowUpgradeModal(false);
     alert('Premium activated! You now have unlimited questions and advanced features.');
   };
 
   const handleStripeCheckout = async () => {
-    // Check if Stripe key is configured
     if (STRIPE_PUBLISHABLE_KEY === 'pk_test_YOUR_PUBLISHABLE_KEY_HERE') {
-      alert('⚠️ Stripe Integration Setup Required\n\nTo enable payments:\n\n1. Sign up at https://stripe.com\n2. Get your Publishable Key from Dashboard > Developers > API Keys\n3. Create a Product & Price in Dashboard > Products\n4. Replace STRIPE_PUBLISHABLE_KEY and STRIPE_PRICE_ID in the code\n\nFor now, click "Activate Free Trial" to test Premium features.');
+      alert('⚠️ Stripe Integration Setup Required');
       return;
     }
-
     setStripeLoading(true);
-
     try {
-      // Load Stripe.js
       const stripe = window.Stripe(STRIPE_PUBLISHABLE_KEY);
-      
-      // Create checkout session
       const { error } = await stripe.redirectToCheckout({
-        lineItems: [
-          {
-            price: STRIPE_PRICE_ID, // Your Premium price ID from Stripe Dashboard
-            quantity: 1,
-          },
-        ],
+        lineItems: [{ price: STRIPE_PRICE_ID_MONTHLY, quantity: 1 }],
         mode: 'subscription',
         successUrl: `${window.location.origin}?payment=success`,
         cancelUrl: `${window.location.origin}?payment=cancel`,
-        customerEmail: username + '@example.com', // In production, use real email
-        clientReferenceId: username, // To identify user after payment
+        customerEmail: username + '@example.com',
+        clientReferenceId: username,
       });
-
-      if (error) {
-        console.error('Stripe Checkout error:', error);
-        alert('Payment error: ' + error.message);
-      }
+      if (error) alert('Payment error: ' + error.message);
     } catch (err) {
-      console.error('Stripe error:', err);
       alert('Unable to process payment. Please try again.');
     } finally {
       setStripeLoading(false);
     }
   };
 
-  // Check for payment success/cancel on page load
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
-    
     if (paymentStatus === 'success') {
-      // Payment successful! Activate premium
       setUserTier('premium');
-      alert('🎉 Payment successful! Welcome to Premium!\n\nYou now have:\n✅ Unlimited questions\n✅ Community access\n✅ Prayer journal\n✅ Reading plan');
-      // Clear URL parameter
+      alert('🎉 Payment successful! Welcome to Premium!');
       window.history.replaceState({}, '', window.location.pathname);
     } else if (paymentStatus === 'cancel') {
-      alert('Payment cancelled. Your subscription was not activated.');
+      alert('Payment cancelled.');
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
-
-  const joinChurch = async () => {
-    if (!churchCode.trim()) {
-      alert('Please enter a church code');
-      return;
-    }
-    
-    // In production, validate church code against database
-    // For demo, accept any code that starts with "CHURCH"
-    if (churchCode.toUpperCase().startsWith('CHURCH')) {
-      setUserTier('church');
-      setChurchName(churchCode.toUpperCase());
-      alert(`Successfully joined ${churchCode}! You now have access to all premium features.`);
-    } else {
-      alert('Invalid church code. Please contact your church administrator.');
-    }
-  };
 
   const submitContactForm = async () => {
     if (!contactInfo.name || !contactInfo.email) {
       alert('Please fill in your name and email');
       return;
     }
-    
-    // In production, this would send to your CRM/email
     try {
-      await window.storage.set(
-        `contact_request_${Date.now()}`,
-        JSON.stringify({
-          ...contactInfo,
-          timestamp: new Date().toISOString()
-        }),
-        true
-      );
-      
-      alert('Thank you! We will contact you within 24 hours to discuss the Church Edition.');
+      await window.storage.set(`contact_request_${Date.now()}`, JSON.stringify({
+        ...contactInfo, timestamp: new Date().toISOString()
+      }), true);
+      alert('Thank you! We will contact you within 24 hours.');
       setShowContactForm(false);
       setShowUpgradeModal(false);
-      setContactInfo({
-        name: '',
-        email: '',
-        phone: '',
-        churchName: '',
-        message: ''
-      });
+      setContactInfo({ name: '', email: '', phone: '', churchName: '', message: '' });
     } catch (err) {
-      console.error('Error submitting contact form:', err);
-      alert('There was an error. Please email us directly at contact@biblicalguidance.com');
+      alert('There was an error. Please email us directly.');
     }
   };
 
   const checkFeatureAccess = (feature) => {
-    if (userTier === 'premium' || userTier === 'church') {
-      return true;
-    }
-    
-    // Features that require premium
+    if (userTier === 'premium' || userTier === 'church') return true;
     const premiumFeatures = ['community', 'journal', 'reading-plan'];
-    
     if (premiumFeatures.includes(feature)) {
       setShowUpgradeModal(true);
       return false;
     }
-    
     return true;
   };
 
@@ -524,17 +395,11 @@ Provide all verses for the entire chapter in New Living Translation (NLT). Do no
       setError('Please enter a question');
       return;
     }
-
-    // Check if user needs to log in
     if (!isLoggedIn) {
       setShowAuthModal(true);
       return;
     }
-
-    // Check daily limit
-    if (!checkDailyLimit()) {
-      return;
-    }
+    if (!checkDailyLimit()) return;
 
     setLoading(true);
     setError('');
@@ -549,47 +414,17 @@ Provide all verses for the entire chapter in New Living Translation (NLT). Do no
           max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `You are a compassionate spiritual guide helping someone find biblical wisdom and guidance. 
-
-The person's question or situation is: "${question}"
-
-Please provide:
-1. A compassionate, understanding response to their situation
-2. 2-3 relevant Bible verses with references (book, chapter, verse) from the New Living Translation (NLT)
-3. Practical guidance on "What would Jesus do" in this situation
-4. Words of encouragement
-
-Format your response as JSON with this structure:
-{
-  "compassionateResponse": "your empathetic response here",
-  "verses": [
-    {"reference": "Book Chapter:Verse", "text": "verse text in NLT"},
-    {"reference": "Book Chapter:Verse", "text": "verse text in NLT"}
-  ],
-  "wwjd": "What Jesus would do in this situation",
-  "encouragement": "Encouraging closing words"
-}
-
-Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgmental, and helpful.`
+            content: `You are a compassionate spiritual guide. Question: "${question}". Provide: 1) Compassionate response 2) 2-3 relevant Bible verses (NLT) 3) What Jesus would do 4) Encouragement. Format as JSON: {"compassionateResponse": "", "verses": [{"reference": "", "text": ""}], "wwjd": "", "encouragement": ""}`
           }]
         })
       });
 
       const data = await apiResponse.json();
-      
-      if (data.content && data.content[0] && data.content[0].text) {
-        let textResponse = data.content[0].text.trim();
-        textResponse = textResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-        
-        try {
-          const parsedResponse = JSON.parse(textResponse);
-          setResponse({ ...parsedResponse, question, timestamp: new Date().toISOString() });
-          
-          // Increment question counter
-          setQuestionsToday(questionsToday + 1);
-        } catch (parseError) {
-          setError('Received response but could not format it properly. Please try again.');
-        }
+      if (data.content && data.content[0]) {
+        let textResponse = data.content[0].text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const parsedResponse = JSON.parse(textResponse);
+        setResponse({ ...parsedResponse, question, timestamp: new Date().toISOString() });
+        setQuestionsToday(questionsToday + 1);
       } else {
         setError('Unable to get a response. Please try again.');
       }
@@ -605,16 +440,14 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
       setShowAuthModal(true);
       return;
     }
-    
-    const newSaved = [...savedResponses, response];
-    setSavedResponses(newSaved);
-    alert('Response saved to your collection!');
+    setSavedResponses([response, ...savedResponses]);
+    alert('Response saved!');
   };
 
   const shareResponse = () => {
     const shareText = `${response.verses[0].text} - ${response.verses[0].reference}`;
     if (navigator.share) {
-      navigator.share({ text: shareText, title: 'Biblical Guidance' });
+      navigator.share({ text: shareText, title: 'VerseAid.ai' });
     } else {
       navigator.clipboard.writeText(shareText);
       alert('Verse copied to clipboard!');
@@ -623,7 +456,6 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
 
   const addPrayerEntry = async () => {
     if (!newPrayerEntry.trim()) return;
-    
     const entry = {
       id: Date.now(),
       text: newPrayerEntry,
@@ -631,26 +463,16 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
       answered: false,
       category: prayerCategory || 'other'
     };
-    
     setPrayerJournal([entry, ...prayerJournal]);
     
-    // If sharing to community, add to community prayers
     if (shareToCommunity) {
-      const communityEntry = {
-        id: Date.now(),
-        text: newPrayerEntry,
-        date: new Date().toISOString(),
-        prayerCount: 0,
-        category: prayerCategory || 'other'
-      };
-      
+      const communityEntry = { ...entry, prayerCount: 0 };
       const updatedCommunity = [communityEntry, ...communityPrayers];
       setCommunityPrayers(updatedCommunity);
-      
       try {
         await window.storage.set('community_prayers', JSON.stringify(updatedCommunity), true);
       } catch (err) {
-        console.error('Error saving community prayer:', err);
+        console.error('Error saving community prayer');
       }
     }
     
@@ -668,39 +490,31 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
       prayerCount: 0,
       category: journalEntry.category || 'other'
     };
-    
     const updatedCommunity = [communityEntry, ...communityPrayers];
     setCommunityPrayers(updatedCommunity);
-    
-    // Track that this prayer has been shared
     setSharedPrayerIds([...sharedPrayerIds, journalEntry.id]);
-    
     try {
       await window.storage.set('community_prayers', JSON.stringify(updatedCommunity), true);
       alert('Prayer shared with the community!');
     } catch (err) {
-      console.error('Error sharing prayer:', err);
+      console.error('Error sharing prayer');
     }
   };
 
   const deleteSavedResponse = (index) => {
-    const updated = savedResponses.filter((_, i) => i !== index);
-    setSavedResponses(updated);
+    setSavedResponses(savedResponses.filter((_, i) => i !== index));
   };
 
   const prayForRequest = async (id) => {
-    // Add to prayed-for list for visual feedback
     setPrayedForIds([...prayedForIds, id]);
-    
     const updated = communityPrayers.map(p => 
       p.id === id ? { ...p, prayerCount: p.prayerCount + 1 } : p
     );
     setCommunityPrayers(updated);
-    
     try {
       await window.storage.set('community_prayers', JSON.stringify(updated), true);
     } catch (err) {
-      console.error('Error updating prayer count:', err);
+      console.error('Error updating prayer count');
     }
   };
 
@@ -709,25 +523,17 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
       setShowAuthModal(true);
       return;
     }
-    
     if (!dailyVerse) return;
-    
     const verseResponse = {
       question: "Today's Daily Verse",
-      verses: [{
-        reference: dailyVerse.reference,
-        text: dailyVerse.text
-      }],
+      verses: [{ reference: dailyVerse.reference, text: dailyVerse.text }],
       compassionateResponse: dailyVerse.reflection,
       wwjd: "",
       encouragement: "",
       timestamp: new Date().toISOString()
     };
-    
     setSavedResponses([verseResponse, ...savedResponses]);
     setSavedDailyVerse(true);
-    
-    // Reset after 2 seconds
     setTimeout(() => setSavedDailyVerse(false), 2000);
   };
 
@@ -754,87 +560,88 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
 
   const renderHome = () => (
     <>
-      {/* Verse Notification */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+      `}</style>
+
       {showVerseNotification && (
-        <div className="fixed top-20 right-4 z-50 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-4 rounded-lg shadow-2xl animate-bounce">
+        <div className="fixed top-20 right-4 z-50 bg-gradient-to-r from-yellow-500 to-orange-500 text-black px-6 py-4 rounded-lg shadow-2xl animate-bounce">
           <div className="flex items-center gap-3">
             <BookOpen className="w-6 h-6" />
             <div>
-              <p className="font-bold">New Daily Verse Available! 📖</p>
-              <p className="text-sm opacity-90">Tap the banner below to read</p>
+              <p className="font-bold">New Daily Verse! 📖</p>
+              <p className="text-sm opacity-90">Tap banner to read</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Daily Verse Banner */}
       {dailyVerse && !showDailyVerse && (
         <div 
           onClick={() => setShowDailyVerse(true)}
-          className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-2xl shadow-lg p-6 mb-6 cursor-pointer hover:shadow-xl transition-shadow"
+          className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 mb-8 cursor-pointer hover:border-yellow-500/40 hover:shadow-yellow-500/20 transition-all"
         >
           <div className="flex items-start gap-3">
-            <Calendar className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-semibold text-gray-800 mb-2">Today's Verse</h3>
-              <p className="text-sm text-gray-700 italic">"{dailyVerse.text}"</p>
-              <p className="text-xs text-amber-700 mt-1">— {dailyVerse.reference}</p>
-              <p className="text-xs text-blue-600 mt-2">Tap to read reflection →</p>
+            <Calendar className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-yellow-500 mb-2 font-playfair">Today's Verse</h3>
+              <p className="text-sm text-gray-300 italic line-clamp-2">"{dailyVerse.text}"</p>
+              <p className="text-xs text-yellow-500 mt-1 font-bold">— {dailyVerse.reference}</p>
+              <p className="text-xs text-gray-400 mt-2">Tap to read reflection →</p>
             </div>
           </div>
         </div>
       )}
 
       {showDailyVerse && dailyVerse && (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl shadow-xl p-6 mb-6">
+        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 mb-8">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xl font-bold text-gray-800">Today's Verse & Reflection</h3>
+            <h3 className="text-2xl font-bold text-yellow-500 font-playfair">Today's Verse & Reflection</h3>
             <div className="flex gap-2">
               <button 
                 onClick={saveDailyVerseToCollection}
                 className={`p-2 rounded-lg transition-all ${
                   savedDailyVerse 
-                    ? 'bg-yellow-400 text-white' 
-                    : 'bg-white hover:bg-yellow-100 text-amber-600'
+                    ? 'bg-yellow-500 text-black' 
+                    : 'bg-gray-800 hover:bg-gray-700 text-yellow-500 border border-yellow-500/20'
                 }`}
-                title="Save to collection"
               >
                 <Star className={`w-5 h-5 ${savedDailyVerse ? 'fill-current' : ''}`} />
               </button>
-              <button onClick={() => setShowDailyVerse(false)} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => setShowDailyVerse(false)} className="text-gray-400 hover:text-gray-300">
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
           <div className="space-y-4">
-            <div className="bg-white rounded-lg p-4">
-              <p className="text-gray-700 italic mb-2">"{dailyVerse.text}"</p>
-              <p className="text-sm font-semibold text-amber-700">— {dailyVerse.reference}</p>
+            <div className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6">
+              <p className="text-gray-300 italic mb-2">"{dailyVerse.text}"</p>
+              <p className="text-sm font-bold text-yellow-500">— {dailyVerse.reference}</p>
             </div>
-            <div className="bg-white rounded-lg p-4">
-              <p className="text-sm text-gray-700 leading-relaxed">{dailyVerse.reflection}</p>
+            <div className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6">
+              <p className="text-sm text-gray-300 leading-relaxed">{dailyVerse.reflection}</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Input Card */}
-      <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-6">
-        {/* Usage Counter */}
+      <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 shadow-lg rounded-2xl p-8 mb-8 hover:border-yellow-500/40 hover:shadow-yellow-500/10 transition-all">
         {isLoggedIn && userTier === 'free' && (
-          <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+          <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm font-medium text-gray-700">
+                <p className="text-sm font-semibold text-yellow-500">
                   Daily Questions: {questionsToday}/3 used
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  Resets daily. Upgrade for unlimited questions!
+                <p className="text-xs text-gray-400 mt-1">
+                  Upgrade to Premium for unlimited access
                 </p>
               </div>
               <button
                 onClick={() => setShowUpgradeModal(true)}
-                className="text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium"
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black px-6 py-2 rounded-lg font-bold hover:shadow-lg hover:shadow-yellow-500/50 transition-all"
               >
                 Upgrade ✨
               </button>
@@ -843,11 +650,11 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
         )}
 
         {isLoggedIn && (userTier === 'premium' || userTier === 'church') && (
-          <div className="mb-4 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg border border-yellow-200">
+          <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl shadow-lg">
             <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-600 fill-current" />
-              <p className="text-sm font-medium text-gray-700">
-                {userTier === 'premium' ? 'Premium Member' : `${churchName} Member`} - Unlimited Questions
+              <Crown className="w-5 h-5 text-black" />
+              <p className="text-sm font-bold text-black">
+                {userTier === 'premium' ? '👑 PREMIUM' : `${churchName} Member`} - Unlimited Questions
               </p>
             </div>
           </div>
@@ -855,20 +662,20 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-yellow-500 mb-2">
               What's on your heart today?
             </label>
             <textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Share your question, concern, or situation..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-              rows="4"
+              className="w-full px-6 py-4 bg-gray-900 border border-yellow-500/20 rounded-xl text-gray-100 placeholder-gray-500 focus:border-yellow-500/50 focus:ring-2 focus:ring-yellow-500/20 resize-none transition-all"
+              rows="5"
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-red-900/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl">
               {error}
             </div>
           )}
@@ -876,7 +683,7 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 disabled:shadow-none text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-[1.02]"
           >
             {loading ? (
               <>
@@ -886,21 +693,21 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
             ) : (
               <>
                 <Send className="w-5 h-5" />
-                Get Biblical Guidance
+                ✨ Get Biblical Guidance
               </>
             )}
           </button>
         </div>
 
         {!response && !loading && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm font-medium text-gray-600 mb-3">Try asking:</p>
+          <div className="mt-8 pt-8 border-t border-yellow-500/10">
+            <p className="text-sm font-semibold text-gray-400 mb-4">Try asking:</p>
             <div className="space-y-2">
               {exampleQuestions.map((example, idx) => (
                 <button
                   key={idx}
                   onClick={() => setQuestion(example)}
-                  className="w-full text-left px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-sm transition-colors"
+                  className="w-full text-left px-6 py-3 bg-gray-900/50 hover:bg-gray-800/80 border border-yellow-500/10 hover:border-yellow-500/30 text-gray-300 rounded-xl text-sm transition-all"
                 >
                   {example}
                 </button>
@@ -912,48 +719,51 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
 
       {response && (
         <div className="space-y-6">
-          {/* Action Buttons */}
           <div className="flex gap-3 justify-center">
             <button
               onClick={saveResponse}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-6 py-3 bg-gray-900 border border-yellow-500/30 hover:border-yellow-500/50 text-yellow-500 font-bold rounded-xl transition-all"
             >
               <Star className="w-4 h-4" />
               Save
             </button>
             <button
               onClick={shareResponse}
-              className="flex items-center gap-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg hover:shadow-yellow-500/50 text-black font-bold rounded-xl transition-all"
             >
               <Share2 className="w-4 h-4" />
               Share
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <Heart className="w-6 h-6 text-pink-500 flex-shrink-0 mt-1" />
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 hover:border-yellow-500/40 transition-all">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                <Heart className="w-6 h-6 text-black" />
+              </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-3">A Word of Understanding</h2>
-                <p className="text-gray-700 leading-relaxed">{response.compassionateResponse}</p>
+                <h2 className="text-2xl font-bold text-yellow-500 mb-3 font-playfair">A Word of Understanding</h2>
+                <p className="text-gray-300 leading-relaxed">{response.compassionateResponse}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl shadow-lg p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <BookOpen className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-6 h-6 text-black" />
+              </div>
               <div className="flex-1">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Scripture for Your Journey</h2>
+                <h2 className="text-2xl font-bold text-yellow-500 mb-4 font-playfair">Scripture for Your Journey</h2>
                 <div className="space-y-4">
                   {response.verses.map((verse, idx) => (
-                    <div key={idx} className="bg-white rounded-lg p-4 shadow-sm">
-                      <p className="text-gray-700 italic mb-2">"{verse.text}"</p>
+                    <div key={idx} className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6">
+                      <p className="text-gray-300 italic mb-3">"{verse.text}"</p>
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-purple-700">— {verse.reference}</p>
+                        <p className="text-sm font-bold text-yellow-500">— {verse.reference}</p>
                         <button
                           onClick={() => goToVerse(verse.reference)}
-                          className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded transition-colors"
+                          className="text-xs bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg hover:shadow-yellow-500/50 text-black font-bold px-4 py-2 rounded-lg transition-all"
                         >
                           Go to Verse →
                         </button>
@@ -965,14 +775,14 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-3">What Would Jesus Do?</h2>
-            <p className="text-gray-700 leading-relaxed">{response.wwjd}</p>
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8">
+            <h2 className="text-2xl font-bold text-yellow-500 mb-3 font-playfair">What Would Jesus Do?</h2>
+            <p className="text-gray-300 leading-relaxed">{response.wwjd}</p>
           </div>
 
-          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-3">Words of Encouragement</h2>
-            <p className="text-gray-700 leading-relaxed">{response.encouragement}</p>
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8">
+            <h2 className="text-2xl font-bold text-yellow-500 mb-3 font-playfair">Words of Encouragement</h2>
+            <p className="text-gray-300 leading-relaxed">{response.encouragement}</p>
           </div>
 
           <div className="text-center">
@@ -982,7 +792,7 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
                 setResponse(null);
                 setError('');
               }}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold py-3 px-8 rounded-lg transition-colors"
+              className="bg-gray-900 border border-yellow-500/30 hover:border-yellow-500/50 text-yellow-500 font-bold py-3 px-8 rounded-xl transition-all"
             >
               Ask Another Question
             </button>
@@ -992,35 +802,35 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
     </>
   );
 
+  // Render other views (Saved, Journal, Community, Bible, Reading Plan) - continued from previous
   const renderSaved = () => (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Saved Responses</h2>
+      <h2 className="text-3xl font-bold text-white mb-4 font-playfair">Saved Responses</h2>
       {savedResponses.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-          <BookMarked className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No saved responses yet. Save your favorite guidance to revisit later!</p>
+        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 text-center">
+          <BookMarked className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-400">No saved responses yet. Save your favorite guidance to revisit later!</p>
         </div>
       ) : (
         savedResponses.map((item, idx) => (
-          <div key={idx} className="bg-white rounded-2xl shadow-lg p-6">
+          <div key={idx} className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 hover:border-yellow-500/40 transition-all">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <p className="text-sm text-gray-500 mb-2">{new Date(item.timestamp).toLocaleDateString()}</p>
-                <p className="font-semibold text-gray-800 mb-3">Q: {item.question}</p>
+                <p className="font-bold text-gray-300 mb-3">Q: {item.question}</p>
               </div>
               <button 
                 onClick={() => deleteSavedResponse(idx)}
-                className="text-red-500 hover:text-red-700 transition-colors"
-                title="Delete saved item"
+                className="text-gray-500 hover:text-gray-300 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-2">
               {item.verses.map((v, i) => (
-                <div key={i} className="bg-purple-50 rounded-lg p-3">
-                  <p className="text-sm italic text-gray-700">"{v.text}"</p>
-                  <p className="text-xs text-purple-700 mt-1">— {v.reference}</p>
+                <div key={i} className="bg-gray-900 border border-yellow-500/20 rounded-lg p-3">
+                  <p className="text-sm italic text-gray-300">"{v.text}"</p>
+                  <p className="text-xs text-yellow-500 mt-1 font-bold">— {v.reference}</p>
                 </div>
               ))}
             </div>
@@ -1033,10 +843,10 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
   const renderJournal = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">Prayer Journal</h2>
+        <h2 className="text-3xl font-bold text-white font-playfair">Prayer Journal</h2>
         <button
           onClick={() => setShowPrayerModal(true)}
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg hover:shadow-yellow-500/50 text-black font-bold px-4 py-2 rounded-lg transition-all"
         >
           <Plus className="w-4 h-4" />
           Add Prayer
@@ -1044,34 +854,34 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
       </div>
 
       {prayerJournal.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-          <Heart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">Start your prayer journal by adding your first prayer request.</p>
+        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 text-center">
+          <Heart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-400">Start your prayer journal by adding your first prayer request.</p>
         </div>
       ) : (
         prayerJournal.map((entry) => (
-          <div key={entry.id} className="bg-white rounded-2xl shadow-lg p-6">
+          <div key={entry.id} className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 hover:border-yellow-500/40 transition-all">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <p className="text-sm text-gray-500">{new Date(entry.date).toLocaleDateString()}</p>
                 {entry.category && (
-                  <span className="inline-block mt-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+                  <span className="inline-block mt-1 px-2 py-1 bg-yellow-500/10 text-yellow-500 text-xs rounded border border-yellow-500/20 font-medium">
                     {prayerCategories.find(c => c.value === entry.category)?.emoji} {prayerCategories.find(c => c.value === entry.category)?.label}
                   </span>
                 )}
               </div>
-              <button onClick={() => deletePrayerEntry(entry.id)} className="text-red-500 hover:text-red-700">
+              <button onClick={() => deletePrayerEntry(entry.id)} className="text-gray-500 hover:text-gray-300">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-gray-800 mb-3">{entry.text}</p>
+            <p className="text-gray-300 mb-3">{entry.text}</p>
             <div className="flex gap-2">
               <button
                 onClick={() => togglePrayerAnswered(entry.id)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm transition-colors ${
+                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-bold transition-all border ${
                   entry.answered 
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-green-900/30 text-green-400 border-green-500/30 hover:bg-green-900/50' 
+                    : 'bg-gray-800/30 text-gray-400 border-gray-700/30 hover:bg-gray-800/50'
                 }`}
               >
                 {entry.answered ? '✓ Answered' : 'Mark as Answered'}
@@ -1079,14 +889,14 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
               <button
                 onClick={() => sharePrayerToCommunity(entry)}
                 disabled={sharedPrayerIds.includes(entry.id)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm transition-all ${
+                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-bold transition-all ${
                   sharedPrayerIds.includes(entry.id)
-                    ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                    : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+                    ? 'bg-green-900/30 text-green-400 cursor-not-allowed'
+                    : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20'
                 }`}
               >
                 <Share2 className="w-4 h-4" />
-                {sharedPrayerIds.includes(entry.id) ? 'Shared to Community' : 'Share to Community'}
+                {sharedPrayerIds.includes(entry.id) ? 'Shared' : 'Share'}
               </button>
             </div>
           </div>
@@ -1094,16 +904,16 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
       )}
 
       {showPrayerModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Add Prayer Request</h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold text-white mb-4 font-playfair">Add Prayer Request</h3>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <label className="block text-sm font-semibold text-yellow-500 mb-2">Category</label>
               <select
                 value={prayerCategory}
                 onChange={(e) => setPrayerCategory(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
               >
                 <option value="">Select a category (optional)</option>
                 {prayerCategories.map(cat => (
@@ -1118,11 +928,11 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
               value={newPrayerEntry}
               onChange={(e) => setNewPrayerEntry(e.target.value)}
               placeholder="What would you like to pray about?"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 resize-none"
+              className="w-full px-4 py-3 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 mb-4 resize-none focus:ring-2 focus:ring-yellow-500/20"
               rows="4"
             />
             
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -1131,9 +941,9 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
                   className="mt-1"
                 />
                 <div>
-                  <p className="text-sm font-medium text-gray-800">Share to Community</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Let others pray for your request. All community prayers are anonymous.
+                  <p className="text-sm font-bold text-yellow-500">Share to Community</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Let others pray for your request. All prayers are anonymous.
                   </p>
                 </div>
               </label>
@@ -1142,7 +952,7 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
             <div className="flex gap-3">
               <button
                 onClick={addPrayerEntry}
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg"
+                className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg text-black font-bold py-2 rounded-lg"
               >
                 Add Prayer
               </button>
@@ -1153,7 +963,7 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
                   setShareToCommunity(false);
                   setPrayerCategory('');
                 }}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg"
+                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2 rounded-lg"
               >
                 Cancel
               </button>
@@ -1167,17 +977,16 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
   const renderCommunity = () => (
     <div className="space-y-4">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Community Prayer Wall</h2>
-        <p className="text-gray-600 text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
+        <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Community Prayer Wall</h2>
+        <p className="text-gray-400 text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
         
-        {/* Filter Pills */}
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setFilterCategory('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
               filterCategory === 'all'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black shadow-lg'
+                : 'bg-gray-900 text-gray-300 border border-yellow-500/20 hover:border-yellow-500/40'
             }`}
           >
             All Prayers
@@ -1186,10 +995,10 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
             <button
               key={cat.value}
               onClick={() => setFilterCategory(cat.value)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
                 filterCategory === cat.value
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black shadow-lg'
+                  : 'bg-gray-900 text-gray-300 border border-yellow-500/20 hover:border-yellow-500/40'
               }`}
             >
               {cat.emoji} {cat.label}
@@ -1199,12 +1008,12 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
       </div>
 
       {filteredCommunityPrayers.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-          <Heart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-4">
+        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 text-center">
+          <Heart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-400 mb-4">
             {filterCategory === 'all' 
               ? 'No community prayer requests yet.' 
-              : `No prayers in the ${prayerCategories.find(c => c.value === filterCategory)?.label} category yet.`}
+              : `No prayers in this category yet.`}
           </p>
           <p className="text-sm text-gray-500">Share a prayer request with the community!</p>
         </div>
@@ -1214,39 +1023,39 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
           const category = prayerCategories.find(c => c.value === prayer.category);
           
           return (
-            <div key={prayer.id} className="bg-white rounded-2xl shadow-lg p-6">
+            <div key={prayer.id} className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 hover:border-yellow-500/40 transition-all">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-purple-600" />
+                  <div className="w-8 h-8 bg-yellow-500/10 border border-yellow-500/30 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-yellow-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Anonymous</p>
+                    <p className="text-sm font-bold text-gray-300">Anonymous</p>
                     <p className="text-xs text-gray-500">{new Date(prayer.date).toLocaleDateString()}</p>
                   </div>
                 </div>
                 {category && (
-                  <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+                  <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 text-xs rounded border border-yellow-500/20 font-medium">
                     {category.emoji} {category.label}
                   </span>
                 )}
               </div>
               
-              <p className="text-gray-800 mb-4 leading-relaxed">{prayer.text}</p>
+              <p className="text-gray-300 mb-4 leading-relaxed">{prayer.text}</p>
               
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => prayForRequest(prayer.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-medium ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-bold ${
                     hasPrayed
-                      ? 'bg-pink-500 text-white'
-                      : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+                      ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black shadow-lg'
+                      : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20'
                   }`}
                 >
                   <Heart className={`w-4 h-4 ${hasPrayed ? 'fill-current' : ''}`} />
                   {hasPrayed ? "I'm Praying" : "I'll Pray"}
                 </button>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-400 font-medium">
                   {prayer.prayerCount} {prayer.prayerCount === 1 ? 'person' : 'people'} praying
                 </span>
               </div>
@@ -1260,23 +1069,23 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
   const renderBible = () => (
     <div className="space-y-6">
       {loadingBible && (
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading Bible chapter...</p>
+        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-12 text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-yellow-500 mx-auto mb-4" />
+          <p className="text-gray-400 font-medium">Loading Bible chapter...</p>
         </div>
       )}
 
       {!loadingBible && !bibleText && (
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Read the Bible</h2>
+        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
+          <h2 className="text-3xl font-bold text-white mb-4 font-playfair">Read the Bible</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Book</label>
+              <label className="block text-sm font-semibold text-yellow-500 mb-2">Book</label>
               <select
                 value={bibleBook}
                 onChange={(e) => setBibleBook(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
               >
                 {bibleBooks.map(book => (
                   <option key={book.name} value={book.name}>{book.name}</option>
@@ -1285,11 +1094,11 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Chapter</label>
+              <label className="block text-sm font-semibold text-yellow-500 mb-2">Chapter</label>
               <select
                 value={bibleChapter}
                 onChange={(e) => setBibleChapter(parseInt(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
               >
                 {Array.from({ length: bibleBooks.find(b => b.name === bibleBook)?.chapters || 1 }, (_, i) => i + 1).map(ch => (
                   <option key={ch} value={ch}>{ch}</option>
@@ -1300,7 +1109,7 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
           
           <button
             onClick={() => fetchBibleChapter(bibleBook, bibleChapter)}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
           >
             <BookOpen className="w-5 h-5" />
             Read Chapter
@@ -1310,14 +1119,14 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
 
       {!loadingBible && bibleText && (
         <>
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-2xl font-bold text-purple-800">
+              <h3 className="text-2xl font-bold text-yellow-500 font-playfair">
                 {bibleText.book} {bibleText.chapter} <span className="text-sm font-normal text-gray-500">(NLT)</span>
               </h3>
               <button
                 onClick={() => setBibleText(null)}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-gray-500 hover:text-gray-300 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -1325,23 +1134,23 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
             
             <div className="space-y-3">
               {bibleText.verses.map((v, idx) => (
-                <p key={idx} className="text-gray-700 leading-relaxed">
-                  <span className="font-semibold text-purple-600 mr-2">{v.verse}</span>
+                <p key={idx} className="text-gray-300 leading-relaxed">
+                  <span className="font-bold text-yellow-500 mr-2">{v.verse}</span>
                   {v.text}
                 </p>
               ))}
             </div>
           </div>
 
-          <div className="bg-purple-50 rounded-2xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Navigate to Another Chapter</h3>
+          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-white mb-4 font-playfair">Navigate to Another Chapter</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Book</label>
+                <label className="block text-sm font-semibold text-yellow-500 mb-2">Book</label>
                 <select
                   value={bibleBook}
                   onChange={(e) => setBibleBook(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
                 >
                   {bibleBooks.map(book => (
                     <option key={book.name} value={book.name}>{book.name}</option>
@@ -1350,11 +1159,11 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Chapter</label>
+                <label className="block text-sm font-semibold text-yellow-500 mb-2">Chapter</label>
                 <select
                   value={bibleChapter}
                   onChange={(e) => setBibleChapter(parseInt(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
                 >
                   {Array.from({ length: bibleBooks.find(b => b.name === bibleBook)?.chapters || 1 }, (_, i) => i + 1).map(ch => (
                     <option key={ch} value={ch}>{ch}</option>
@@ -1365,7 +1174,7 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
             
             <button
               onClick={() => fetchBibleChapter(bibleBook, bibleChapter)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
             >
               <BookOpen className="w-5 h-5" />
               Go to Chapter
@@ -1384,20 +1193,20 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
 
     return (
       <div className="space-y-6">
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Bible in a Year</h2>
-          <p className="text-gray-600 mb-4">Follow along and complete the entire Bible in 365 days</p>
+        <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
+          <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Bible in a Year</h2>
+          <p className="text-gray-300 mb-4">Complete the entire Bible in 365 days</p>
           
-          <div className="bg-white rounded-lg p-4 mb-4">
+          <div className="bg-gray-900 border border-yellow-500/20 rounded-lg p-4 mb-4">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">Progress</span>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm font-bold text-gray-300">Progress</span>
+              <span className="text-sm text-gray-400 font-medium">
                 {completedReadings.length} / {readingPlan.reduce((sum, day) => sum + day.readings.length, 0)} chapters
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-purple-600 to-blue-600 h-3 rounded-full transition-all"
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all shadow-lg shadow-yellow-500/50"
                 style={{
                   width: `${(completedReadings.length / readingPlan.reduce((sum, day) => sum + day.readings.length, 0)) * 100}%`
                 }}
@@ -1407,15 +1216,15 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
         </div>
 
         {todaysPlan && (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-4 font-playfair">
               📅 Day {dayOfYear} - Today's Reading
             </h3>
             <div className="space-y-3">
               {todaysPlan.readings.map((reading, idx) => {
                 const isComplete = isReadingComplete(todaysPlan.day, reading);
                 return (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                  <div key={idx} className="flex items-center justify-between p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
@@ -1429,7 +1238,7 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
                           setBibleChapter(reading.chapter);
                           fetchBibleChapter(reading.book, reading.chapter);
                         }}
-                        className={`font-medium text-left ${isComplete ? 'text-gray-500 line-through' : 'text-gray-800 hover:text-purple-600'}`}
+                        className={`font-bold text-left ${isComplete ? 'text-gray-500 line-through' : 'text-gray-300 hover:text-yellow-500'}`}
                       >
                         {reading.book} {reading.chapter}
                       </button>
@@ -1440,7 +1249,7 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
                         setBibleChapter(reading.chapter);
                         fetchBibleChapter(reading.book, reading.chapter);
                       }}
-                      className="text-sm bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded transition-colors"
+                      className="text-sm bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg text-black font-bold px-3 py-1 rounded-lg transition-all"
                     >
                       Read →
                     </button>
@@ -1451,17 +1260,17 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">All Days</h3>
+        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-white mb-4 font-playfair">All Days</h3>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {readingPlan.map((day, idx) => {
               const dayComplete = day.readings.every(r => isReadingComplete(day.day, r));
               return (
-                <div key={idx} className={`p-3 rounded-lg ${dayComplete ? 'bg-green-50' : 'bg-gray-50'}`}>
-                  <div className="font-medium text-gray-800 mb-1">
+                <div key={idx} className={`p-3 rounded-lg border ${dayComplete ? 'bg-green-900/20 border-green-500/30' : 'bg-gray-900/50 border-gray-700/30'}`}>
+                  <div className="font-bold text-gray-300 mb-1">
                     Day {day.day} {dayComplete && '✓'}
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-400">
                     {day.readings.map(r => `${r.book} ${r.chapter}`).join(', ')}
                   </div>
                 </div>
@@ -1474,82 +1283,68 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
   };
 
   return (
-          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {/* Load Stripe.js */}
+    <div className="min-h-screen bg-black font-inter">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+      `}</style>
       <script src="https://js.stripe.com/v3/"></script>
       
-      {/* Header */}
-      <div className="bg-white shadow-md sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <BookOpen className="w-8 h-8 text-purple-600" />
-            <h1 className="text-2xl font-bold text-gray-800">Biblical Guidance</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {isLoggedIn ? (
-              <>
-                <button onClick={() => setShowMenu(!showMenu)} className="md:hidden text-gray-600">
-                  <Menu className="w-6 h-6" />
-                </button>
-                <div className="hidden md:flex items-center gap-3">
-                  {userTier === 'premium' && (
-                    <span className="flex items-center gap-1 text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 rounded-full">
-                      <Crown className="w-3 h-3" /> Premium
-                    </span>
-                  )}
-                  {userTier === 'church' && (
-                    <span className="flex items-center gap-1 text-xs bg-gradient-to-r from-green-600 to-teal-600 text-white px-3 py-1 rounded-full">
-                      <Users className="w-3 h-3" /> {churchName}
-                    </span>
-                  )}
-                  <span className="text-sm text-gray-600">Hi, {username}!</span>
-                  {(userTier === 'premium' || userTier === 'church') && (
-                    <button
-                      onClick={() => {
-                        if (STRIPE_PUBLISHABLE_KEY === 'pk_test_YOUR_PUBLISHABLE_KEY_HERE') {
-                          alert('⚠️ Stripe Customer Portal not configured.\n\nTo enable subscription management:\n1. Set up your Stripe keys\n2. Configure Customer Portal in Stripe Dashboard');
-                        } else {
-                          window.open('https://billing.stripe.com/p/login/test_XXXXX', '_blank');
-                        }
-                      }}
-                      className="text-xs text-purple-600 hover:text-purple-700 underline"
-                    >
-                      Manage Subscription
-                    </button>
-                  )}
-                  {userTier === 'free' && (
-                    <button
-                      onClick={() => setShowUpgradeModal(true)}
-                      className="text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium"
-                    >
-                      Upgrade ✨
-                    </button>
-                  )}
-                  <button onClick={handleLogout} className="text-sm text-purple-600 hover:text-purple-700">
-                    Logout
+      <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-yellow-500/20 sticky top-0 z-50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-10 h-10 text-yellow-500" />
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent font-playfair">
+                VerseAid.ai
+              </h1>
+            </div>
+            <div className="flex items-center gap-4">
+              {isLoggedIn ? (
+                <>
+                  <button onClick={() => setShowMenu(!showMenu)} className="md:hidden text-yellow-500">
+                    <Menu className="w-6 h-6" />
                   </button>
-                </div>
-              </>
-            ) : (
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm"
-              >
-                <User className="w-4 h-4" />
-                Sign In
-              </button>
-            )}
+                  <div className="hidden md:flex items-center gap-4">
+                    {(userTier === 'premium' || userTier === 'church') && (
+                      <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-yellow-500/50">
+                        👑 {userTier === 'premium' ? 'PREMIUM' : churchName.toUpperCase()}
+                      </span>
+                    )}
+                    {userTier === 'free' && (
+                      <button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-4 py-1.5 rounded-full hover:shadow-lg hover:shadow-yellow-500/50 transition-all"
+                      >
+                        Upgrade ✨
+                      </button>
+                    )}
+                    <span className="text-gray-400 text-sm">Hi, <span className="text-yellow-500 font-semibold">{username}</span></span>
+                    <button onClick={handleLogout} className="text-yellow-500 hover:text-yellow-400 font-semibold text-sm">
+                      Sign Out
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="text-yellow-500 hover:text-yellow-400 font-semibold text-sm"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Navigation */}
         {isLoggedIn && (
-          <div className={`${showMenu ? 'block' : 'hidden'} md:block border-t border-gray-200`}>
-            <div className="max-w-4xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto">
+          <div className={`${showMenu ? 'block' : 'hidden'} md:block border-t border-yellow-500/10`}>
+            <div className="max-w-7xl mx-auto px-6 py-2 flex gap-2 overflow-x-auto">
               <button
                 onClick={() => { setCurrentView('home'); setShowMenu(false); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${
-                  currentView === 'home' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'home' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
                 }`}
               >
                 <Home className="w-4 h-4" />
@@ -1557,8 +1352,8 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
               </button>
               <button
                 onClick={() => { setCurrentView('saved'); setShowMenu(false); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${
-                  currentView === 'saved' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'saved' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
                 }`}
               >
                 <Star className="w-4 h-4" />
@@ -1571,12 +1366,12 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
                     setShowMenu(false);
                   }
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${
-                  currentView === 'journal' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'journal' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
                 }`}
               >
                 <BookMarked className="w-4 h-4" />
-                Journal {(userTier === 'free') && <Crown className="w-3 h-3 text-yellow-600" />}
+                Journal {(userTier === 'free') && <Crown className="w-3 h-3" />}
               </button>
               <button
                 onClick={() => { 
@@ -1585,24 +1380,24 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
                     setShowMenu(false);
                   }
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${
-                  currentView === 'community' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'community' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
                 }`}
               >
                 <Heart className="w-4 h-4" />
-                Community {(userTier === 'free') && <Crown className="w-3 h-3 text-yellow-600" />}
+                Community {(userTier === 'free') && <Crown className="w-3 h-3" />}
               </button>
               <button
                 onClick={() => { 
                   setCurrentView('bible'); 
                   setShowMenu(false);
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${
-                  currentView === 'bible' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'bible' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
-                Read Bible
+                Bible
               </button>
               <button
                 onClick={() => { 
@@ -1611,19 +1406,18 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
                     setShowMenu(false);
                   }
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${
-                  currentView === 'reading-plan' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'reading-plan' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
                 }`}
               >
                 <Calendar className="w-4 h-4" />
-                Reading Plan {(userTier === 'free') && <Crown className="w-3 h-3 text-yellow-600" />}
+                Reading Plan {(userTier === 'free') && <Crown className="w-3 h-3" />}
               </button>
             </div>
           </div>
         )}
-      </div>
+      </header>
 
-      {/* Main Content */}
       <div className="max-w-4xl mx-auto p-4 sm:p-6 pb-12">
         {currentView === 'home' && renderHome()}
         {currentView === 'saved' && renderSaved()}
@@ -1633,51 +1427,50 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
         {currentView === 'reading-plan' && renderReadingPlan()}
       </div>
 
-      {/* Auth Modal */}
       {showAuthModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-white font-playfair">
                 {authMode === 'login' ? 'Sign In' : 'Create Account'}
               </h2>
-              <button onClick={() => setShowAuthModal(false)} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => setShowAuthModal(false)} className="text-gray-500 hover:text-gray-300">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <label className="block text-sm font-semibold text-yellow-500 mb-1">Username</label>
                 <input
                   type="text"
                   value={authUsername}
                   onChange={(e) => setAuthUsername(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
                   placeholder="Enter username"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className="block text-sm font-semibold text-yellow-500 mb-1">Password</label>
                 <input
                   type="password"
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
                   placeholder="Enter password"
                 />
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-red-900/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
                   {error}
                 </div>
               )}
 
               <button
                 onClick={handleAuth}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg"
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
               >
                 {authMode === 'login' ? 'Sign In' : 'Create Account'}
               </button>
@@ -1685,15 +1478,15 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
               <div className="text-center">
                 <button
                   onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                  className="text-sm text-purple-600 hover:text-purple-700"
+                  className="text-sm text-gray-400 hover:text-gray-300"
                 >
                   {authMode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                 </button>
               </div>
               
               {authMode === 'signup' && (
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-600 text-center">
+                <div className="pt-4 border-t border-gray-800">
+                  <p className="text-xs text-gray-500 text-center">
                     Free tier includes 3 questions daily, Bible reader, and community features
                   </p>
                 </div>
@@ -1703,291 +1496,192 @@ Use the New Living Translation (NLT) for all Bible verses. Be warm, non-judgment
         </div>
       )}
 
-      {/* Upgrade Modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-6 max-w-4xl w-full my-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">Upgrade Your Experience</h2>
-              <button onClick={() => setShowUpgradeModal(false)} className="text-gray-500 hover:text-gray-700">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-3xl p-10 max-w-5xl w-full my-8">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold text-center text-white font-playfair">
+                Choose Your <span className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">Premium</span> Plan
+              </h2>
+              <button onClick={() => setShowUpgradeModal(false)} className="text-gray-500 hover:text-gray-300">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Premium Plan */}
-              <div className="border-2 border-purple-200 rounded-2xl p-6 bg-gradient-to-br from-purple-50 to-blue-50">
-                <div className="flex items-center gap-2 mb-4">
-                  <Crown className="w-8 h-8 text-purple-600" />
-                  <h3 className="text-2xl font-bold text-gray-800">Premium</h3>
-                </div>
-                
-                <div className="mb-6">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-gray-800">$4.99</span>
-                    <span className="text-gray-600">/month</span>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="border-2 border-yellow-500/30 rounded-2xl p-8 bg-gradient-to-br from-gray-900 to-black hover:border-yellow-500/50 transition-all hover:shadow-2xl hover:shadow-yellow-500/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
+                    <Crown className="w-6 h-6 text-black" />
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">or $49.99/year (save 17%)</p>
+                  <h3 className="text-3xl font-bold text-white font-playfair">Premium</h3>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700"><strong>Unlimited questions</strong> daily</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700"><strong>Community Prayer Wall</strong> access</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700"><strong>Prayer Journal</strong> with tracking</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700"><strong>Bible-in-a-Year</strong> reading plan</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Priority AI responses</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Advanced study tools (coming soon)</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Audio Bible (coming soon)</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Multiple translations (coming soon)</p>
-                  </div>
+                <div className="flex items-baseline gap-2 mb-8">
+                  <span className="text-5xl font-bold text-yellow-500">$4.99</span>
+                  <span className="text-gray-400">/month</span>
                 </div>
+
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <span className="text-yellow-500 text-xl">✓</span>
+                    <span><strong className="text-white">Unlimited questions</strong> daily</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <span className="text-yellow-500 text-xl">✓</span>
+                    <span><strong className="text-white">Community Prayer Wall</strong> access</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <span className="text-yellow-500 text-xl">✓</span>
+                    <span><strong className="text-white">Prayer Journal</strong> with tracking</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <span className="text-yellow-500 text-xl">✓</span>
+                    <span><strong className="text-white">Bible-in-a-Year</strong> reading plan</span>
+                  </li>
+                </ul>
 
                 <button
                   onClick={handleStripeCheckout}
                   disabled={stripeLoading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-purple-400 disabled:to-blue-400 text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2 mb-2"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 text-black font-bold py-4 rounded-xl transition-all transform hover:scale-105 mb-2"
                 >
                   {stripeLoading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
                       Processing...
                     </>
                   ) : (
-                    <>
-                      💳 Subscribe Now - $4.99/month
-                    </>
+                    '💳 Subscribe Now'
                   )}
                 </button>
-                
+
                 <button
                   onClick={upgradeToPremium}
-                  className="w-full border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-semibold py-3 rounded-lg transition-all mb-2"
+                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-4 rounded-xl transition-all transform hover:scale-105"
                 >
                   🎁 Activate 7-Day Free Trial
                 </button>
-                
-                <p className="text-xs text-center text-gray-500">
-                  Cancel anytime • No commitment
-                </p>
               </div>
 
-              {/* Church Plan */}
-              <div className="border-2 border-green-200 rounded-2xl p-6 bg-gradient-to-br from-green-50 to-teal-50">
-                <div className="flex items-center gap-2 mb-4">
-                  <Users className="w-8 h-8 text-green-600" />
-                  <h3 className="text-2xl font-bold text-gray-800">Church Edition</h3>
-                </div>
-                
-                <div className="mb-6">
-                  <p className="text-lg text-gray-700 font-medium mb-2">For Churches & Ministries</p>
-                  <p className="text-sm text-gray-600">
-                    Equip your entire congregation with premium Biblical guidance tools, custom branding, and powerful engagement features.
-                  </p>
+              <div className="border-2 border-yellow-500/30 rounded-2xl p-8 bg-gradient-to-br from-gray-900 to-black hover:border-yellow-500/50 transition-all hover:shadow-2xl hover:shadow-yellow-500/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-black" />
+                  </div>
+                  <h3 className="text-3xl font-bold text-white font-playfair">Church</h3>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700"><strong>All Premium features</strong> for unlimited members</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Custom branding with church logo & colors</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Private church prayer wall</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Admin dashboard with engagement analytics</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Pastor devotional & sermon integration</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Small group discussion tools</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <p className="text-sm text-gray-700">Priority support & onboarding</p>
-                  </div>
+                <div className="mb-8">
+                  <span className="text-3xl font-bold text-yellow-500">Custom Pricing</span>
+                  <p className="text-gray-400 text-sm mt-2">For churches & ministries</p>
                 </div>
+
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <span className="text-yellow-500 text-xl">✓</span>
+                    <span><strong className="text-white">All Premium features</strong> for unlimited members</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <span className="text-yellow-500 text-xl">✓</span>
+                    <span>Custom branding with church logo</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <span className="text-yellow-500 text-xl">✓</span>
+                    <span>Private church prayer wall</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <span className="text-yellow-500 text-xl">✓</span>
+                    <span>Admin dashboard & analytics</span>
+                  </li>
+                </ul>
 
                 <button
                   onClick={() => setShowContactForm(true)}
-                  className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold py-4 rounded-lg transition-all text-lg mb-3"
+                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-4 rounded-xl transition-all transform hover:scale-105"
                 >
                   Request Information
                 </button>
-                
-                <p className="text-xs text-center text-gray-600">
-                  We'll contact you within 24 hours to discuss custom pricing for your ministry
-                </p>
               </div>
-            </div>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Questions? Email us at <a href="mailto:support@biblicalguidance.com" className="text-purple-600 hover:underline">support@biblicalguidance.com</a>
-              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Church Contact Form Modal */}
       {showContactForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full my-8">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-lg w-full my-8">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">Church Edition Inquiry</h2>
-                <p className="text-sm text-gray-600 mt-1">We'll contact you within 24 hours</p>
+                <h2 className="text-2xl font-bold text-white font-playfair">Church Edition Inquiry</h2>
+                <p className="text-sm text-gray-400 mt-1">We'll contact you within 24 hours</p>
               </div>
-              <button onClick={() => setShowContactForm(false)} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => setShowContactForm(false)} className="text-gray-500 hover:text-gray-300">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Your Name *</label>
+                <label className="block text-sm font-semibold text-yellow-500 mb-2">Your Name *</label>
                 <input
                   type="text"
                   value={contactInfo.name}
                   onChange={(e) => setContactInfo({...contactInfo, name: e.target.value})}
                   placeholder="John Smith"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                <label className="block text-sm font-semibold text-yellow-500 mb-2">Email Address *</label>
                 <input
                   type="email"
                   value={contactInfo.email}
                   onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
                   placeholder="john@church.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                <input
-                  type="tel"
-                  value={contactInfo.phone}
-                  onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
-                  placeholder="(555) 123-4567"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Church/Ministry Name</label>
+                <label className="block text-sm font-semibold text-yellow-500 mb-2">Church/Ministry Name</label>
                 <input
                   type="text"
                   value={contactInfo.churchName}
                   onChange={(e) => setContactInfo({...contactInfo, churchName: e.target.value})}
                   placeholder="Grace Community Church"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message (Optional)</label>
+                <label className="block text-sm font-semibold text-yellow-500 mb-2">Message (Optional)</label>
                 <textarea
                   value={contactInfo.message}
                   onChange={(e) => setContactInfo({...contactInfo, message: e.target.value})}
-                  placeholder="Tell us about your church and how you'd like to use this app..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-none"
+                  placeholder="Tell us about your church..."
+                  className="w-full px-4 py-3 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 resize-none focus:ring-2 focus:ring-yellow-500/20"
                   rows="3"
                 />
               </div>
 
-              <div className="pt-4">
-                <button
-                  onClick={submitContactForm}
-                  className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold py-3 rounded-lg transition-all mb-2"
-                >
-                  Submit Request
-                </button>
-                <button
-                  onClick={() => setShowContactForm(false)}
-                  className="w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 rounded-lg transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              <p className="text-xs text-gray-500 text-center pt-2">
-                By submitting, you agree to be contacted about the Church Edition. We respect your privacy and will not share your information.
-              </p>
+              <button
+                onClick={submitContactForm}
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
+              >
+                Submit Request
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Footer */}
-      <div className="text-center py-8 text-sm text-gray-500">
-        <p>This guidance is powered by AI and should complement, not replace, personal prayer and pastoral counsel.</p>
-      </div>
+      <footer className="border-t border-yellow-500/10 py-12 mt-20">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-gray-500 text-sm">© 2025 VerseAid.ai - Premium Biblical guidance powered by AI</p>
+        </div>
+      </footer>
     </div>
   );
 }
