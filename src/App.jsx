@@ -168,7 +168,11 @@ export default function BiblicalGuidanceApp() {
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 4000,
@@ -180,6 +184,11 @@ export default function BiblicalGuidanceApp() {
       });
 
       const data = await response.json();
+      if (data.error) {
+        console.error('API error:', data.error);
+        alert('Error loading Bible text: ' + (data.error.message || 'Please try again.'));
+        return;
+      }
       if (data.content && data.content[0]) {
         let text = data.content[0].text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         const parsed = JSON.parse(text);
@@ -255,7 +264,11 @@ export default function BiblicalGuidanceApp() {
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 500,
@@ -267,6 +280,10 @@ export default function BiblicalGuidanceApp() {
       });
 
       const data = await response.json();
+      if (data.error) {
+        console.error('API error generating daily verse:', data.error);
+        return;
+      }
       if (data.content && data.content[0]) {
         let text = data.content[0].text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         const verse = JSON.parse(text);
@@ -464,7 +481,11 @@ export default function BiblicalGuidanceApp() {
     try {
       const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
@@ -476,6 +497,11 @@ export default function BiblicalGuidanceApp() {
       });
 
       const data = await apiResponse.json();
+      if (data.error) {
+        console.error('API error:', data.error);
+        setError('API error: ' + (data.error.message || 'Please try again.'));
+        return;
+      }
       if (data.content && data.content[0]) {
         let textResponse = data.content[0].text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         const parsedResponse = JSON.parse(textResponse);
@@ -485,6 +511,7 @@ export default function BiblicalGuidanceApp() {
         setError('Unable to get a response. Please try again.');
       }
     } catch (err) {
+      console.error('Error submitting question:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
