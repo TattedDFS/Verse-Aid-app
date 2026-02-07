@@ -13,6 +13,10 @@ export default function BiblicalGuidanceApp() {
   const [authMode, setAuthMode] = useState('login');
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const [userTier, setUserTier] = useState('free');
   const [questionsToday, setQuestionsToday] = useState(0);
   const [lastQuestionDate, setLastQuestionDate] = useState('');
@@ -283,17 +287,67 @@ export default function BiblicalGuidanceApp() {
       return;
     }
 
-    setUsername(authUsername);
-    setIsLoggedIn(true);
     if (authMode === 'signup') {
+      if (!authEmail.trim()) {
+        setError('Please enter your email address');
+        return;
+      }
+      try {
+        await window.storage.set(`credentials_${authUsername}`, JSON.stringify({
+          password: authPassword,
+          email: authEmail
+        }));
+      } catch (err) {
+        console.error('Error storing credentials:', err);
+      }
+      setUsername(authUsername);
+      setIsLoggedIn(true);
       setUserTier('free');
       setQuestionsToday(0);
       setLastQuestionDate(new Date().toDateString());
+    } else {
+      try {
+        const storedCreds = await window.storage.get(`credentials_${authUsername}`);
+        if (storedCreds) {
+          const creds = JSON.parse(storedCreds.value);
+          if (creds.password !== authPassword) {
+            setError('Incorrect password');
+            return;
+          }
+        }
+      } catch (err) {
+        console.log('No stored credentials found, allowing login');
+      }
+      setUsername(authUsername);
+      setIsLoggedIn(true);
     }
+
     setShowAuthModal(false);
+    setShowForgotPassword(false);
     setError('');
     setAuthUsername('');
     setAuthPassword('');
+    setAuthEmail('');
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail.trim()) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    try {
+      await window.storage.set(`password_reset_${Date.now()}`, JSON.stringify({
+        email: forgotPasswordEmail,
+        timestamp: new Date().toISOString(),
+        status: 'pending'
+      }), true);
+    } catch (err) {
+      console.error('Error storing reset request:', err);
+    }
+
+    setResetEmailSent(true);
+    setError('');
   };
 
   const handleLogout = () => {
@@ -1434,66 +1488,170 @@ export default function BiblicalGuidanceApp() {
           <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white font-playfair">
-                {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                {showForgotPassword ? 'Reset Password' : (authMode === 'login' ? 'Sign In' : 'Create Account')}
               </h2>
-              <button onClick={() => setShowAuthModal(false)} className="text-gray-500 hover:text-gray-300">
+              <button onClick={() => { setShowAuthModal(false); setShowForgotPassword(false); setResetEmailSent(false); setError(''); }} className="text-gray-500 hover:text-gray-300">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-yellow-500 mb-1">Username</label>
-                <input
-                  type="text"
-                  value={authUsername}
-                  onChange={(e) => setAuthUsername(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
-                  placeholder="Enter username"
-                />
-              </div>
+            {showForgotPassword ? (
+              <div className="space-y-4">
+                {resetEmailSent ? (
+                  <div className="text-center py-4">
+                    <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Send className="w-8 h-8 text-black" />
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">Check Your Email</h3>
+                    <p className="text-gray-400 text-sm mb-6">
+                      If an account exists with <span className="text-yellow-500">{forgotPasswordEmail}</span>, we've sent password reset instructions to that address.
+                    </p>
+                    <button
+                      onClick={() => { setShowForgotPassword(false); setResetEmailSent(false); setForgotPasswordEmail(''); setAuthMode('login'); }}
+                      className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
+                    >
+                      Back to Sign In
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={(e) => { e.preventDefault(); handleForgotPassword(); }}>
+                    <div className="space-y-4">
+                      <p className="text-gray-400 text-sm">
+                        Enter the email address associated with your account and we'll send you a link to reset your password.
+                      </p>
+                      <div>
+                        <label htmlFor="forgot-email" className="block text-sm font-semibold text-yellow-500 mb-1">Email Address</label>
+                        <input
+                          type="email"
+                          id="forgot-email"
+                          name="email"
+                          autoComplete="email"
+                          value={forgotPasswordEmail}
+                          onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                          className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                          placeholder="Enter your email"
+                          autoFocus
+                        />
+                      </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-yellow-500 mb-1">Password</label>
-                <input
-                  type="password"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
-                  placeholder="Enter password"
-                />
-              </div>
+                      {error && (
+                        <div className="bg-red-900/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+                          {error}
+                        </div>
+                      )}
 
-              {error && (
-                <div className="bg-red-900/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
-                  {error}
+                      <button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
+                      >
+                        Send Reset Link
+                      </button>
+
+                      <div className="text-center">
+                        <button
+                          type="button"
+                          onClick={() => { setShowForgotPassword(false); setError(''); setForgotPasswordEmail(''); }}
+                          className="text-sm text-gray-400 hover:text-gray-300"
+                        >
+                          Back to Sign In
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+              </div>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); handleAuth(); }} autoComplete="on">
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="auth-username" className="block text-sm font-semibold text-yellow-500 mb-1">Username</label>
+                    <input
+                      type="text"
+                      id="auth-username"
+                      name="username"
+                      autoComplete="username"
+                      value={authUsername}
+                      onChange={(e) => setAuthUsername(e.target.value)}
+                      className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                      placeholder="Enter username"
+                    />
+                  </div>
+
+                  {authMode === 'signup' && (
+                    <div>
+                      <label htmlFor="auth-email" className="block text-sm font-semibold text-yellow-500 mb-1">Email</label>
+                      <input
+                        type="email"
+                        id="auth-email"
+                        name="email"
+                        autoComplete="email"
+                        value={authEmail}
+                        onChange={(e) => setAuthEmail(e.target.value)}
+                        className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                        placeholder="Enter email"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label htmlFor="auth-password" className="block text-sm font-semibold text-yellow-500 mb-1">Password</label>
+                    <input
+                      type="password"
+                      id="auth-password"
+                      name="password"
+                      autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                      placeholder="Enter password"
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-900/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
+                  >
+                    {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                  </button>
+
+                  {authMode === 'login' && (
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => { setShowForgotPassword(true); setError(''); }}
+                        className="text-sm text-yellow-500 hover:text-yellow-400"
+                      >
+                        Forgot your password?
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setError(''); setAuthEmail(''); }}
+                      className="text-sm text-gray-400 hover:text-gray-300"
+                    >
+                      {authMode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                    </button>
+                  </div>
+
+                  {authMode === 'signup' && (
+                    <div className="pt-4 border-t border-gray-800">
+                      <p className="text-xs text-gray-500 text-center">
+                        Free tier includes 3 questions daily, Bible reader, and community features
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
-
-              <button
-                onClick={handleAuth}
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
-              >
-                {authMode === 'login' ? 'Sign In' : 'Create Account'}
-              </button>
-
-              <div className="text-center">
-                <button
-                  onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                  className="text-sm text-gray-400 hover:text-gray-300"
-                >
-                  {authMode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-                </button>
-              </div>
-              
-              {authMode === 'signup' && (
-                <div className="pt-4 border-t border-gray-800">
-                  <p className="text-xs text-gray-500 text-center">
-                    Free tier includes 3 questions daily, Bible reader, and community features
-                  </p>
-                </div>
-              )}
-            </div>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -1687,41 +1845,4 @@ export default function BiblicalGuidanceApp() {
     </div>
   );
 }
-<function_calls>
-<invoke name="bash_tool">
-<parameter name="command">cd /mnt/user-data/outputs && cat >> BiblicalGuidanceApp.jsx << 'ENDOFFILE'
-contactInfo, churchName: e.target.value})}
-placeholder="Grace Community Church"
-className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
-/>
-</div>
-  <div>
-            <label className="block text-sm font-semibold text-yellow-500 mb-2">Message (Optional)</label>
-            <textarea
-              value={contactInfo.message}
-              onChange={(e) => setContactInfo({...contactInfo, message: e.target.value})}
-              placeholder="Tell us about your church..."
-              className="w-full px-4 py-3 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 resize-none focus:ring-2 focus:ring-yellow-500/20"
-              rows="3"
-            />
-          </div>
 
-          <button
-            onClick={submitContactForm}
-            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
-          >
-            Submit Request
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-
-  <footer className="border-t border-yellow-500/10 py-12 mt-20">
-    <div className="max-w-7xl mx-auto px-6 text-center">
-      <p className="text-gray-500 text-sm">© 2025 VerseAid.ai - Premium Biblical guidance powered by AI</p>
-    </div>
-  </footer>
-</div>
-);
-}
