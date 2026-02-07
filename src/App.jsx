@@ -30,6 +30,8 @@ export default function BiblicalGuidanceApp() {
   });
   const [stripeLoading, setStripeLoading] = useState(false);
   
+  const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
+
   const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SmIS3BrYJWG1fHoknt8tWaPGaKTxxOI9YRkXgce6fjHzZfQam3MiRAGxW0dwkhkoNT1xXVGPEeYFuvz1SqY7HB200waXtmSzp';
   const STRIPE_PRICE_ID_MONTHLY = 'price_1SmKbEBrYJWG1fHopEY2owKh';
   const STRIPE_PRICE_ID_ANNUAL = 'price_1SmKbEBrYJWG1fHo3DZ8Kw9L';
@@ -170,6 +172,7 @@ export default function BiblicalGuidanceApp() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true'
         },
@@ -266,6 +269,7 @@ export default function BiblicalGuidanceApp() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true'
         },
@@ -483,6 +487,7 @@ export default function BiblicalGuidanceApp() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true'
         },
