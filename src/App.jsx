@@ -181,7 +181,7 @@ export default function BiblicalGuidanceApp() {
           max_tokens: 4000,
           messages: [{
             role: 'user',
-            content: `Provide the full text of ${book} chapter ${chapter} from the Bible using the New Living Translation (NLT). Format as JSON: {"book": "${book}", "chapter": ${chapter}, "verses": [{"verse": 1, "text": "verse text"}]}. No markdown, just JSON.`
+            content: `Provide the full text of ${book} chapter ${chapter} from the Bible using the King James Version (KJV). Format as JSON: {"book": "${book}", "chapter": ${chapter}, "verses": [{"verse": 1, "text": "verse text"}]}. No markdown, just JSON.`
           }]
         })
       });
@@ -278,7 +278,7 @@ export default function BiblicalGuidanceApp() {
           max_tokens: 500,
           messages: [{
             role: 'user',
-            content: `Provide one inspirational Bible verse for today with a brief reflection (2-3 sentences). Use the New Living Translation (NLT). Format as JSON: {"reference": "Book Chapter:Verse", "text": "verse text in NLT", "reflection": "brief reflection"}`
+            content: `Provide one inspirational Bible verse for today with a brief reflection (2-3 sentences). Use the King James Version (KJV). Format as JSON: {"reference": "Book Chapter:Verse", "text": "verse text in KJV", "reflection": "brief reflection"}`
           }]
         })
       });
@@ -496,7 +496,7 @@ export default function BiblicalGuidanceApp() {
           max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `You are a compassionate spiritual guide. Question: "${question}". Provide: 1) Compassionate response 2) 2-3 relevant Bible verses (NLT) 3) What Jesus would do 4) Encouragement. Format as JSON: {"compassionateResponse": "", "verses": [{"reference": "", "text": ""}], "wwjd": "", "encouragement": ""}`
+            content: `You are a compassionate spiritual guide. Question: "${question}". Provide: 1) Compassionate response 2) 2-3 relevant Bible verses (KJV) 3) What Jesus would do 4) Encouragement. Format as JSON: {"compassionateResponse": "", "verses": [{"reference": "", "text": ""}], "wwjd": "", "encouragement": ""}`
           }]
         })
       });
@@ -1210,7 +1210,7 @@ export default function BiblicalGuidanceApp() {
           <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-2xl font-bold text-yellow-500 font-playfair">
-                {bibleText.book} {bibleText.chapter} <span className="text-sm font-normal text-gray-500">(NLT)</span>
+                {bibleText.book} {bibleText.chapter} <span className="text-sm font-normal text-gray-500">(KJV)</span>
               </h3>
               <button
                 onClick={() => setBibleText(null)}
