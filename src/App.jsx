@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users } from 'lucide-react';
+import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClient';
+import { safeStorageGet, safeStorageSet } from './utils/storage';
 
 export default function BiblicalGuidanceApp() {
   const [question, setQuestion] = useState('');
@@ -32,9 +34,13 @@ export default function BiblicalGuidanceApp() {
   
   const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
 
-  const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SmIS3BrYJWG1fHoknt8tWaPGaKTxxOI9YRkXgce6fjHzZfQam3MiRAGxW0dwkhkoNT1xXVGPEeYFuvz1SqY7HB200waXtmSzp';
-  const STRIPE_PRICE_ID_MONTHLY = 'price_1SmKbEBrYJWG1fHopEY2owKh';
-  const STRIPE_PRICE_ID_ANNUAL = 'price_1SmKbEBrYJWG1fHo3DZ8Kw9L';
+  const STRIPE_PUBLISHABLE_KEY = 'pk_live_51SmIRvPn2XQV6iQ8vDI9EHyfT5Cl62nHdGKrOSbJ2eSqcl2Z47kesRI3tQZYDjJ6jP1MPAzLvOyzRZ9WoyvX75fO00FsJyllGh';
+  const STRIPE_PRICE_ID_MONTHLY = 'price_1Szfd1Pn2XQV6iQ8St63dVyE';
+  const STRIPE_PRICE_ID_ANNUAL = 'price_1SzfduPn2XQV6iQ8cXTCWHci';
+  const STRIPE_PRICE_ID_LIFETIME = 'price_1SzfeXPn2XQV6iQ8hEOpG9cQ';
+
+  const anthropicRequest = ({ messages, maxTokens }) =>
+    anthropicRequestBase({ apiKey: ANTHROPIC_API_KEY, messages, maxTokens });
   
   const [currentView, setCurrentView] = useState('home');
   const [showMenu, setShowMenu] = useState(false);
@@ -62,6 +68,9 @@ export default function BiblicalGuidanceApp() {
   
   const [dailyVerse, setDailyVerse] = useState(null);
   const [showDailyVerse, setShowDailyVerse] = useState(false);
+  const [guidanceTone, setGuidanceTone] = useState('gentle');
+  const [highlightedVerse, setHighlightedVerse] = useState(null);
+  const [bibleCache, setBibleCache] = useState({});
 
   const prayerCategories = [
     { value: 'health', label: 'Health & Healing', emoji: '🏥' },
@@ -108,33 +117,58 @@ export default function BiblicalGuidanceApp() {
 
   const loadUserData = async () => {
     if (!isLoggedIn || !username) return;
-    try {
-      const savedData = await window.storage.get(`saved_${username}`);
-      const journalData = await window.storage.get(`journal_${username}`);
-      const readingsData = await window.storage.get(`completed_readings_${username}`);
-      const userData = await window.storage.get(`user_data_${username}`);
-      
-      if (savedData) setSavedResponses(JSON.parse(savedData.value));
-      if (journalData) setPrayerJournal(JSON.parse(journalData.value));
-      if (readingsData) setCompletedReadings(JSON.parse(readingsData.value));
-      if (userData) {
+    const [savedData, journalData, readingsData, userData] = await Promise.all([
+      safeStorageGet(`saved_${username}`),
+      safeStorageGet(`journal_${username}`),
+      safeStorageGet(`completed_readings_${username}`),
+      safeStorageGet(`user_data_${username}`)
+    ]);
+
+    if (savedData && savedData.value) {
+      try {
+        setSavedResponses(JSON.parse(savedData.value));
+      } catch (err) {
+        console.error('Error parsing saved responses for user', username, err);
+      }
+    }
+    if (journalData && journalData.value) {
+      try {
+        setPrayerJournal(JSON.parse(journalData.value));
+      } catch (err) {
+        console.error('Error parsing journal for user', username, err);
+      }
+    }
+    if (readingsData && readingsData.value) {
+      try {
+        setCompletedReadings(JSON.parse(readingsData.value));
+      } catch (err) {
+        console.error('Error parsing completed readings for user', username, err);
+      }
+    }
+    if (userData && userData.value) {
+      try {
         const parsed = JSON.parse(userData.value);
         setUserTier(parsed.tier || 'free');
         setQuestionsToday(parsed.questionsToday || 0);
         setLastQuestionDate(parsed.lastQuestionDate || '');
         setChurchCode(parsed.churchCode || '');
         setChurchName(parsed.churchName || '');
+      } catch (err) {
+        console.error('Error parsing user data for user', username, err);
       }
-    } catch (err) {
-      console.log('No saved data found');
     }
   };
 
   const loadCommunityPrayers = async () => {
-    try {
-      const result = await window.storage.get('community_prayers', true);
-      if (result) setCommunityPrayers(JSON.parse(result.value));
-    } catch (err) {
+    const result = await safeStorageGet('community_prayers', true);
+    if (result && result.value) {
+      try {
+        setCommunityPrayers(JSON.parse(result.value));
+      } catch (err) {
+        console.error('Error parsing community prayers', err);
+        setCommunityPrayers([]);
+      }
+    } else {
       setCommunityPrayers([]);
     }
   };
@@ -166,24 +200,21 @@ export default function BiblicalGuidanceApp() {
   };
 
   const fetchBibleChapter = async (book, chapter) => {
+    const cacheKey = `${book}-${chapter}`;
+    if (bibleCache[cacheKey]) {
+      setBibleText(bibleCache[cacheKey]);
+      setCurrentView('bible');
+      return;
+    }
+
     setLoadingBible(true);
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          messages: [{
-            role: 'user',
-            content: `Provide the full text of ${book} chapter ${chapter} from the Bible using the King James Version (KJV). Format as JSON: {"book": "${book}", "chapter": ${chapter}, "verses": [{"verse": 1, "text": "verse text"}]}. No markdown, just JSON.`
-          }]
-        })
+      const response = await anthropicRequest({
+        maxTokens: 4000,
+        messages: [{
+          role: 'user',
+          content: `Provide the full text of ${book} chapter ${chapter} from the Bible using the World English Version (WEV). Format as JSON: {"book": "${book}", "chapter": ${chapter}, "verses": [{"verse": 1, "text": "verse text"}]}. No markdown, just JSON.`
+        }]
       });
 
       const data = await response.json();
@@ -196,6 +227,7 @@ export default function BiblicalGuidanceApp() {
         let text = data.content[0].text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         const parsed = JSON.parse(text);
         setBibleText(parsed);
+        setBibleCache(prev => ({ ...prev, [cacheKey]: parsed }));
         setCurrentView('bible');
       }
     } catch (err) {
@@ -209,10 +241,16 @@ export default function BiblicalGuidanceApp() {
   const goToVerse = (reference) => {
     const match = reference.match(/^(.+?)\s+(\d+):(\d+)/);
     if (match) {
-      const [, book, chapter] = match;
+      const [, book, chapter, verse] = match;
       setBibleBook(book);
       setBibleChapter(parseInt(chapter));
+      setHighlightedVerse(parseInt(verse));
       fetchBibleChapter(book, parseInt(chapter));
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {
+        window.scrollTo(0, 0);
+      }
     }
   };
 
@@ -230,16 +268,14 @@ export default function BiblicalGuidanceApp() {
 
   const saveUserData = async () => {
     if (!isLoggedIn || !username) return;
-    try {
-      await window.storage.set(`saved_${username}`, JSON.stringify(savedResponses));
-      await window.storage.set(`journal_${username}`, JSON.stringify(prayerJournal));
-      await window.storage.set(`completed_readings_${username}`, JSON.stringify(completedReadings));
-      await window.storage.set(`user_data_${username}`, JSON.stringify({
+    await Promise.all([
+      safeStorageSet(`saved_${username}`, JSON.stringify(savedResponses)),
+      safeStorageSet(`journal_${username}`, JSON.stringify(prayerJournal)),
+      safeStorageSet(`completed_readings_${username}`, JSON.stringify(completedReadings)),
+      safeStorageSet(`user_data_${username}`, JSON.stringify({
         tier: userTier, questionsToday, lastQuestionDate, churchCode, churchName
-      }));
-    } catch (err) {
-      console.error('Error saving data:', err);
-    }
+      }))
+    ]);
   };
 
   useEffect(() => {
@@ -248,39 +284,29 @@ export default function BiblicalGuidanceApp() {
 
   const checkDailyVerse = async () => {
     const today = new Date().toDateString();
-    try {
-      const verseData = await window.storage.get('daily_verse', true);
-      if (verseData) {
+    const verseData = await safeStorageGet('daily_verse', true);
+    if (verseData && verseData.value) {
+      try {
         const parsed = JSON.parse(verseData.value);
         if (parsed.date === today) {
           setDailyVerse(parsed);
           return;
         }
+      } catch (err) {
+        console.error('Error parsing stored daily verse', err);
       }
-    } catch (err) {
-      console.log('Will generate new verse');
     }
     await generateDailyVerse();
   };
 
   const generateDailyVerse = async () => {
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 500,
-          messages: [{
-            role: 'user',
-            content: `Provide one inspirational Bible verse for today with a brief reflection (2-3 sentences). Use the King James Version (KJV). Format as JSON: {"reference": "Book Chapter:Verse", "text": "verse text in KJV", "reflection": "brief reflection"}`
-          }]
-        })
+      const response = await anthropicRequest({
+        maxTokens: 500,
+        messages: [{
+          role: 'user',
+          content: `Provide one inspirational Bible verse for today with a brief reflection (2-3 sentences). Use the World English Version (WEV). Format as JSON: {"reference": "Book Chapter:Verse", "text": "verse text in WEV", "reflection": "brief reflection"}`
+        }]
       });
 
       const data = await response.json();
@@ -328,7 +354,7 @@ export default function BiblicalGuidanceApp() {
       setLastQuestionDate(new Date().toDateString());
     } else {
       try {
-        const storedCreds = await window.storage.get(`credentials_${authUsername}`);
+        const storedCreds = await safeStorageGet(`credentials_${authUsername}`);
         if (storedCreds) {
           const creds = JSON.parse(storedCreds.value);
           if (creds.password !== authPassword) {
@@ -358,7 +384,7 @@ export default function BiblicalGuidanceApp() {
     }
 
     try {
-      await window.storage.set(`password_reset_${Date.now()}`, JSON.stringify({
+      await safeStorageSet(`password_reset_${Date.now()}`, JSON.stringify({
         email: forgotPasswordEmail,
         timestamp: new Date().toISOString(),
         status: 'pending'
@@ -402,22 +428,29 @@ export default function BiblicalGuidanceApp() {
     alert('Premium activated! You now have unlimited questions and advanced features.');
   };
 
-  const handleStripeCheckout = async () => {
-    if (STRIPE_PUBLISHABLE_KEY === 'pk_test_YOUR_PUBLISHABLE_KEY_HERE') {
-      alert('⚠️ Stripe Integration Setup Required');
-      return;
-    }
+  const handleStripeCheckout = async (priceId, isSubscription = true, planName = 'Premium') => {
     setStripeLoading(true);
     try {
       const stripe = window.Stripe(STRIPE_PUBLISHABLE_KEY);
-      const { error } = await stripe.redirectToCheckout({
-        lineItems: [{ price: STRIPE_PRICE_ID_MONTHLY, quantity: 1 }],
-        mode: 'subscription',
-        successUrl: `${window.location.origin}?payment=success`,
+      const purchaseType = isSubscription ? 'subscription' : 'payment';
+      const checkoutOptions = {
+        lineItems: [{ price: priceId, quantity: 1 }],
+        mode: isSubscription ? 'subscription' : 'payment',
+        successUrl: `${window.location.origin}?payment=success&type=${purchaseType}`,
         cancelUrl: `${window.location.origin}?payment=cancel`,
         customerEmail: username + '@example.com',
         clientReferenceId: username,
-      });
+      };
+      
+      // Add 3-day free trial for subscriptions (not one-time payments)
+      if (isSubscription) {
+        checkoutOptions.subscriptionData = {
+          trial_period_days: 3,
+          metadata: { plan: planName, username: username }
+        };
+      }
+      
+      const { error } = await stripe.redirectToCheckout(checkoutOptions);
       if (error) alert('Payment error: ' + error.message);
     } catch (err) {
       alert('Unable to process payment. Please try again.');
@@ -429,12 +462,24 @@ export default function BiblicalGuidanceApp() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
+    const purchaseType = urlParams.get('type');
+    
     if (paymentStatus === 'success') {
       setUserTier('premium');
-      alert('🎉 Payment successful! Welcome to Premium!');
+      
+      // Show different messages based on purchase type
+      if (purchaseType === 'subscription') {
+        alert('🎉 Welcome to Premium! Your 3-day free trial has started. You\'ll have full access immediately, and your card will be charged after the trial ends unless you cancel. Check your email for your Stripe receipt with cancellation instructions.');
+      } else if (purchaseType === 'payment') {
+        alert('🎉 Welcome to Premium! Your Lifetime Premium purchase is complete. You now have unlimited access to all features with no recurring charges. Thank you for your support!');
+      } else {
+        // Fallback for older URLs or edge cases
+        alert('🎉 Welcome to Premium! You now have unlimited access to all features.');
+      }
+      
       window.history.replaceState({}, '', window.location.pathname);
     } else if (paymentStatus === 'cancel') {
-      alert('Payment cancelled.');
+      alert('Payment cancelled. No charges were made.');
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -467,7 +512,14 @@ export default function BiblicalGuidanceApp() {
     return true;
   };
 
+  const guidanceToneDescriptions = {
+    gentle: 'a warm, gentle, and comforting',
+    direct: 'a clear, honest, and practical',
+    deep: 'a thoughtful, in-depth, and teaching-oriented'
+  };
+
   const handleSubmit = async () => {
+    if (loading) return;
     if (!question.trim()) {
       setError('Please enter a question');
       return;
@@ -478,27 +530,19 @@ export default function BiblicalGuidanceApp() {
     }
     if (!checkDailyLimit()) return;
 
+    const toneDescription = guidanceToneDescriptions[guidanceTone] || guidanceToneDescriptions.gentle;
+
     setLoading(true);
     setError('');
     setResponse(null);
 
     try {
-      const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `You are a compassionate spiritual guide. Question: "${question}". Provide: 1) Compassionate response 2) 2-3 relevant Bible verses (KJV) 3) What Jesus would do 4) Encouragement. Format as JSON: {"compassionateResponse": "", "verses": [{"reference": "", "text": ""}], "wwjd": "", "encouragement": ""}`
-          }]
-        })
+      const apiResponse = await anthropicRequest({
+        maxTokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `You are a compassionate spiritual guide using the World English Version (WEV) of the Bible. Please respond in ${toneDescription} tone that is easy to understand. The person is asking: "${question}". Provide a JSON response with: 1) "compassionateResponse": a short, empathetic answer, 2) "verses": an array of 2-3 relevant Bible verses from the World English Version with "reference" and "text", 3) "wwjd": what Jesus might do or invite them to do, 4) "encouragement": a hopeful closing thought. Format as JSON only: {"compassionateResponse": "", "verses": [{"reference": "", "text": ""}], "wwjd": "", "encouragement": ""}`
+        }]
       });
 
       const data = await apiResponse.json();
@@ -557,11 +601,7 @@ export default function BiblicalGuidanceApp() {
       const communityEntry = { ...entry, prayerCount: 0 };
       const updatedCommunity = [communityEntry, ...communityPrayers];
       setCommunityPrayers(updatedCommunity);
-      try {
-        await window.storage.set('community_prayers', JSON.stringify(updatedCommunity), true);
-      } catch (err) {
-        console.error('Error saving community prayer');
-      }
+      await safeStorageSet('community_prayers', JSON.stringify(updatedCommunity), true);
     }
     
     setNewPrayerEntry('');
@@ -581,12 +621,8 @@ export default function BiblicalGuidanceApp() {
     const updatedCommunity = [communityEntry, ...communityPrayers];
     setCommunityPrayers(updatedCommunity);
     setSharedPrayerIds([...sharedPrayerIds, journalEntry.id]);
-    try {
-      await window.storage.set('community_prayers', JSON.stringify(updatedCommunity), true);
-      alert('Prayer shared with the community!');
-    } catch (err) {
-      console.error('Error sharing prayer');
-    }
+    await safeStorageSet('community_prayers', JSON.stringify(updatedCommunity), true);
+    alert('Prayer shared with the community!');
   };
 
   const deleteSavedResponse = (index) => {
@@ -599,11 +635,7 @@ export default function BiblicalGuidanceApp() {
       p.id === id ? { ...p, prayerCount: p.prayerCount + 1 } : p
     );
     setCommunityPrayers(updated);
-    try {
-      await window.storage.set('community_prayers', JSON.stringify(updated), true);
-    } catch (err) {
-      console.error('Error updating prayer count');
-    }
+    await safeStorageSet('community_prayers', JSON.stringify(updated), true);
   };
 
   const saveDailyVerseToCollection = () => {
@@ -639,6 +671,12 @@ export default function BiblicalGuidanceApp() {
     setPrayerJournal(prayerJournal.filter(p => p.id !== id));
   };
 
+  const guidanceToneOptions = [
+    { value: 'gentle', label: 'Gentle & comforting' },
+    { value: 'direct', label: 'Clear & practical' },
+    { value: 'deep', label: 'Deeper Bible study' }
+  ];
+
   const exampleQuestions = [
     "I'm feeling anxious about my future. What does the Bible say?",
     "How do I forgive someone who hurt me deeply?",
@@ -646,7 +684,7 @@ export default function BiblicalGuidanceApp() {
     "How should I handle conflict with a family member?"
   ];
 
-  const renderHome = () => (
+  const HomeView = () => (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
@@ -718,20 +756,20 @@ export default function BiblicalGuidanceApp() {
       <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 shadow-lg rounded-2xl p-8 mb-8 hover:border-yellow-500/40 hover:shadow-yellow-500/10 transition-all">
         {isLoggedIn && userTier === 'free' && (
           <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-start gap-4">
               <div>
                 <p className="text-sm font-semibold text-yellow-500">
                   Daily Questions: {questionsToday}/3 used
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Upgrade to Premium for unlimited access
+                  Premium gives you unlimited questions, the full prayer journal, community wall, and the Bible-in-a-year plan—with no daily limits.
                 </p>
               </div>
               <button
                 onClick={() => setShowUpgradeModal(true)}
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black px-6 py-2 rounded-lg font-bold hover:shadow-lg hover:shadow-yellow-500/50 transition-all"
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black px-6 py-2 rounded-lg font-bold hover:shadow-lg hover:shadow-yellow-500/50 transition-all whitespace-nowrap"
               >
-                Upgrade ✨
+                See Premium
               </button>
             </div>
           </div>
@@ -750,9 +788,12 @@ export default function BiblicalGuidanceApp() {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-yellow-500 mb-2">
+            <label className="block text-sm font-semibold text-yellow-500 mb-1">
               What's on your heart today?
             </label>
+            <p className="text-xs text-gray-400 mb-2">
+              Share in your own words—VerseAid will listen gently and answer from the World English Version.
+            </p>
             <textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
@@ -760,6 +801,28 @@ export default function BiblicalGuidanceApp() {
               className="w-full px-6 py-4 bg-gray-900 border border-yellow-500/20 rounded-xl text-gray-100 placeholder-gray-500 focus:border-yellow-500/50 focus:ring-2 focus:ring-yellow-500/20 resize-none transition-all"
               rows="5"
             />
+          </div>
+
+          <div className="mt-3">
+            <p className="text-xs font-semibold text-gray-400 mb-2">
+              Response style
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {guidanceToneOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setGuidanceTone(option.value)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                    guidanceTone === option.value
+                      ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black border-transparent shadow-lg shadow-yellow-500/40'
+                      : 'bg-gray-900 text-gray-300 border-yellow-500/20 hover:border-yellow-500/40'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {error && (
@@ -845,16 +908,17 @@ export default function BiblicalGuidanceApp() {
                 <h2 className="text-2xl font-bold text-yellow-500 mb-4 font-playfair">Scripture for Your Journey</h2>
                 <div className="space-y-4">
                   {response.verses.map((verse, idx) => (
-                    <div key={idx} className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6">
+                    <div
+                      key={idx}
+                      onClick={() => goToVerse(verse.reference)}
+                      className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6 cursor-pointer hover:border-yellow-500/40 hover:bg-gray-900/80 transition-all"
+                    >
                       <p className="text-gray-300 italic mb-3">"{verse.text}"</p>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mt-1">
                         <p className="text-sm font-bold text-yellow-500">— {verse.reference}</p>
-                        <button
-                          onClick={() => goToVerse(verse.reference)}
-                          className="text-xs bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg hover:shadow-yellow-500/50 text-black font-bold px-4 py-2 rounded-lg transition-all"
-                        >
-                          Go to Verse →
-                        </button>
+                        <span className="text-xs text-gray-400">
+                          Tap to open in Bible reader →
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -872,6 +936,92 @@ export default function BiblicalGuidanceApp() {
             <h2 className="text-2xl font-bold text-yellow-500 mb-3 font-playfair">Words of Encouragement</h2>
             <p className="text-gray-300 leading-relaxed">{response.encouragement}</p>
           </div>
+
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-yellow-500 mb-3 font-playfair">Keep the conversation going</h3>
+            <p className="text-xs text-gray-400 mb-3">
+              Tap a follow-up to add it to the question box. You can edit it before sending.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const nextQuestion = `Help me apply this guidance in a practical way. My original question was: "${response.question}".`;
+                  setQuestion(nextQuestion);
+                  try {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } catch (e) {
+                    window.scrollTo(0, 0);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 border border-yellow-500/20 text-gray-200 hover:border-yellow-500/40 hover:bg-gray-800 transition-all"
+              >
+                Apply this to my situation
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextQuestion = `Turn this guidance into a short, personal prayer I can pray word-for-word. My original question was: "${response.question}".`;
+                  setQuestion(nextQuestion);
+                  try {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } catch (e) {
+                    window.scrollTo(0, 0);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 border border-yellow-500/20 text-gray-200 hover:border-yellow-500/40 hover:bg-gray-800 transition-all"
+              >
+                Turn this into a prayer
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextQuestion = `Share a few more World English Version verses that go even deeper on this same theme. My original question was: "${response.question}".`;
+                  setQuestion(nextQuestion);
+                  try {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } catch (e) {
+                    window.scrollTo(0, 0);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 border border-yellow-500/20 text-gray-200 hover:border-yellow-500/40 hover:bg-gray-800 transition-all"
+              >
+                Show more related verses
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextQuestion = `What is one simple next step I can take this week in light of your last answer? My original question was: "${response.question}".`;
+                  setQuestion(nextQuestion);
+                  try {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } catch (e) {
+                    window.scrollTo(0, 0);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 border border-yellow-500/20 text-gray-200 hover:border-yellow-500/40 hover:bg-gray-800 transition-all"
+              >
+                Help me take a next step
+              </button>
+            </div>
+          </div>
+
+          {userTier === 'free' && (
+            <div className="bg-gradient-to-br from-yellow-500/5 to-orange-500/5 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
+              <h3 className="text-lg font-bold text-yellow-500 mb-2 font-playfair">Enjoying this guidance?</h3>
+              <p className="text-xs text-gray-300 mb-3">
+                Premium removes the 3-questions-a-day limit and unlocks the full prayer journal, community prayer wall, and Bible-in-a-year plan.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(true)}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-4 py-2 rounded-lg hover:shadow-lg hover:shadow-yellow-500/50 transition-all"
+              >
+                <Crown className="w-4 h-4" />
+                Learn about Premium
+              </button>
+            </div>
+          )}
 
           <div className="text-center">
             <button
@@ -891,13 +1041,16 @@ export default function BiblicalGuidanceApp() {
   );
 
   // Render other views (Saved, Journal, Community, Bible, Reading Plan) - continued from previous
-  const renderSaved = () => (
+  const SavedView = () => (
     <div className="space-y-4">
       <h2 className="text-3xl font-bold text-white mb-4 font-playfair">Saved Responses</h2>
       {savedResponses.length === 0 ? (
         <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 text-center">
           <BookMarked className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400">No saved responses yet. Save your favorite guidance to revisit later!</p>
+          <p className="text-gray-400 mb-2">No saved responses yet.</p>
+          <p className="text-sm text-gray-500">
+            After you receive guidance on the Home tab, tap <span className="text-yellow-500 font-semibold">Save</span> to keep it here for later.
+          </p>
         </div>
       ) : (
         savedResponses.map((item, idx) => (
@@ -928,7 +1081,7 @@ export default function BiblicalGuidanceApp() {
     </div>
   );
 
-  const renderJournal = () => (
+  const JournalView = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-3xl font-bold text-white font-playfair">Prayer Journal</h2>
@@ -1062,7 +1215,7 @@ export default function BiblicalGuidanceApp() {
     </div>
   );
 
-  const renderCommunity = () => (
+  const CommunityView = () => (
     <div className="space-y-4">
       <div className="mb-6">
         <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Community Prayer Wall</h2>
@@ -1154,7 +1307,7 @@ export default function BiblicalGuidanceApp() {
     </div>
   );
 
-  const renderBible = () => (
+  const BibleView = () => (
     <div className="space-y-6">
       {loadingBible && (
         <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-12 text-center">
@@ -1165,7 +1318,10 @@ export default function BiblicalGuidanceApp() {
 
       {!loadingBible && !bibleText && (
         <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
-          <h2 className="text-3xl font-bold text-white mb-4 font-playfair">Read the Bible</h2>
+          <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Read the Bible</h2>
+          <p className="text-sm text-gray-400 mb-4">
+            Choose a book and chapter to read from the World English Version. Tap verses in answers to jump straight here.
+          </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -1196,7 +1352,10 @@ export default function BiblicalGuidanceApp() {
           </div>
           
           <button
-            onClick={() => fetchBibleChapter(bibleBook, bibleChapter)}
+            onClick={() => {
+              setHighlightedVerse(null);
+              fetchBibleChapter(bibleBook, bibleChapter);
+            }}
             className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
           >
             <BookOpen className="w-5 h-5" />
@@ -1210,10 +1369,13 @@ export default function BiblicalGuidanceApp() {
           <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-2xl font-bold text-yellow-500 font-playfair">
-                {bibleText.book} {bibleText.chapter} <span className="text-sm font-normal text-gray-500">(KJV)</span>
+                {bibleText.book} {bibleText.chapter} <span className="text-sm font-normal text-gray-500">(World English Version)</span>
               </h3>
               <button
-                onClick={() => setBibleText(null)}
+                onClick={() => {
+                  setBibleText(null);
+                  setHighlightedVerse(null);
+                }}
                 className="text-gray-500 hover:text-gray-300 transition-colors"
               >
                 <X className="w-6 h-6" />
@@ -1222,8 +1384,19 @@ export default function BiblicalGuidanceApp() {
             
             <div className="space-y-3">
               {bibleText.verses.map((v, idx) => (
-                <p key={idx} className="text-gray-300 leading-relaxed">
-                  <span className="font-bold text-yellow-500 mr-2">{v.verse}</span>
+                <p
+                  key={idx}
+                  className={`text-gray-300 leading-relaxed rounded-lg px-3 py-1 transition-colors ${
+                    highlightedVerse === v.verse ? 'bg-yellow-500/10 border border-yellow-500/40' : ''
+                  }`}
+                >
+                  <span
+                    className={`font-bold mr-2 ${
+                      highlightedVerse === v.verse ? 'text-yellow-400' : 'text-yellow-500'
+                    }`}
+                  >
+                    {v.verse}
+                  </span>
                   {v.text}
                 </p>
               ))}
@@ -1261,7 +1434,10 @@ export default function BiblicalGuidanceApp() {
             </div>
             
             <button
-              onClick={() => fetchBibleChapter(bibleBook, bibleChapter)}
+              onClick={() => {
+                setHighlightedVerse(null);
+                fetchBibleChapter(bibleBook, bibleChapter);
+              }}
               className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
             >
               <BookOpen className="w-5 h-5" />
@@ -1273,7 +1449,7 @@ export default function BiblicalGuidanceApp() {
     </div>
   );
 
-  const renderReadingPlan = () => {
+  const ReadingPlanView = () => {
     const today = new Date();
     const startOfYear = new Date(today.getFullYear(), 0, 1);
     const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
@@ -1324,6 +1500,7 @@ export default function BiblicalGuidanceApp() {
                         onClick={() => {
                           setBibleBook(reading.book);
                           setBibleChapter(reading.chapter);
+                          setHighlightedVerse(null);
                           fetchBibleChapter(reading.book, reading.chapter);
                         }}
                         className={`font-bold text-left ${isComplete ? 'text-gray-500 line-through' : 'text-gray-300 hover:text-yellow-500'}`}
@@ -1335,6 +1512,7 @@ export default function BiblicalGuidanceApp() {
                       onClick={() => {
                         setBibleBook(reading.book);
                         setBibleChapter(reading.chapter);
+                        setHighlightedVerse(null);
                         fetchBibleChapter(reading.book, reading.chapter);
                       }}
                       className="text-sm bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg text-black font-bold px-3 py-1 rounded-lg transition-all"
@@ -1507,12 +1685,12 @@ export default function BiblicalGuidanceApp() {
       </header>
 
       <div className="max-w-4xl mx-auto p-4 sm:p-6 pb-12">
-        {currentView === 'home' && renderHome()}
-        {currentView === 'saved' && renderSaved()}
-        {currentView === 'journal' && renderJournal()}
-        {currentView === 'community' && renderCommunity()}
-        {currentView === 'bible' && renderBible()}
-        {currentView === 'reading-plan' && renderReadingPlan()}
+        {currentView === 'home' && <HomeView />}
+        {currentView === 'saved' && <SavedView />}
+        {currentView === 'journal' && <JournalView />}
+        {currentView === 'community' && <CommunityView />}
+        {currentView === 'bible' && <BibleView />}
+        {currentView === 'reading-plan' && <ReadingPlanView />}
       </div>
 
       {showAuthModal && (
@@ -1709,12 +1887,29 @@ export default function BiblicalGuidanceApp() {
                   <h3 className="text-3xl font-bold text-white font-playfair">Premium</h3>
                 </div>
 
-                <div className="flex items-baseline gap-2 mb-8">
-                  <span className="text-5xl font-bold text-yellow-500">$4.99</span>
-                  <span className="text-gray-400">/month</span>
+                <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
+                  <p className="text-sm font-bold text-yellow-500 mb-1">✨ 3-Day Free Trial</p>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Start your 3-day free trial today. Enter your payment information at checkout—you won't be charged until after the trial ends. Cancel anytime before the trial ends to avoid charges.
+                  </p>
                 </div>
 
-                <ul className="space-y-4 mb-8">
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-yellow-500">$4.99</span>
+                    <span className="text-gray-400 text-sm">per month</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-yellow-500">$49.99</span>
+                    <span className="text-gray-400 text-sm">per year</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-yellow-500">$89.99</span>
+                    <span className="text-gray-400 text-sm">lifetime (one-time)</span>
+                  </div>
+                </div>
+
+                <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-3 text-gray-300">
                     <span className="text-yellow-500 text-xl">✓</span>
                     <span><strong className="text-white">Unlimited questions</strong> daily</span>
@@ -1734,9 +1929,9 @@ export default function BiblicalGuidanceApp() {
                 </ul>
 
                 <button
-                  onClick={handleStripeCheckout}
+                  onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_MONTHLY, true, 'Monthly Premium')}
                   disabled={stripeLoading}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 text-black font-bold py-4 rounded-xl transition-all transform hover:scale-105 mb-2"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 text-black font-bold py-3 rounded-xl transition-all transform hover:scale-105 mb-2"
                 >
                   {stripeLoading ? (
                     <>
@@ -1744,16 +1939,31 @@ export default function BiblicalGuidanceApp() {
                       Processing...
                     </>
                   ) : (
-                    '💳 Subscribe Now'
+                    '💳 Start 3-Day Trial - Monthly $4.99/mo'
                   )}
                 </button>
 
                 <button
-                  onClick={upgradeToPremium}
-                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-4 rounded-xl transition-all transform hover:scale-105"
+                  onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_ANNUAL, true, 'Annual Premium')}
+                  disabled={stripeLoading}
+                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-3 rounded-xl transition-all transform hover:scale-105 mb-2 disabled:border-gray-600 disabled:text-gray-500"
                 >
-                  🎁 Activate 7-Day Free Trial
+                  💳 Start 3-Day Trial - Annual $49.99/yr
                 </button>
+
+                <button
+                  onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_LIFETIME, false, 'Lifetime Premium')}
+                  disabled={stripeLoading}
+                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-3 rounded-xl transition-all transform hover:scale-105 disabled:border-gray-600 disabled:text-gray-500"
+                >
+                  💳 Lifetime Premium - $89.99 once
+                </button>
+
+                <div className="mt-6 pt-4 border-t border-yellow-500/10">
+                  <p className="text-xs text-gray-400 text-center leading-relaxed">
+                    <strong className="text-gray-300">Important:</strong> Your card will be automatically charged after the 3-day trial unless you cancel before the trial ends. You can cancel your subscription anytime from the link in your Stripe email receipt or by contacting support. Lifetime purchases are one-time payments with no recurring charges.
+                  </p>
+                </div>
               </div>
 
               <div className="border-2 border-yellow-500/30 rounded-2xl p-8 bg-gradient-to-br from-gray-900 to-black hover:border-yellow-500/50 transition-all hover:shadow-2xl hover:shadow-yellow-500/20">
