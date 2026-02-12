@@ -116,7 +116,13 @@ export default function BiblicalGuidanceApp() {
   }, [isLoggedIn, username]);
 
   const loadUserData = async () => {
-    if (!isLoggedIn || !username) return;
+    if (!isLoggedIn || !username) {
+      // Check for premium status stored by session ID (for users who paid before logging in)
+      // Note: We can't easily enumerate all premium_session_ keys with window.storage API
+      // This check will be done when user logs in via username-based storage
+      return;
+    }
+    
     const [savedData, journalData, readingsData, userData] = await Promise.all([
       safeStorageGet(`saved_${username}`),
       safeStorageGet(`journal_${username}`),
@@ -148,13 +154,38 @@ export default function BiblicalGuidanceApp() {
     if (userData && userData.value) {
       try {
         const parsed = JSON.parse(userData.value);
-        setUserTier(parsed.tier || 'free');
+        let tier = parsed.tier || 'free';
+        
+        // Check if user has premium status stored by username (using window.storage API)
+        try {
+          const userPremiumData = await safeStorageGet(`premium_user_${username}`);
+          if (userPremiumData && userPremiumData.value && tier === 'free') {
+            // User has premium status stored but tier wasn't saved - upgrade them
+            tier = 'premium';
+            console.log('Restoring premium status from user storage');
+          }
+        } catch (err) {
+          console.error('Error checking premium sessions:', err);
+        }
+        
+        setUserTier(tier);
         setQuestionsToday(parsed.questionsToday || 0);
         setLastQuestionDate(parsed.lastQuestionDate || '');
         setChurchCode(parsed.churchCode || '');
         setChurchName(parsed.churchName || '');
       } catch (err) {
         console.error('Error parsing user data for user', username, err);
+      }
+    } else {
+      // No user data found - check for user-specific premium storage (using window.storage API)
+      try {
+        const userPremiumData = await safeStorageGet(`premium_user_${username}`);
+        if (userPremiumData && userPremiumData.value) {
+          setUserTier('premium');
+          console.log('Applied premium status from user storage for new user');
+        }
+      } catch (err) {
+        console.error('Error checking premium sessions:', err);
       }
     }
   };
@@ -266,21 +297,27 @@ export default function BiblicalGuidanceApp() {
     return completedReadings.includes(key);
   };
 
-  const saveUserData = async () => {
+  const saveUserData = React.useCallback(async (tierOverride = null) => {
     if (!isLoggedIn || !username) return;
+    const tierToSave = tierOverride !== null ? tierOverride : userTier;
     await Promise.all([
       safeStorageSet(`saved_${username}`, JSON.stringify(savedResponses)),
       safeStorageSet(`journal_${username}`, JSON.stringify(prayerJournal)),
       safeStorageSet(`completed_readings_${username}`, JSON.stringify(completedReadings)),
       safeStorageSet(`user_data_${username}`, JSON.stringify({
-        tier: userTier, questionsToday, lastQuestionDate, churchCode, churchName
+        tier: tierToSave, questionsToday, lastQuestionDate, churchCode, churchName
       }))
     ]);
-  };
+  }, [isLoggedIn, username, savedResponses, prayerJournal, completedReadings, userTier, questionsToday, lastQuestionDate, churchCode, churchName]);
+
+  const saveUserDataRef = React.useRef(saveUserData);
+  saveUserDataRef.current = saveUserData;
 
   useEffect(() => {
-    saveUserData();
-  }, [savedResponses, prayerJournal, completedReadings, userTier, questionsToday, lastQuestionDate]);
+    if (isLoggedIn && username) {
+      saveUserDataRef.current();
+    }
+  }, [savedResponses, prayerJournal, completedReadings, userTier, questionsToday, lastQuestionDate, churchCode, churchName, isLoggedIn, username]);
 
   const checkDailyVerse = async () => {
     const today = new Date().toDateString();
@@ -429,6 +466,13 @@ export default function BiblicalGuidanceApp() {
   };
 
   const handleStripeCheckout = async (priceId, isSubscription = true, planName = 'Premium') => {
+    // Require authentication before allowing payment
+    if (!isLoggedIn || !username) {
+      alert('Please sign in before making a payment. This ensures your premium status is saved to your account.');
+      setShowAuthModal(true);
+      return;
+    }
+
     setStripeLoading(true);
     try {
       // Check if Stripe.js is loaded
@@ -448,10 +492,25 @@ export default function BiblicalGuidanceApp() {
       }
 
       // Get backend API URL from environment variable
-      const backendUrl = import.meta.env.VITE_STRIPE_API_URL || 'http://localhost:3001';
+      const envBackendUrl = import.meta.env.VITE_STRIPE_API_URL;
+      const backendUrl = envBackendUrl || 'http://localhost:3001';
       
-      if (!backendUrl) {
-        alert('Backend API URL not configured. Please set VITE_STRIPE_API_URL in your .env file.');
+      // Warn if using default in production (but still allow it for development)
+      if (!envBackendUrl && import.meta.env.PROD) {
+        console.warn('VITE_STRIPE_API_URL not set. Using default localhost URL. This may not work in production.');
+      }
+
+      // Verify payment backend is reachable before attempting checkout (avoids generic network errors)
+      try {
+        const healthRes = await fetch(`${backendUrl}/health`, { method: 'GET' });
+        if (!healthRes.ok) {
+          throw new Error(`Backend returned ${healthRes.status}`);
+        }
+      } catch (err) {
+        const hint = !envBackendUrl
+          ? ' Start the backend server (e.g. run the server in this project) or set VITE_STRIPE_API_URL in .env to your payment API URL.'
+          : ` Ensure the server at ${backendUrl} is running.`;
+        alert('Payment server is unreachable.' + hint);
         setStripeLoading(false);
         return;
       }
@@ -466,8 +525,8 @@ export default function BiblicalGuidanceApp() {
           priceId,
           isSubscription,
           planName,
-          username: username || 'guest',
-          successUrl: `${window.location.origin}?payment=success&type=${isSubscription ? 'subscription' : 'payment'}`,
+          username: username,
+          successUrl: `${window.location.origin}?payment=success&type=${isSubscription ? 'subscription' : 'payment'}&session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${window.location.origin}?payment=cancel`,
           trialPeriodDays: isSubscription ? 3 : undefined
         })
@@ -478,18 +537,14 @@ export default function BiblicalGuidanceApp() {
         throw new Error(errorData.error || errorData.message || 'Failed to create checkout session');
       }
 
-      const { sessionId } = await response.json();
+      const { sessionId, url } = await response.json();
       
-      if (!sessionId) {
-        throw new Error('No session ID returned from server');
+      if (!url) {
+        throw new Error('No checkout URL returned from server');
       }
       
-      // Redirect to Stripe Checkout
-      const { error } = await stripe.redirectToCheckout({ sessionId });
-      
-      if (error) {
-        alert('Payment error: ' + error.message);
-      }
+      // Redirect to Stripe hosted Checkout (redirectToCheckout was removed in Stripe.js Sept 2025)
+      window.location.href = url;
     } catch (err) {
       console.error('Stripe checkout error:', err);
       alert('Unable to process payment: ' + (err.message || 'Please try again. Make sure the backend server is running.'));
@@ -498,30 +553,87 @@ export default function BiblicalGuidanceApp() {
     }
   };
 
+  // Payment success/cancel: run only when URL has payment params; do not depend on saveUserData
+  // so the effect doesn't re-run when saveUserData identity changes (which would re-show alerts).
+  const saveUserDataRefForPayment = React.useRef(saveUserData);
+  saveUserDataRefForPayment.current = saveUserData;
+  const paymentSuccessCancelledRef = React.useRef(false);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
     const purchaseType = urlParams.get('type');
-    
-    if (paymentStatus === 'success') {
-      setUserTier('premium');
-      
-      // Show different messages based on purchase type
-      if (purchaseType === 'subscription') {
-        alert('🎉 Welcome to Premium! Your 3-day free trial has started. You\'ll have full access immediately, and your card will be charged after the trial ends unless you cancel. Check your email for your Stripe receipt with cancellation instructions.');
-      } else if (purchaseType === 'payment') {
-        alert('🎉 Welcome to Premium! Your Lifetime Premium purchase is complete. You now have unlimited access to all features with no recurring charges. Thank you for your support!');
-      } else {
-        // Fallback for older URLs or edge cases
-        alert('🎉 Welcome to Premium! You now have unlimited access to all features.');
-      }
-      
+    // Stripe replaces {CHECKOUT_SESSION_ID} in success_url when redirecting; treat literal placeholder as missing
+    let sessionId = urlParams.get('session_id');
+    if (sessionId === '{CHECKOUT_SESSION_ID}' || !sessionId) sessionId = null;
+
+    if (paymentStatus !== 'success' && paymentStatus !== 'cancel') return;
+
+    if (paymentStatus === 'cancel') {
       window.history.replaceState({}, '', window.location.pathname);
-    } else if (paymentStatus === 'cancel') {
       alert('Payment cancelled. No charges were made.');
-      window.history.replaceState({}, '', window.location.pathname);
+      return;
     }
-  }, []);
+
+    // paymentStatus === 'success': clear URL only after async handler completes so effect re-runs can retry if needed
+    if (paymentStatus === 'success') {
+      // Set only when starting this run's async; avoids undoing cleanup when effect re-runs (e.g. logout)
+      paymentSuccessCancelledRef.current = false;
+      const premiumData = {
+        tier: 'premium',
+        purchaseType: purchaseType || 'unknown',
+        timestamp: new Date().toISOString(),
+        username: username || null
+      };
+
+      const runAsync = async () => {
+        try {
+          if (sessionId) {
+            await safeStorageSet(`premium_session_${sessionId}`, JSON.stringify(premiumData), true);
+          }
+          if (paymentSuccessCancelledRef.current) return;
+          if (isLoggedIn && username) {
+            await safeStorageSet(`premium_user_${username}`, JSON.stringify(premiumData));
+          }
+          if (paymentSuccessCancelledRef.current) return;
+          await safeStorageSet(`premium_${Date.now()}`, JSON.stringify(premiumData), true);
+        } catch (err) {
+          console.error('Error storing premium session:', err);
+        }
+        if (paymentSuccessCancelledRef.current) return;
+
+        if (isLoggedIn && username) {
+          const saveFn = saveUserDataRefForPayment.current;
+          if (saveFn) await saveFn('premium');
+        }
+        if (paymentSuccessCancelledRef.current) return;
+
+        // Only update UI and show alerts for the logged-in user who completed payment
+        if (isLoggedIn && username) {
+          setUserTier('premium');
+          if (purchaseType === 'subscription') {
+            alert('🎉 Welcome to Premium! Your 3-day free trial has started. You\'ll have full access immediately, and your card will be charged after the trial ends unless you cancel. Check your email for your Stripe receipt with cancellation instructions.');
+          } else if (purchaseType === 'payment') {
+            alert('🎉 Welcome to Premium! Your Lifetime Premium purchase is complete. You now have unlimited access to all features with no recurring charges. Thank you for your support!');
+          } else {
+            alert('🎉 Welcome to Premium! You now have unlimited access to all features.');
+          }
+        }
+
+        // Clear URL only after processing so a re-run (e.g. user logs back in) can retry and persist premium
+        try {
+          window.history.replaceState({}, '', window.location.pathname);
+        } catch (e) {
+          /* ignore */
+        }
+      };
+      runAsync().catch((err) => console.error('Payment success handler error:', err));
+    }
+
+    return () => {
+      paymentSuccessCancelledRef.current = true;
+    };
+  }, [isLoggedIn, username]);
 
   const submitContactForm = async () => {
     if (!contactInfo.name || !contactInfo.email) {
@@ -618,7 +730,7 @@ export default function BiblicalGuidanceApp() {
   const shareResponse = () => {
     const shareText = `${response.verses[0].text} - ${response.verses[0].reference}`;
     if (navigator.share) {
-      navigator.share({ text: shareText, title: 'VerseAid.ai' });
+      navigator.share({ text: shareText, title: 'VerseAid' });
     } else {
       navigator.clipboard.writeText(shareText);
       alert('Verse copied to clipboard!');
@@ -1601,7 +1713,7 @@ export default function BiblicalGuidanceApp() {
             <div className="flex items-center gap-3">
               <BookOpen className="w-10 h-10 text-yellow-500" />
               <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent font-playfair">
-                VerseAid.ai
+                VerseAid
               </h1>
             </div>
             <div className="flex items-center gap-4">
@@ -2119,7 +2231,7 @@ export default function BiblicalGuidanceApp() {
 
       <footer className="border-t border-yellow-500/10 py-12 mt-20">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="text-gray-500 text-sm">© 2025 VerseAid.ai - Premium Biblical guidance powered by AI</p>
+          <p className="text-gray-500 text-sm">© 2025 VerseAid - Premium Biblical guidance powered by AI</p>
         </div>
       </footer>
     </div>
