@@ -431,29 +431,68 @@ export default function BiblicalGuidanceApp() {
   const handleStripeCheckout = async (priceId, isSubscription = true, planName = 'Premium') => {
     setStripeLoading(true);
     try {
+      // Check if Stripe.js is loaded
+      if (typeof window.Stripe === 'undefined') {
+        alert('Stripe is not loaded. Please refresh the page and try again.');
+        setStripeLoading(false);
+        return;
+      }
+
       const stripe = window.Stripe(STRIPE_PUBLISHABLE_KEY);
-      const purchaseType = isSubscription ? 'subscription' : 'payment';
-      const checkoutOptions = {
-        lineItems: [{ price: priceId, quantity: 1 }],
-        mode: isSubscription ? 'subscription' : 'payment',
-        successUrl: `${window.location.origin}?payment=success&type=${purchaseType}`,
-        cancelUrl: `${window.location.origin}?payment=cancel`,
-        customerEmail: username + '@example.com',
-        clientReferenceId: username,
-      };
       
-      // Add 3-day free trial for subscriptions (not one-time payments)
-      if (isSubscription) {
-        checkoutOptions.subscriptionData = {
-          trial_period_days: 3,
-          metadata: { plan: planName, username: username }
-        };
+      // Check if Stripe initialized correctly
+      if (!stripe) {
+        alert('Failed to initialize Stripe. Please check your API key.');
+        setStripeLoading(false);
+        return;
+      }
+
+      // Get backend API URL from environment variable
+      const backendUrl = import.meta.env.VITE_STRIPE_API_URL || 'http://localhost:3001';
+      
+      if (!backendUrl) {
+        alert('Backend API URL not configured. Please set VITE_STRIPE_API_URL in your .env file.');
+        setStripeLoading(false);
+        return;
+      }
+
+      // Create checkout session via backend API
+      const response = await fetch(`${backendUrl}/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId,
+          isSubscription,
+          planName,
+          username: username || 'guest',
+          successUrl: `${window.location.origin}?payment=success&type=${isSubscription ? 'subscription' : 'payment'}`,
+          cancelUrl: `${window.location.origin}?payment=cancel`,
+          trialPeriodDays: isSubscription ? 3 : undefined
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || errorData.message || 'Failed to create checkout session');
+      }
+
+      const { sessionId } = await response.json();
+      
+      if (!sessionId) {
+        throw new Error('No session ID returned from server');
       }
       
-      const { error } = await stripe.redirectToCheckout(checkoutOptions);
-      if (error) alert('Payment error: ' + error.message);
+      // Redirect to Stripe Checkout
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+      
+      if (error) {
+        alert('Payment error: ' + error.message);
+      }
     } catch (err) {
-      alert('Unable to process payment. Please try again.');
+      console.error('Stripe checkout error:', err);
+      alert('Unable to process payment: ' + (err.message || 'Please try again. Make sure the backend server is running.'));
     } finally {
       setStripeLoading(false);
     }
@@ -1555,7 +1594,6 @@ export default function BiblicalGuidanceApp() {
         .font-playfair { font-family: 'Playfair Display', serif; }
         .font-inter { font-family: 'Inter', sans-serif; }
       `}</style>
-      <script src="https://js.stripe.com/v3/"></script>
       
       <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-yellow-500/20 sticky top-0 z-50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -1868,62 +1906,62 @@ export default function BiblicalGuidanceApp() {
 
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-3xl p-10 max-w-5xl w-full my-8">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold text-center text-white font-playfair">
+          <div className="relative bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-3xl p-6 w-full md:w-1/2 max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors z-10">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-center text-white font-playfair">
                 Choose Your <span className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">Premium</span> Plan
               </h2>
-              <button onClick={() => setShowUpgradeModal(false)} className="text-gray-500 hover:text-gray-300">
-                <X className="w-6 h-6" />
-              </button>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="border-2 border-yellow-500/30 rounded-2xl p-8 bg-gradient-to-br from-gray-900 to-black hover:border-yellow-500/50 transition-all hover:shadow-2xl hover:shadow-yellow-500/20">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
-                    <Crown className="w-6 h-6 text-black" />
+            <div className="grid md:grid-cols-2 gap-5">
+              <div className="border-2 border-yellow-500/30 rounded-2xl p-5 bg-gradient-to-br from-gray-900 to-black hover:border-yellow-500/50 transition-all hover:shadow-2xl hover:shadow-yellow-500/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-black" />
                   </div>
-                  <h3 className="text-3xl font-bold text-white font-playfair">Premium</h3>
+                  <h3 className="text-2xl font-bold text-white font-playfair">Premium</h3>
                 </div>
 
-                <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
+                <div className="mb-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
                   <p className="text-sm font-bold text-yellow-500 mb-1">✨ 3-Day Free Trial</p>
                   <p className="text-xs text-gray-300 leading-relaxed">
                     Start your 3-day free trial today. Enter your payment information at checkout—you won't be charged until after the trial ends. Cancel anytime before the trial ends to avoid charges.
                   </p>
                 </div>
 
-                <div className="space-y-4 mb-6">
+                <div className="space-y-2 mb-4">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-yellow-500">$4.99</span>
+                    <span className="text-2xl font-bold text-yellow-500">$4.99</span>
                     <span className="text-gray-400 text-sm">per month</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-yellow-500">$49.99</span>
+                    <span className="text-2xl font-bold text-yellow-500">$49.99</span>
                     <span className="text-gray-400 text-sm">per year</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-yellow-500">$89.99</span>
+                    <span className="text-2xl font-bold text-yellow-500">$89.99</span>
                     <span className="text-gray-400 text-sm">lifetime (one-time)</span>
                   </div>
                 </div>
 
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <span className="text-yellow-500 text-xl">✓</span>
+                <ul className="space-y-2 mb-5">
+                  <li className="flex items-start gap-2 text-gray-300 text-sm">
+                    <span className="text-yellow-500">✓</span>
                     <span><strong className="text-white">Unlimited questions</strong> daily</span>
                   </li>
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <span className="text-yellow-500 text-xl">✓</span>
+                  <li className="flex items-start gap-2 text-gray-300 text-sm">
+                    <span className="text-yellow-500">✓</span>
                     <span><strong className="text-white">Community Prayer Wall</strong> access</span>
                   </li>
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <span className="text-yellow-500 text-xl">✓</span>
+                  <li className="flex items-start gap-2 text-gray-300 text-sm">
+                    <span className="text-yellow-500">✓</span>
                     <span><strong className="text-white">Prayer Journal</strong> with tracking</span>
                   </li>
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <span className="text-yellow-500 text-xl">✓</span>
+                  <li className="flex items-start gap-2 text-gray-300 text-sm">
+                    <span className="text-yellow-500">✓</span>
                     <span><strong className="text-white">Bible-in-a-Year</strong> reading plan</span>
                   </li>
                 </ul>
@@ -1931,11 +1969,11 @@ export default function BiblicalGuidanceApp() {
                 <button
                   onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_MONTHLY, true, 'Monthly Premium')}
                   disabled={stripeLoading}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 text-black font-bold py-3 rounded-xl transition-all transform hover:scale-105 mb-2"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 text-black font-bold py-2.5 rounded-xl transition-all transform hover:scale-105 mb-2 text-sm"
                 >
                   {stripeLoading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+                      <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
                       Processing...
                     </>
                   ) : (
@@ -1946,7 +1984,7 @@ export default function BiblicalGuidanceApp() {
                 <button
                   onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_ANNUAL, true, 'Annual Premium')}
                   disabled={stripeLoading}
-                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-3 rounded-xl transition-all transform hover:scale-105 mb-2 disabled:border-gray-600 disabled:text-gray-500"
+                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-2.5 rounded-xl transition-all transform hover:scale-105 mb-2 disabled:border-gray-600 disabled:text-gray-500 text-sm"
                 >
                   💳 Start 3-Day Trial - Annual $49.99/yr
                 </button>
@@ -1954,53 +1992,53 @@ export default function BiblicalGuidanceApp() {
                 <button
                   onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_LIFETIME, false, 'Lifetime Premium')}
                   disabled={stripeLoading}
-                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-3 rounded-xl transition-all transform hover:scale-105 disabled:border-gray-600 disabled:text-gray-500"
+                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-2.5 rounded-xl transition-all transform hover:scale-105 disabled:border-gray-600 disabled:text-gray-500 text-sm"
                 >
                   💳 Lifetime Premium - $89.99 once
                 </button>
 
-                <div className="mt-6 pt-4 border-t border-yellow-500/10">
+                <div className="mt-4 pt-3 border-t border-yellow-500/10">
                   <p className="text-xs text-gray-400 text-center leading-relaxed">
                     <strong className="text-gray-300">Important:</strong> Your card will be automatically charged after the 3-day trial unless you cancel before the trial ends. You can cancel your subscription anytime from the link in your Stripe email receipt or by contacting support. Lifetime purchases are one-time payments with no recurring charges.
                   </p>
                 </div>
               </div>
 
-              <div className="border-2 border-yellow-500/30 rounded-2xl p-8 bg-gradient-to-br from-gray-900 to-black hover:border-yellow-500/50 transition-all hover:shadow-2xl hover:shadow-yellow-500/20">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-black" />
+              <div className="border-2 border-yellow-500/30 rounded-2xl p-5 bg-gradient-to-br from-gray-900 to-black hover:border-yellow-500/50 transition-all hover:shadow-2xl hover:shadow-yellow-500/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-black" />
                   </div>
-                  <h3 className="text-3xl font-bold text-white font-playfair">Church</h3>
+                  <h3 className="text-2xl font-bold text-white font-playfair">Church</h3>
                 </div>
 
-                <div className="mb-8">
-                  <span className="text-3xl font-bold text-yellow-500">Custom Pricing</span>
+                <div className="mb-6">
+                  <span className="text-2xl font-bold text-yellow-500">Custom Pricing</span>
                   <p className="text-gray-400 text-sm mt-2">For churches & ministries</p>
                 </div>
 
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <span className="text-yellow-500 text-xl">✓</span>
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-start gap-2 text-gray-300 text-sm">
+                    <span className="text-yellow-500">✓</span>
                     <span><strong className="text-white">All Premium features</strong> for unlimited members</span>
                   </li>
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <span className="text-yellow-500 text-xl">✓</span>
+                  <li className="flex items-start gap-2 text-gray-300 text-sm">
+                    <span className="text-yellow-500">✓</span>
                     <span>Custom branding with church logo</span>
                   </li>
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <span className="text-yellow-500 text-xl">✓</span>
+                  <li className="flex items-start gap-2 text-gray-300 text-sm">
+                    <span className="text-yellow-500">✓</span>
                     <span>Private church prayer wall</span>
                   </li>
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <span className="text-yellow-500 text-xl">✓</span>
+                  <li className="flex items-start gap-2 text-gray-300 text-sm">
+                    <span className="text-yellow-500">✓</span>
                     <span>Admin dashboard & analytics</span>
                   </li>
                 </ul>
 
                 <button
                   onClick={() => setShowContactForm(true)}
-                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-4 rounded-xl transition-all transform hover:scale-105"
+                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-3 rounded-xl transition-all transform hover:scale-105"
                 >
                   Request Information
                 </button>
