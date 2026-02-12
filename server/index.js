@@ -8,8 +8,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+// Validate Stripe secret key before initializing
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+if (!STRIPE_SECRET_KEY || typeof STRIPE_SECRET_KEY !== 'string' || !STRIPE_SECRET_KEY.startsWith('sk_')) {
+  console.error('Missing or invalid STRIPE_SECRET_KEY. Set STRIPE_SECRET_KEY in your .env file (e.g. sk_test_... or sk_live_...).');
+  process.exit(1);
+}
+
+const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: '2024-11-20.acacia',
 });
 
@@ -57,7 +63,8 @@ app.post('/create-checkout-session', async (req, res) => {
         },
       ],
       mode: isSubscription ? 'subscription' : 'payment',
-      success_url: successUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}?payment=success&type=${isSubscription ? 'subscription' : 'payment'}`,
+      // Stripe replaces {CHECKOUT_SESSION_ID} in success_url when redirecting; frontend reads session_id from URL
+      success_url: successUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}?payment=success&type=${isSubscription ? 'subscription' : 'payment'}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}?payment=cancel`,
       client_reference_id: username,
       metadata: {
@@ -84,7 +91,8 @@ app.post('/create-checkout-session', async (req, res) => {
     // Create the checkout session
     const session = await stripe.checkout.sessions.create(sessionParams);
 
-    res.json({ sessionId: session.id });
+    // Return url for redirect (redirectToCheckout was removed in Stripe.js 2025); sessionId kept for frontend success URL handling
+    res.json({ sessionId: session.id, url: session.url });
   } catch (error) {
     console.error('Error creating checkout session:', error);
     res.status(500).json({ 
