@@ -34,7 +34,8 @@ export default function BiblicalGuidanceApp() {
   
   const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
 
-  const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SmIRvPn2XQV6iQ882R9uaUcXXaMyIlRkQF7VdQQKU8dFa6Ldn8Sp7Ix8DFgLiLOR5hQB9Y87uhrxW69pzMPSteZ00MzZhLbkj';
+  // Use VITE_STRIPE_PUBLISHABLE_KEY in .env for production (pk_live_...). Fallback for local dev.
+  const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51SmIRvPn2XQV6iQ882R9uaUcXXaMyIlRkQF7VdQQKU8dFa6Ldn8Sp7Ix8DFgLiLOR5hQB9Y87uhrxW69pzMPSteZ00MzZhLbkj';
   const STRIPE_PRICE_ID_MONTHLY = 'price_1Szfd1Pn2XQV6iQ8St63dVyE';
   const STRIPE_PRICE_ID_ANNUAL = 'price_1SzfduPn2XQV6iQ8cXTCWHci';
   const STRIPE_PRICE_ID_LIFETIME = 'price_1SzfeXPn2XQV6iQ8hEOpG9cQ';

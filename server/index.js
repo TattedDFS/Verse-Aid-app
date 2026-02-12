@@ -24,6 +24,44 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
+
+// Webhook must get raw body for Stripe signature verification — register before express.json()
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction && !webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET is required in production. Set it in .env.');
+    return res.status(500).send('Webhook not configured');
+  }
+
+  let event;
+  try {
+    if (webhookSecret) {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } else {
+      event = JSON.parse(req.body.toString());
+    }
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  switch (event.type) {
+    case 'checkout.session.completed':
+      console.log('Checkout session completed:', event.data.object.id);
+      break;
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated':
+      console.log('Subscription updated:', event.data.object.id);
+      break;
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+  res.json({ received: true });
+});
+
 app.use(express.json());
 
 // Health check endpoint
@@ -100,45 +138,6 @@ app.post('/create-checkout-session', async (req, res) => {
       message: error.message 
     });
   }
-});
-
-// Webhook endpoint for Stripe events (optional, for handling subscription updates)
-app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-
-  try {
-    if (webhookSecret) {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } else {
-      // For development, you can skip webhook signature verification
-      event = JSON.parse(req.body.toString());
-    }
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object;
-      console.log('Checkout session completed:', session.id);
-      // Here you could update your database, send confirmation emails, etc.
-      break;
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated':
-      const subscription = event.data.object;
-      console.log('Subscription updated:', subscription.id);
-      // Handle subscription updates
-      break;
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
-
-  res.json({ received: true });
 });
 
 app.listen(PORT, () => {
