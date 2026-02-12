@@ -558,6 +558,8 @@ export default function BiblicalGuidanceApp() {
   const saveUserDataRefForPayment = React.useRef(saveUserData);
   saveUserDataRefForPayment.current = saveUserData;
   const paymentSuccessCancelledRef = React.useRef(false);
+  // Bind payment success to the user who was logged in when the URL was first seen (avoids applying to wrong user after logout/login)
+  const paymentIntendedForUsernameRef = React.useRef(null);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -575,15 +577,19 @@ export default function BiblicalGuidanceApp() {
       return;
     }
 
-    // paymentStatus === 'success': clear URL only after async handler completes so effect re-runs can retry if needed
+    // paymentStatus === 'success': bind to the user who is logged in when we first see this URL
     if (paymentStatus === 'success') {
-      // Set only when starting this run's async; avoids undoing cleanup when effect re-runs (e.g. logout)
+      if (paymentIntendedForUsernameRef.current == null) {
+        paymentIntendedForUsernameRef.current = username || null;
+      }
+      const intendedUsername = paymentIntendedForUsernameRef.current;
+
       paymentSuccessCancelledRef.current = false;
       const premiumData = {
         tier: 'premium',
         purchaseType: purchaseType || 'unknown',
         timestamp: new Date().toISOString(),
-        username: username || null
+        username: intendedUsername
       };
 
       const runAsync = async () => {
@@ -592,7 +598,7 @@ export default function BiblicalGuidanceApp() {
             await safeStorageSet(`premium_session_${sessionId}`, JSON.stringify(premiumData), true);
           }
           if (paymentSuccessCancelledRef.current) return;
-          if (isLoggedIn && username) {
+          if (isLoggedIn && username === intendedUsername) {
             await safeStorageSet(`premium_user_${username}`, JSON.stringify(premiumData));
           }
           if (paymentSuccessCancelledRef.current) return;
@@ -602,14 +608,14 @@ export default function BiblicalGuidanceApp() {
         }
         if (paymentSuccessCancelledRef.current) return;
 
-        if (isLoggedIn && username) {
+        if (isLoggedIn && username === intendedUsername) {
           const saveFn = saveUserDataRefForPayment.current;
           if (saveFn) await saveFn('premium');
         }
         if (paymentSuccessCancelledRef.current) return;
 
-        // Only update UI and show alerts for the logged-in user who completed payment
-        if (isLoggedIn && username) {
+        // Only update UI and show alerts for the user this payment was intended for
+        if (isLoggedIn && username === intendedUsername) {
           setUserTier('premium');
           if (purchaseType === 'subscription') {
             alert('🎉 Welcome to Premium! Your 3-day free trial has started. You\'ll have full access immediately, and your card will be charged after the trial ends unless you cancel. Check your email for your Stripe receipt with cancellation instructions.');
@@ -620,7 +626,7 @@ export default function BiblicalGuidanceApp() {
           }
         }
 
-        // Clear URL only after processing so a re-run (e.g. user logs back in) can retry and persist premium
+        paymentIntendedForUsernameRef.current = null;
         try {
           window.history.replaceState({}, '', window.location.pathname);
         } catch (e) {
@@ -632,6 +638,12 @@ export default function BiblicalGuidanceApp() {
 
     return () => {
       paymentSuccessCancelledRef.current = true;
+      paymentIntendedForUsernameRef.current = null;
+      try {
+        window.history.replaceState({}, '', window.location.pathname);
+      } catch (e) {
+        /* ignore */
+      }
     };
   }, [isLoggedIn, username]);
 
