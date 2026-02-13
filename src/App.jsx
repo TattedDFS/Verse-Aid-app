@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users } from 'lucide-react';
 import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClient';
 import { safeStorageGet, safeStorageSet } from './utils/storage';
+import { supabase } from './supabaseClient';
 
 export default function BiblicalGuidanceApp() {
   const [question, setQuestion] = useState('');
@@ -367,8 +368,8 @@ export default function BiblicalGuidanceApp() {
   };
 
   const handleAuth = async () => {
-    if (!authUsername.trim() || !authPassword.trim()) {
-      setError('Please enter username and password');
+    if (!authPassword.trim()) {
+      setError('Please enter your password');
       return;
     }
 
@@ -377,34 +378,61 @@ export default function BiblicalGuidanceApp() {
         setError('Please enter your email address');
         return;
       }
-      try {
-        await window.storage.set(`credentials_${authUsername}`, JSON.stringify({
-          password: authPassword,
-          email: authEmail
-        }));
-      } catch (err) {
-        console.error('Error storing credentials:', err);
+      if (!authUsername.trim()) {
+        setError('Please enter a username');
+        return;
       }
-      setUsername(authUsername);
-      setIsLoggedIn(true);
-      setUserTier('free');
-      setQuestionsToday(0);
-      setLastQuestionDate(new Date().toDateString());
-    } else {
-      try {
-        const storedCreds = await safeStorageGet(`credentials_${authUsername}`);
-        if (storedCreds) {
-          const creds = JSON.parse(storedCreds.value);
-          if (creds.password !== authPassword) {
-            setError('Incorrect password');
-            return;
-          }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: authEmail,
+        password: authPassword,
+        options: {
+          data: { full_name: authUsername }
         }
-      } catch (err) {
-        console.log('No stored credentials found, allowing login');
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
       }
-      setUsername(authUsername);
-      setIsLoggedIn(true);
+
+      if (data.user) {
+        await supabase.from('profiles').insert({
+          id: data.user.id,
+          email: authEmail,
+          full_name: authUsername,
+          subscription_tier: 'free'
+        });
+
+        setUsername(authUsername);
+        setIsLoggedIn(true);
+        setUserTier('free');
+        setQuestionsToday(0);
+        setLastQuestionDate(new Date().toDateString());
+        setError('Account created! Check your email to confirm your account.');
+      }
+
+    } else {
+      if (!authEmail.trim()) {
+        setError('Please enter your email address');
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: authPassword
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.user) {
+        const displayName = data.user.user_metadata?.full_name || data.user.email;
+        setUsername(displayName);
+        setIsLoggedIn(true);
+      }
     }
 
     setShowAuthModal(false);
@@ -421,21 +449,21 @@ export default function BiblicalGuidanceApp() {
       return;
     }
 
-    try {
-      await safeStorageSet(`password_reset_${Date.now()}`, JSON.stringify({
-        email: forgotPasswordEmail,
-        timestamp: new Date().toISOString(),
-        status: 'pending'
-      }), true);
-    } catch (err) {
-      console.error('Error storing reset request:', err);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+      redirectTo: window.location.origin
+    });
+
+    if (error) {
+      setError(error.message);
+      return;
     }
 
     setResetEmailSent(true);
     setError('');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setIsLoggedIn(false);
     setUsername('');
     setUserTier('free');
@@ -1937,17 +1965,18 @@ export default function BiblicalGuidanceApp() {
               <form onSubmit={(e) => { e.preventDefault(); handleAuth(); }} autoComplete="on">
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="auth-username" className="block text-sm font-semibold text-yellow-500 mb-1">Username</label>
-                    <input
-                      type="text"
-                      id="auth-username"
-                      name="username"
-                      autoComplete="username"
-                      value={authUsername}
-                      onChange={(e) => setAuthUsername(e.target.value)}
-                      className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
-                      placeholder="Enter username"
-                    />
+                  <label htmlFor="auth-email" className="block text-sm font-semibold text-yellow-500 mb-1">Email</label>
+                  <input
+                   type="email"
+                   id="auth-email"
+                   name="email"
+                   autoComplete="email"
+                   value={authEmail}
+                   onChange={(e) => setAuthEmail(e.target.value)}
+                   className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                   placeholder="Enter email"
+                  />
+
                   </div>
 
                   {authMode === 'signup' && (
