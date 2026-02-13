@@ -32,6 +32,7 @@ export default function BiblicalGuidanceApp() {
     name: '', email: '', phone: '', churchName: '', message: ''
   });
   const [stripeLoading, setStripeLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
 
@@ -1986,32 +1987,41 @@ export default function BiblicalGuidanceApp() {
 
                   {authMode === 'signup' && (
                     <div>
-                      <label htmlFor="auth-email" className="block text-sm font-semibold text-yellow-500 mb-1">Email</label>
+                      <label htmlFor="auth-username" className="block text-sm font-semibold text-yellow-500 mb-1">Username</label>
                       <input
-                        type="email"
-                        id="auth-email"
-                        name="email"
-                        autoComplete="email"
-                        value={authEmail}
-                        onChange={(e) => setAuthEmail(e.target.value)}
+                        type="text"
+                        id="auth-username"
+                        name="username"
+                        autoComplete="username"
+                        value={authUsername}
+                        onChange={(e) => setAuthUsername(e.target.value)}
                         className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
-                        placeholder="Enter email"
+                        placeholder="Enter username"
                       />
                     </div>
                   )}
 
-                  <div>
+<div>
                     <label htmlFor="auth-password" className="block text-sm font-semibold text-yellow-500 mb-1">Password</label>
-                    <input
-                      type="password"
-                      id="auth-password"
-                      name="password"
-                      autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
-                      value={authPassword}
-                      onChange={(e) => setAuthPassword(e.target.value)}
-                      className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
-                      placeholder="Enter password"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        id="auth-password"
+                        name="password"
+                        autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20 pr-16"
+                        placeholder="Enter password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-yellow-500 font-bold hover:text-yellow-400"
+                      >
+                        {showPassword ? 'HIDE' : 'SHOW'}
+                      </button>
+                    </div>
                   </div>
 
                   {error && (
