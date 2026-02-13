@@ -463,14 +463,19 @@ export default function BiblicalGuidanceApp() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setIsLoggedIn(false);
-    setUsername('');
-    setUserTier('free');
-    setQuestionsToday(0);
-    setSavedResponses([]);
-    setPrayerJournal([]);
-    setCurrentView('home');
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Sign out error:', err);
+    } finally {
+      setIsLoggedIn(false);
+      setUsername('');
+      setUserTier('free');
+      setQuestionsToday(0);
+      setSavedResponses([]);
+      setPrayerJournal([]);
+      setCurrentView('home');
+    }
   };
 
   const checkDailyLimit = () => {
@@ -2279,4 +2284,3 @@ export default function BiblicalGuidanceApp() {
     </div>
   );
 }
-
