@@ -241,13 +241,18 @@ export default function BiblicalGuidanceApp() {
       return;
     }
 
+    if (!ANTHROPIC_API_KEY) {
+      alert('Bible feature requires an API key. Please set VITE_ANTHROPIC_API_KEY in your environment.');
+      return;
+    }
+
     setLoadingBible(true);
     try {
       const response = await anthropicRequest({
         maxTokens: 4000,
         messages: [{
           role: 'user',
-          content: `Provide the full text of ${book} chapter ${chapter} from the Bible using the World English Version (WEV). Format as JSON: {"book": "${book}", "chapter": ${chapter}, "verses": [{"verse": 1, "text": "verse text"}]}. No markdown, just JSON.`
+          content: `Provide the full text of ${book} chapter ${chapter} from the Bible using the World English Version (WEV). Format as JSON only, no markdown or extra text: {"book": "${book}", "chapter": ${chapter}, "verses": [{"verse": 1, "text": "verse text"}]}.`
         }]
       });
 
@@ -257,16 +262,35 @@ export default function BiblicalGuidanceApp() {
         alert('Error loading Bible text: ' + (data.error.message || 'Please try again.'));
         return;
       }
-      if (data.content && data.content[0]) {
-        let text = data.content[0].text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const parsed = JSON.parse(text);
-        setBibleText(parsed);
-        setBibleCache(prev => ({ ...prev, [cacheKey]: parsed }));
-        setCurrentView('bible');
+      const rawText = data.content?.[0]?.text;
+      if (!rawText) {
+        console.error('Unexpected API response:', data);
+        alert('Error loading Bible text: no content returned. Please try again.');
+        return;
       }
+      let text = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Extract JSON in case the model wrapped it in prose (e.g. "Here is the JSON: {...}")
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) text = jsonMatch[0];
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (parseErr) {
+        console.error('Failed to parse Bible JSON:', parseErr);
+        alert('Error loading Bible text: response format was invalid. Please try again.');
+        return;
+      }
+      if (!parsed.verses || !Array.isArray(parsed.verses) || typeof parsed.book !== 'string') {
+        console.error('Invalid Bible response shape:', parsed);
+        alert('Error loading Bible text: invalid format. Please try again.');
+        return;
+      }
+      setBibleText(parsed);
+      setBibleCache(prev => ({ ...prev, [cacheKey]: parsed }));
+      setCurrentView('bible');
     } catch (err) {
       console.error('Error fetching Bible text:', err);
-      alert('Error loading Bible text. Please try again.');
+      alert('Error loading Bible text: ' + (err.message || 'Please try again.'));
     } finally {
       setLoadingBible(false);
     }
