@@ -342,13 +342,36 @@ export default function BiblicalGuidanceApp() {
     await generateDailyVerse();
   };
 
+  const getRecentVerseReferences = async () => {
+    const DAYS_TO_AVOID = 365;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - DAYS_TO_AVOID);
+    const historyData = await safeStorageGet('daily_verse_history', true);
+    if (!historyData?.value) return [];
+    try {
+      const history = JSON.parse(historyData.value);
+      if (!Array.isArray(history)) return [];
+      return history
+        .filter((entry) => entry?.reference && new Date(entry.date) >= cutoff)
+        .map((entry) => entry.reference.trim());
+    } catch (err) {
+      console.error('Error parsing daily verse history', err);
+      return [];
+    }
+  };
+
   const generateDailyVerse = async () => {
     try {
+      const recentRefs = await getRecentVerseReferences();
+      const excludeInstruction = recentRefs.length > 0
+        ? ` Do NOT use any of these verses (they were used in the last 365 days): ${recentRefs.join(', ')}. Choose a different verse.`
+        : '';
+
       const response = await anthropicRequest({
         maxTokens: 500,
         messages: [{
           role: 'user',
-          content: `Provide one inspirational Bible verse for today with a brief reflection (2-3 sentences). Use the World English Version (WEV). Format as JSON: {"reference": "Book Chapter:Verse", "text": "verse text in WEV", "reflection": "brief reflection"}`
+          content: `Provide one inspirational Bible verse for today with a brief reflection (2-3 sentences). Use the World English Version (WEV). Format as JSON: {"reference": "Book Chapter:Verse", "text": "verse text in WEV", "reflection": "brief reflection"}.${excludeInstruction}`
         }]
       });
 
@@ -359,10 +382,28 @@ export default function BiblicalGuidanceApp() {
       }
       if (data.content && data.content[0]) {
         let text = data.content[0].text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) text = jsonMatch[0];
         const verse = JSON.parse(text);
-        const dailyData = { ...verse, date: new Date().toDateString() };
+        const today = new Date().toDateString();
+        const dailyData = { ...verse, date: today };
         setDailyVerse(dailyData);
-        if (window.storage) await window.storage.set('daily_verse', JSON.stringify(dailyData), true);
+        if (window.storage) {
+          await window.storage.set('daily_verse', JSON.stringify(dailyData), true);
+          const historyData = await safeStorageGet('daily_verse_history', true);
+          let history = [];
+          if (historyData?.value) {
+            try {
+              history = JSON.parse(historyData.value);
+              if (!Array.isArray(history)) history = [];
+            } catch (e) { history = []; }
+          }
+          history.push({ reference: (dailyData.reference || '').trim(), date: today });
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - 365);
+          history = history.filter((entry) => entry.reference && new Date(entry.date) >= cutoff);
+          await safeStorageSet('daily_verse_history', JSON.stringify(history), true);
+        }
         setShowVerseNotification(true);
         setTimeout(() => setShowVerseNotification(false), 5000);
       }
