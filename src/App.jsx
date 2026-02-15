@@ -241,56 +241,35 @@ export default function BiblicalGuidanceApp() {
       return;
     }
 
-    if (!ANTHROPIC_API_KEY) {
-      alert('Bible feature requires an API key. Please set VITE_ANTHROPIC_API_KEY in your environment.');
-      return;
-    }
-
     setLoadingBible(true);
     try {
-      const response = await anthropicRequest({
-        maxTokens: 4000,
-        messages: [{
-          role: 'user',
-          content: `Provide the full text of ${book} chapter ${chapter} from the Bible using the World English Version (WEV). Format as JSON only, no markdown or extra text: {"book": "${book}", "chapter": ${chapter}, "verses": [{"verse": 1, "text": "verse text"}]}.`
-        }]
-      });
-
+      // Use free Bible API (World English Bible) — no API key, reliable chapter text
+      const ref = `${book} ${chapter}`;
+      const url = `https://bible-api.com/${encodeURIComponent(ref)}?translation=web`;
+      const response = await fetch(url);
       const data = await response.json();
-      if (data.error) {
-        console.error('API error:', data.error);
-        alert('Error loading Bible text: ' + (data.error.message || 'Please try again.'));
+
+      if (!response.ok || data.error) {
+        const msg = data.error || data.message || response.statusText || 'Please try again.';
+        alert('Error loading Bible text: ' + msg);
         return;
       }
-      const rawText = data.content?.[0]?.text;
-      if (!rawText) {
-        console.error('Unexpected API response:', data);
-        alert('Error loading Bible text: no content returned. Please try again.');
+      if (!data.verses || !Array.isArray(data.verses) || data.verses.length === 0) {
+        alert('Error loading Bible text: no verses returned for this reference.');
         return;
       }
-      let text = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      // Extract JSON in case the model wrapped it in prose (e.g. "Here is the JSON: {...}")
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) text = jsonMatch[0];
-      let parsed;
-      try {
-        parsed = JSON.parse(text);
-      } catch (parseErr) {
-        console.error('Failed to parse Bible JSON:', parseErr);
-        alert('Error loading Bible text: response format was invalid. Please try again.');
-        return;
-      }
-      if (!parsed.verses || !Array.isArray(parsed.verses) || typeof parsed.book !== 'string') {
-        console.error('Invalid Bible response shape:', parsed);
-        alert('Error loading Bible text: invalid format. Please try again.');
-        return;
-      }
+      // Map API shape to our app shape: { book, chapter, verses: [{ verse, text }] }
+      const parsed = {
+        book: data.verses[0].book_name || book,
+        chapter: data.verses[0].chapter ?? chapter,
+        verses: data.verses.map((v) => ({ verse: v.verse, text: (v.text || '').trim() }))
+      };
       setBibleText(parsed);
       setBibleCache(prev => ({ ...prev, [cacheKey]: parsed }));
       setCurrentView('bible');
     } catch (err) {
       console.error('Error fetching Bible text:', err);
-      alert('Error loading Bible text: ' + (err.message || 'Please try again.'));
+      alert('Error loading Bible text: ' + (err.message || 'Check your connection and try again.'));
     } finally {
       setLoadingBible(false);
     }
