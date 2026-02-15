@@ -993,8 +993,10 @@ export default function BiblicalGuidanceApp() {
               Share in your own words—VerseAid will listen gently and answer from the World English Version.
             </p>
             <textarea
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
+             value={question}
+             onChange={(e) => setQuestion(e.target.value)}
+             key="main-question-textarea"
+              autoFocus
               placeholder="Share your question, concern, or situation..."
               className="w-full px-6 py-4 bg-gray-900 border border-yellow-500/20 rounded-xl text-gray-100 placeholder-gray-500 focus:border-yellow-500/50 focus:ring-2 focus:ring-yellow-500/20 resize-none transition-all"
               rows="5"
@@ -1882,7 +1884,7 @@ export default function BiblicalGuidanceApp() {
       </header>
 
       <div className="max-w-4xl mx-auto p-4 sm:p-6 pb-12">
-        {currentView === 'home' && <HomeView />}
+        {currentView === 'home' && HomeView()}
         {currentView === 'saved' && <SavedView />}
         {currentView === 'journal' && <JournalView />}
         {currentView === 'community' && <CommunityView />}
