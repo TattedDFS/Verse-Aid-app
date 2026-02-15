@@ -359,7 +359,7 @@ export default function BiblicalGuidanceApp() {
         const verse = JSON.parse(text);
         const dailyData = { ...verse, date: new Date().toDateString() };
         setDailyVerse(dailyData);
-        await window.storage.set('daily_verse', JSON.stringify(dailyData), true);
+        if (window.storage) await window.storage.set('daily_verse', JSON.stringify(dailyData), true);
         setShowVerseNotification(true);
         setTimeout(() => setShowVerseNotification(false), 5000);
       }
@@ -688,7 +688,7 @@ export default function BiblicalGuidanceApp() {
       return;
     }
     try {
-      await window.storage.set(`contact_request_${Date.now()}`, JSON.stringify({
+      if (window.storage) await window.storage.set(`contact_request_${Date.now()}`, JSON.stringify({
         ...contactInfo, timestamp: new Date().toISOString()
       }), true);
       alert('Thank you! We will contact you within 24 hours.');
