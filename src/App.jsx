@@ -2560,7 +2560,7 @@ export default function BiblicalGuidanceApp() {
       <span className="text-gray-600">•</span>
       <a href="/terms-of-service.html" className="text-yellow-500 hover:text-yellow-400">Terms of Service</a>
       <span className="text-gray-600">•</span>
-      <a href="mailto:support@verseaid.ai" className="text-yellow-500 hover:text-yellow-400">Contact</a>
+      <a href="mailto:verseaid.ai@gmail.com" className="text-yellow-500 hover:text-yellow-400">Contact</a>
     </div>
   </div>
 </footer>
