@@ -2552,11 +2552,18 @@ export default function BiblicalGuidanceApp() {
         </div>
       )}
 
-      <footer className="border-t border-yellow-500/10 py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="text-gray-500 text-sm">© 2025 VerseAid - Premium Biblical guidance powered by AI</p>
-        </div>
-      </footer>
+<footer className="border-t border-yellow-500/10 py-12 mt-20">
+  <div className="max-w-7xl mx-auto px-6 text-center">
+    <p className="text-gray-500 text-sm mb-3">© 2025 VerseAid - Premium Biblical guidance powered by AI</p>
+    <div className="flex justify-center gap-4 text-sm">
+      <a href="/privacy-policy.html" className="text-yellow-500 hover:text-yellow-400">Privacy Policy</a>
+      <span className="text-gray-600">•</span>
+      <a href="/terms-of-service.html" className="text-yellow-500 hover:text-yellow-400">Terms of Service</a>
+      <span className="text-gray-600">•</span>
+      <a href="mailto:support@verseaid.ai" className="text-yellow-500 hover:text-yellow-400">Contact</a>
+    </div>
+  </div>
+</footer>
     </div>
   );
 }
