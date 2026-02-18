@@ -33,7 +33,15 @@ export default function BiblicalGuidanceApp() {
   });
   const [stripeLoading, setStripeLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+   const [settingsTab, setSettingsTab] = useState('account');
+   const [newEmail, setNewEmail] = useState('');
+   const [newPassword, setNewPassword] = useState('');
+   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+   const [settingsMessage, setSettingsMessage] = useState('');
+   const [settingsError, setSettingsError] = useState('');
+   const [cancellingSubscription, setCancellingSubscription] = useState(false);
+   
   const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
 
   // Use VITE_STRIPE_PUBLISHABLE_KEY in .env for production (pk_live_...). Fallback for local dev.
@@ -442,11 +450,12 @@ export default function BiblicalGuidanceApp() {
       }
 
       if (data.user) {
-        await supabase.from('profiles').insert({
+        await supabase.from('profiles').upsert({
           id: data.user.id,
           email: authEmail,
           full_name: authUsername,
-          subscription_tier: 'free'
+          subscription_tier: 'free',
+          subscription_status: 'inactive'
         });
 
         setUsername(authUsername);
@@ -477,6 +486,17 @@ export default function BiblicalGuidanceApp() {
         const displayName = data.user.user_metadata?.full_name || data.user.email;
         setUsername(displayName);
         setIsLoggedIn(true);
+      
+        // Load premium status from Supabase
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier, subscription_status')
+          .eq('id', data.user.id)
+          .single();
+      
+        if (profile) {
+          setUserTier(profile.subscription_tier || 'free');
+        }
       }
     }
 
@@ -1830,9 +1850,16 @@ export default function BiblicalGuidanceApp() {
                       </button>
                     )}
                     <span className="text-gray-400 text-sm">Hi, <span className="text-yellow-500 font-semibold">{username}</span></span>
-                    <button onClick={handleLogout} className="text-yellow-500 hover:text-yellow-400 font-semibold text-sm">
-                      Sign Out
-                    </button>
+<button
+  onClick={() => setShowSettingsModal(true)}
+  className="text-gray-400 hover:text-yellow-500 transition-colors"
+  title="Settings"
+>
+  ⚙️
+</button>
+<button onClick={handleLogout} className="text-yellow-500 hover:text-yellow-400 font-semibold text-sm">
+  Sign Out
+</button>
                   </div>
                 </>
               ) : (
@@ -2262,6 +2289,199 @@ export default function BiblicalGuidanceApp() {
           </div>
         </div>
       )}
+      
+{showSettingsModal && (
+  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-lg w-full my-8">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-white font-playfair">Account Settings</h2>
+        <button onClick={() => { setShowSettingsModal(false); setSettingsMessage(''); setSettingsError(''); }} className="text-gray-500 hover:text-gray-300">
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+
+      <div className="flex gap-2 mb-6 border-b border-yellow-500/20 pb-3">
+        <button
+          onClick={() => setSettingsTab('account')}
+          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${settingsTab === 'account' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'}`}
+        >
+          Account
+        </button>
+        <button
+          onClick={() => setSettingsTab('subscription')}
+          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${settingsTab === 'subscription' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'}`}
+        >
+          Subscription
+        </button>
+      </div>
+
+      {settingsMessage && (
+        <div className="mb-4 bg-green-900/20 border border-green-500/50 text-green-400 px-4 py-3 rounded-lg text-sm">
+          {settingsMessage}
+        </div>
+      )}
+      {settingsError && (
+        <div className="mb-4 bg-red-900/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+          {settingsError}
+        </div>
+      )}
+
+      {settingsTab === 'account' && (
+        <div className="space-y-5">
+          <div>
+            <p className="text-sm text-gray-400 mb-4">Signed in as <span className="text-yellow-500 font-semibold">{username}</span></p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-yellow-500 mb-2">Update Email</label>
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="Enter new email address"
+              className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+            />
+            <button
+              onClick={async () => {
+                setSettingsMessage('');
+                setSettingsError('');
+                if (!newEmail.trim()) { setSettingsError('Please enter a new email'); return; }
+                if (!supabase) { setSettingsError('Account settings are not configured.'); return; }
+                const { error } = await supabase.auth.updateUser({ email: newEmail });
+                if (error) { setSettingsError(error.message); return; }
+                await supabase.from('profiles').update({ email: newEmail }).eq('email', username);
+                setSettingsMessage('Confirmation sent to your new email address. Please check your inbox.');
+                setNewEmail('');
+              }}
+              className="mt-2 w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold py-2 rounded-lg hover:shadow-lg transition-all"
+            >
+              Update Email
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-yellow-500 mb-2">Update Password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
+              className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20 mb-2"
+            />
+            <input
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              placeholder="Confirm new password"
+              className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+            />
+            <button
+              onClick={async () => {
+                setSettingsMessage('');
+                setSettingsError('');
+                if (!newPassword.trim()) { setSettingsError('Please enter a new password'); return; }
+                if (newPassword !== confirmNewPassword) { setSettingsError('Passwords do not match'); return; }
+                if (newPassword.length < 6) { setSettingsError('Password must be at least 6 characters'); return; }
+                if (!supabase) { setSettingsError('Account settings are not configured.'); return; }
+                const { error } = await supabase.auth.updateUser({ password: newPassword });
+                if (error) { setSettingsError(error.message); return; }
+                setSettingsMessage('Password updated successfully!');
+                setNewPassword('');
+                setConfirmNewPassword('');
+              }}
+              className="mt-2 w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold py-2 rounded-lg hover:shadow-lg transition-all"
+            >
+              Update Password
+            </button>
+          </div>
+        </div>
+      )}
+
+      {settingsTab === 'subscription' && (
+        <div className="space-y-5">
+          <div className="p-4 bg-gray-900 border border-yellow-500/20 rounded-xl">
+            <p className="text-sm font-semibold text-gray-400 mb-1">Current Plan</p>
+            {userTier === 'premium' ? (
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🛡️</span>
+                <span className="text-yellow-500 font-bold text-lg">Premium</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-gray-300 font-bold text-lg">Free</span>
+                <button
+                  onClick={() => { setShowSettingsModal(false); setShowUpgradeModal(true); }}
+                  className="ml-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-3 py-1 rounded-full"
+                >
+                  Upgrade ✨
+                </button>
+              </div>
+            )}
+          </div>
+
+          {userTier === 'premium' && (
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-yellow-500 mb-2">Update Payment Method</label>
+                <p className="text-xs text-gray-400 mb-3">You'll be redirected to Stripe to securely update your card information.</p>
+                <button
+                  onClick={() => {
+                    window.open('https://billing.stripe.com/p/login/test_00g000000000000', '_blank');
+                  }}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold py-2 rounded-lg hover:shadow-lg transition-all"
+                >
+                  Manage Payment Method
+                </button>
+              </div>
+
+              <div className="pt-4 border-t border-red-500/20">
+                <label className="block text-sm font-semibold text-red-400 mb-2">Cancel Subscription</label>
+                <p className="text-xs text-gray-400 mb-3">Your premium access will remain until the end of your current billing period.</p>
+                <button
+                  onClick={async () => {
+                    if (!window.confirm('Are you sure you want to cancel your subscription? You will keep premium access until the end of your billing period.')) return;
+                    if (!supabase) { setSettingsError('Not configured.'); setCancellingSubscription(false); return; }
+                    setCancellingSubscription(true);
+                    setSettingsError('');
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('subscription_id')
+                        .eq('id', user.id)
+                        .single();
+                      if (!profile?.subscription_id) {
+                        setSettingsError('No active subscription found. Please contact support.');
+                        setCancellingSubscription(false);
+                        return;
+                      }
+                      const response = await fetch('/api/cancel-subscription', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subscriptionId: profile.subscription_id })
+                      });
+                      if (!response.ok) throw new Error('Failed to cancel');
+                      setSettingsMessage('Subscription cancelled. You keep premium access until your billing period ends.');
+                      setUserTier('free');
+                    } catch (err) {
+                      setSettingsError('Error cancelling subscription. Please contact support at contact@verseaid.ai');
+                    } finally {
+                      setCancellingSubscription(false);
+                    }
+                  }}
+                  disabled={cancellingSubscription}
+                  className="w-full bg-red-900/20 border border-red-500/30 text-red-400 font-bold py-2 rounded-lg hover:bg-red-900/40 transition-all disabled:opacity-50"
+                >
+                  {cancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
       {showContactForm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
