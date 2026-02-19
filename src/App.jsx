@@ -956,19 +956,7 @@ export default function BiblicalGuidanceApp() {
         .font-inter { font-family: 'Inter', sans-serif; }
       `}</style>
 
-      {showVerseNotification && (
-        <div className="fixed top-20 right-4 z-50 bg-gradient-to-r from-yellow-500 to-orange-500 text-black px-6 py-4 rounded-lg shadow-2xl animate-bounce">
-          <div className="flex items-center gap-3">
-            <BookOpen className="w-6 h-6" />
-            <div>
-              <p className="font-bold">New Daily Verse! 📖</p>
-              <p className="text-sm opacity-90">Tap banner to read</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {dailyVerse && !showDailyVerse && (
+           {dailyVerse && !showDailyVerse && (
         <div 
           onClick={() => setShowDailyVerse(true)}
           className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 mb-8 cursor-pointer hover:border-yellow-500/40 hover:shadow-yellow-500/20 transition-all"
