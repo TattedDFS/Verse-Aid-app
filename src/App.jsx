@@ -494,9 +494,11 @@ export default function BiblicalGuidanceApp() {
           .eq('id', data.user.id)
           .single();
       
-        if (profile) {
-          setUserTier(profile.subscription_tier || 'free');
-        }
+          if (profile) {
+            const isActive = profile.subscription_status === 'active';
+            const isPaidTier = ['monthly', 'yearly', 'lifetime'].includes(profile.subscription_tier);
+            setUserTier(isActive && isPaidTier ? 'premium' : 'free');
+          }
       }
     }
 
