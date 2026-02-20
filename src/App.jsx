@@ -808,8 +808,9 @@ export default function BiblicalGuidanceApp() {
     setError('');
     setResponse(null);
 
-    try {
-      const apiResponse = await anthropicRequest({
+    const makeRequest = async (attempt = 1) => {
+      try { 
+        const apiResponse = await anthropicRequest({
         maxTokens: 1000,
         messages: [{
           role: 'user',
@@ -820,6 +821,10 @@ export default function BiblicalGuidanceApp() {
       const data = await apiResponse.json();
       if (data.error) {
         console.error('API error:', data.error);
+        if (attempt < 3) {
+          setTimeout(() => makeRequest(attempt + 1), 2000);
+          return;
+        }
         setError("Lord have mercy, we've got too many tabs open up here! Even God rested on the seventh day. Give us just a second and we'll be right back with your answer. 🕊️📜");
         return;
       }
@@ -833,11 +838,18 @@ export default function BiblicalGuidanceApp() {
       }
     } catch (err) {
       console.error('Error submitting question:', err);
+      if (attempt < 3) {
+        setTimeout(() => makeRequest(attempt + 1), 2000);
+        return;
+      }
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  makeRequest();
+};
 
   const saveResponse = async () => {
     if (!isLoggedIn) {
