@@ -1904,7 +1904,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                   <div className="hidden md:flex items-center gap-4">
                     {(userTier === 'premium' || userTier === 'church') && (
                       <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-yellow-500/50">
-                        👑 {userTier === 'premium' ? 'PREMIUM' : churchName.toUpperCase()}
+                        {userTier === 'premium' ? 'PREMIUM' : churchName.toUpperCase()}
                       </span>
                     )}
                     {userTier === 'free' && (
