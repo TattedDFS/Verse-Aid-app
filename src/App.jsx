@@ -498,6 +498,14 @@ export default function BiblicalGuidanceApp() {
             const isActive = profile.subscription_status === 'active';
             const isPaidTier = ['monthly', 'yearly', 'lifetime'].includes(profile.subscription_tier);
             setUserTier(isActive && isPaidTier ? 'premium' : 'free');
+            
+            if (profile.saved_responses) {
+              try {
+                setSavedResponses(JSON.parse(profile.saved_responses));
+              } catch (err) {
+                console.error('Error loading saved responses:', err);
+              }
+            }
           }
       }
     }
@@ -831,12 +839,23 @@ export default function BiblicalGuidanceApp() {
     }
   };
 
-  const saveResponse = () => {
+  const saveResponse = async () => {
     if (!isLoggedIn) {
       setShowAuthModal(true);
       return;
     }
-    setSavedResponses([response, ...savedResponses]);
+    const newSaved = [response, ...savedResponses];
+    setSavedResponses(newSaved);
+    
+    if (isLoggedIn) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ saved_responses: JSON.stringify(newSaved) })
+          .eq('id', user.id);
+      }
+    }
     alert('Response saved!');
   };
 
@@ -889,8 +908,19 @@ export default function BiblicalGuidanceApp() {
     alert('Prayer shared with the community!');
   };
 
-  const deleteSavedResponse = (index) => {
-    setSavedResponses(savedResponses.filter((_, i) => i !== index));
+  const deleteSavedResponse = async (index) => {
+    const newSaved = savedResponses.filter((_, i) => i !== index);
+    setSavedResponses(newSaved);
+    
+    if (isLoggedIn) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ saved_responses: JSON.stringify(newSaved) })
+          .eq('id', user.id);
+      }
+    }
   };
 
   const prayForRequest = async (id) => {
@@ -902,7 +932,7 @@ export default function BiblicalGuidanceApp() {
     await safeStorageSet('community_prayers', JSON.stringify(updated), true);
   };
 
-  const saveDailyVerseToCollection = () => {
+  const saveDailyVerseToCollection = async() => {
     if (!isLoggedIn) {
       setShowAuthModal(true);
       return;
@@ -916,9 +946,20 @@ export default function BiblicalGuidanceApp() {
       encouragement: "",
       timestamp: new Date().toISOString()
     };
-    setSavedResponses([verseResponse, ...savedResponses]);
+    const newSaved = [verseResponse, ...savedResponses];
+    setSavedResponses(newSaved);
     setSavedDailyVerse(true);
     setTimeout(() => setSavedDailyVerse(false), 2000);
+    
+    if (isLoggedIn) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ saved_responses: JSON.stringify(newSaved) })
+          .eq('id', user.id);
+      }
+    }
   };
 
   const filteredCommunityPrayers = filterCategory === 'all' 
