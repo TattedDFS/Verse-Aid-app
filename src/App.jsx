@@ -355,16 +355,22 @@ export default function BiblicalGuidanceApp() {
     const DAYS_TO_AVOID = 365;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - DAYS_TO_AVOID);
-    const historyData = await safeStorageGet('daily_verse_history', true);
-    if (!historyData?.value) return [];
     try {
-      const history = JSON.parse(historyData.value);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('verse_history')
+        .eq('id', user.id)
+        .single();
+      if (!profile?.verse_history) return [];
+      const history = JSON.parse(profile.verse_history);
       if (!Array.isArray(history)) return [];
       return history
         .filter((entry) => entry?.reference && new Date(entry.date) >= cutoff)
         .map((entry) => entry.reference.trim());
     } catch (err) {
-      console.error('Error parsing daily verse history', err);
+      console.error('Error reading verse history:', err);
       return [];
     }
   };
@@ -397,21 +403,32 @@ export default function BiblicalGuidanceApp() {
         const today = new Date().toDateString();
         const dailyData = { ...verse, date: today };
         setDailyVerse(dailyData);
-        if (window.storage) {
-          await window.storage.set('daily_verse', JSON.stringify(dailyData), true);
-          const historyData = await safeStorageGet('daily_verse_history', true);
-          let history = [];
-          if (historyData?.value) {
-            try {
-              history = JSON.parse(historyData.value);
-              if (!Array.isArray(history)) history = [];
-            } catch (e) { history = []; }
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('verse_history')
+              .eq('id', user.id)
+              .single();
+            let history = [];
+            if (profile?.verse_history) {
+              try {
+                history = JSON.parse(profile.verse_history);
+                if (!Array.isArray(history)) history = [];
+              } catch (e) { history = []; }
+            }
+            history.push({ reference: (dailyData.reference || '').trim(), date: today });
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - 365);
+            history = history.filter((entry) => entry.reference && new Date(entry.date) >= cutoff);
+            await supabase
+              .from('profiles')
+              .update({ verse_history: JSON.stringify(history) })
+              .eq('id', user.id);
           }
-          history.push({ reference: (dailyData.reference || '').trim(), date: today });
-          const cutoff = new Date();
-          cutoff.setDate(cutoff.getDate() - 365);
-          history = history.filter((entry) => entry.reference && new Date(entry.date) >= cutoff);
-          await safeStorageSet('daily_verse_history', JSON.stringify(history), true);
+        } catch (err) {
+          console.error('Error saving verse history:', err);
         }
         setShowVerseNotification(true);
         setTimeout(() => setShowVerseNotification(false), 5000);
