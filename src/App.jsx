@@ -1501,6 +1501,10 @@ setTimeout(() => setSavedResponse(false), 2000);
               placeholder="What would you like to pray about?"
               className="w-full px-4 py-3 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 mb-4 resize-none focus:ring-2 focus:ring-yellow-500/20"
               rows="4"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
             
             <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
