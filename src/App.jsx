@@ -67,6 +67,7 @@ export default function BiblicalGuidanceApp() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [prayedForIds, setPrayedForIds] = useState([]);
   const [savedDailyVerse, setSavedDailyVerse] = useState(false);
+  const [savedResponse, setSavedResponse] = useState(false);
   const [sharedPrayerIds, setSharedPrayerIds] = useState([]);
   const [showVerseNotification, setShowVerseNotification] = useState(false);
   
@@ -868,7 +869,8 @@ export default function BiblicalGuidanceApp() {
           .eq('id', user.id);
       }
     }
-    alert('Response saved!');
+    setSavedResponse(true);
+setTimeout(() => setSavedResponse(false), 2000);
   };
 
   const shareResponse = () => {
@@ -1178,12 +1180,16 @@ export default function BiblicalGuidanceApp() {
       {response && (
         <div className="space-y-6">
           <div className="flex gap-3 justify-center">
-            <button
+          <button
               onClick={saveResponse}
-              className="flex items-center gap-2 px-6 py-3 bg-gray-900 border border-yellow-500/30 hover:border-yellow-500/50 text-yellow-500 font-bold rounded-xl transition-all"
+              className={`flex items-center gap-2 px-6 py-3 font-bold rounded-xl transition-all duration-300 ${
+                savedResponse
+                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black scale-110 shadow-lg shadow-yellow-500/50'
+                  : 'bg-gray-900 border border-yellow-500/30 hover:border-yellow-500/50 text-yellow-500'
+              }`}
             >
-              <Star className="w-4 h-4" />
-              Save
+              <Star className={`w-4 h-4 transition-all duration-300 ${savedResponse ? 'fill-current scale-125' : ''}`} />
+              {savedResponse ? '✓ Saved!' : 'Save'}
             </button>
             <button
               onClick={shareResponse}
