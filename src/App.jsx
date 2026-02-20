@@ -745,11 +745,11 @@ export default function BiblicalGuidanceApp() {
         if (isLoggedIn && username === intendedUsername) {
           setUserTier('premium');
           if (purchaseType === 'subscription') {
-            alert('🎉 Welcome to Premium! Your 3-day free trial has started. You\'ll have full access immediately, and your card will be charged after the trial ends unless you cancel. Check your email for your Stripe receipt with cancellation instructions.');
+            alert('Welcome to Premium! Your 3-day free trial has started. You\'ll have full access immediately, and your card will be charged after the trial ends unless you cancel. Check your email for your Stripe receipt with cancellation instructions.');
           } else if (purchaseType === 'payment') {
-            alert('🎉 Welcome to Premium! Your Lifetime Premium purchase is complete. You now have unlimited access to all features with no recurring charges. Thank you for your support!');
+            alert('Welcome to Premium! Your Lifetime Premium purchase is complete. You now have unlimited access to all features with no recurring charges. Thank you for your support!');
           } else {
-            alert('🎉 Welcome to Premium! You now have unlimited access to all features.');
+            alert('Welcome to Premium! You now have unlimited access to all features.');
           }
         }
 
@@ -1104,7 +1104,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             <div className="flex items-center gap-2">
               <Crown className="w-5 h-5 text-black" />
               <p className="text-sm font-bold text-black">
-                {userTier === 'premium' ? '👑 PREMIUM' : `${churchName} Member`} - Unlimited Questions
+                {userTier === 'premium' ? 'PREMIUM' : `${churchName} Member`} - Unlimited Questions
               </p>
             </div>
           </div>
@@ -1169,8 +1169,8 @@ setTimeout(() => setSavedResponse(false), 2000);
               </>
             ) : (
               <>
-                <Send className="w-5 h-5" />
-                ✨ Get Biblical Guidance
+                <Send className="w-5✨ Get Biblical Guidance h-5" />
+                Get Biblical Guidance
               </>
             )}
           </button>
@@ -1912,7 +1912,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                         onClick={() => setShowUpgradeModal(true)}
                         className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-4 py-1.5 rounded-full hover:shadow-lg hover:shadow-yellow-500/50 transition-all"
                       >
-                        Upgrade ✨
+                        Upgrade 
                       </button>
                     )}
                     <span className="text-gray-400 text-sm">Hi, <span className="text-yellow-500 font-semibold">{username}</span></span>
@@ -2285,7 +2285,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                       Processing...
                     </>
                   ) : (
-                    '💳 Start 3-Day Trial - Monthly $4.99/mo'
+                    'Start 3-Day Trial - Monthly $4.99/mo'
                   )}
                 </button>
 
@@ -2294,7 +2294,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                   disabled={stripeLoading}
                   className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-2.5 rounded-xl transition-all transform hover:scale-105 mb-2 disabled:border-gray-600 disabled:text-gray-500 text-sm"
                 >
-                  💳 Start 3-Day Trial - Annual $49.99/yr
+                  Start 3-Day Trial - Annual $49.99/yr
                 </button>
 
                 <button
@@ -2302,7 +2302,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                   disabled={stripeLoading}
                   className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-2.5 rounded-xl transition-all transform hover:scale-105 disabled:border-gray-600 disabled:text-gray-500 text-sm"
                 >
-                  💳 Lifetime Premium - $89.99 once
+                  Lifetime Premium - $89.99 once
                 </button>
 
                 <div className="mt-4 pt-3 border-t border-yellow-500/10">
