@@ -820,7 +820,9 @@ export default function BiblicalGuidanceApp() {
       const data = await apiResponse.json();
       if (data.error) {
         console.error('API error:', data.error);
-        setError('API error: ' + (data.error.message || 'Please try again.'));
+        setError(data.error.message?.includes('overloaded') ? 
+          "Lord have mercy, we've got too many tabs open up here! Even God rested on the seventh day. Give us just a second and we'll be right back with your answer. 🕊️📜" 
+          : 'API error: ' + (data.error.message || 'Please try again.'));
         return;
       }
       if (data.content && data.content[0]) {
