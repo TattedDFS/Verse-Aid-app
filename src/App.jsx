@@ -68,6 +68,7 @@ export default function BiblicalGuidanceApp() {
   const [prayedForIds, setPrayedForIds] = useState([]);
   const [savedDailyVerse, setSavedDailyVerse] = useState(false);
   const [savedResponse, setSavedResponse] = useState(false);
+  const [sharedPrayer, setSharedPrayer] = useState(null);
   const [sharedPrayerIds, setSharedPrayerIds] = useState([]);
   const [showVerseNotification, setShowVerseNotification] = useState(false);
   
@@ -936,7 +937,8 @@ setTimeout(() => setSavedResponse(false), 2000);
     setCommunityPrayers(updatedCommunity);
     setSharedPrayerIds([...sharedPrayerIds, journalEntry.id]);
     await safeStorageSet('community_prayers', JSON.stringify(updatedCommunity), true);
-    alert('Prayer shared with the community!');
+    setSharedPrayer(journalEntry.id);
+setTimeout(() => setSharedPrayer(null), 2000);
   };
 
   const deleteSavedResponse = async (index) => {
@@ -1460,14 +1462,16 @@ setTimeout(() => setSavedResponse(false), 2000);
               <button
                 onClick={() => sharePrayerToCommunity(entry)}
                 disabled={sharedPrayerIds.includes(entry.id)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-bold transition-all ${
-                  sharedPrayerIds.includes(entry.id)
+                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-bold transition-all duration-300 ${
+                  sharedPrayer === entry.id
+                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black scale-110 shadow-lg shadow-yellow-500/50'
+                    : sharedPrayerIds.includes(entry.id)
                     ? 'bg-green-900/30 text-green-400 cursor-not-allowed'
                     : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20'
                 }`}
               >
-                <Share2 className="w-4 h-4" />
-                {sharedPrayerIds.includes(entry.id) ? 'Shared' : 'Share'}
+                <Share2 className={`w-4 h-4 transition-all duration-300 ${sharedPrayer === entry.id ? 'scale-125' : ''}`} />
+                {sharedPrayer === entry.id ? '✓ Shared!' : sharedPrayerIds.includes(entry.id) ? 'Shared' : 'Share'}
               </button>
             </div>
           </div>
