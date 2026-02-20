@@ -490,7 +490,7 @@ export default function BiblicalGuidanceApp() {
         // Load premium status from Supabase
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_tier, subscription_status')
+          .select('subscription_tier, subscription_status, saved_responses')
           .eq('id', data.user.id)
           .single();
       
