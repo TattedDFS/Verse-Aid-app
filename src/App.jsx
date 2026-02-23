@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle } from 'lucide-react';
+import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle, AlertTriangle } from 'lucide-react';
 import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClient';
 import { safeStorageGet, safeStorageSet } from './utils/storage';
 import { supabase } from './supabaseClient';
@@ -71,6 +71,7 @@ export default function BiblicalGuidanceApp() {
   const [sharedPrayer, setSharedPrayer] = useState(null);
   const [sharedPrayerIds, setSharedPrayerIds] = useState([]);
   const [showVerseNotification, setShowVerseNotification] = useState(false);
+  const [deletePrayerConfirmId, setDeletePrayerConfirmId] = useState(null);
   
   const [bibleBook, setBibleBook] = useState('Genesis');
   const [bibleChapter, setBibleChapter] = useState(1);
@@ -1163,9 +1164,14 @@ setTimeout(() => setSavedResponse(false), 2000);
   const deletePrayerEntry = async (id) => {
     const isShared = sharedPrayerIds.includes(id);
     if (isShared) {
-      const ok = window.confirm('This prayer is on the community wall. Removing it will delete it from the wall too. Continue?');
-      if (!ok) return;
+      setDeletePrayerConfirmId(id);
+      return;
     }
+    await performDeletePrayerEntry(id);
+  };
+
+  const performDeletePrayerEntry = async (id) => {
+    const isShared = sharedPrayerIds.includes(id);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -1180,6 +1186,7 @@ setTimeout(() => setSavedResponse(false), 2000);
       setSharedPrayerIds(prev => prev.filter(x => x !== id));
       setCommunityPrayers(prev => prev.filter(p => p.source_journal_id !== id));
     }
+    setDeletePrayerConfirmId(null);
   };
 
   const guidanceToneOptions = [
@@ -2818,6 +2825,39 @@ setTimeout(() => setSavedResponse(false), 2000);
           </div>
         </div>
       )}
+
+      {deletePrayerConfirmId !== null && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-md w-full shadow-xl shadow-black/50">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white font-playfair mb-1">Remove from community wall?</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  This prayer is on the community wall. Removing it will delete it from the wall too. This cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setDeletePrayerConfirmId(null)}
+                className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-xl border border-gray-600/50 hover:border-gray-500 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => performDeletePrayerEntry(deletePrayerConfirmId)}
+                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl border border-red-500/50 hover:shadow-lg hover:shadow-red-500/20 transition-all"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 <footer className="border-t border-yellow-500/10 py-12 mt-20">
   <div className="max-w-7xl mx-auto px-6 text-center">
     <p className="text-gray-500 text-sm mb-3">© 2025 VerseAid - Premium Biblical guidance powered by AI</p>
