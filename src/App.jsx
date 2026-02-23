@@ -1668,6 +1668,13 @@ setTimeout(() => setSavedResponse(false), 2000);
       <div className="mb-6">
         <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Community Prayer Wall</h2>
         <p className="text-gray-400 text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
+
+        <div className="py-3 mb-4 border-y border-yellow-500/10">
+          <p className="text-center text-gray-500 text-sm italic max-w-xl mx-auto leading-relaxed" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            "For where two or three gather in my name, there am I with them."
+          </p>
+          <p className="text-center text-gray-600 text-xs mt-1">— Matthew 18:20</p>
+        </div>
         
         <div className="flex gap-2 flex-wrap">
           <button
