@@ -1669,18 +1669,6 @@ setTimeout(() => setSavedResponse(false), 2000);
         <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Community Prayer Wall</h2>
         <p className="text-gray-400 text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
 
-        <div className="bg-gradient-to-br from-gray-900 to-black border border-yellow-500/20 rounded-2xl p-5 mb-5">
-          <p className="text-gray-300 text-sm mb-3">Add a prayer request and share it with the community.</p>
-          <button
-            type="button"
-            onClick={() => setShowPrayerModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg hover:shadow-yellow-500/50 text-black font-bold px-4 py-2 rounded-lg transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            Add Prayer
-          </button>
-        </div>
-
         <div className="py-4 mb-5 border-y border-yellow-500/20 bg-gray-900/40 rounded-lg px-4">
           <p className="text-center text-gray-200 text-lg italic max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
             "For where two or three gather in my name, there am I with them."
