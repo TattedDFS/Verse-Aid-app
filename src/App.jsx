@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle, AlertTriangle } from 'lucide-react';
+import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
 import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClient';
 import { safeStorageGet, safeStorageSet } from './utils/storage';
 import { supabase } from './supabaseClient';
@@ -72,6 +72,7 @@ export default function BiblicalGuidanceApp() {
   const [sharedPrayerIds, setSharedPrayerIds] = useState([]);
   const [showVerseNotification, setShowVerseNotification] = useState(false);
   const [deletePrayerConfirmId, setDeletePrayerConfirmId] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
   
   const [bibleBook, setBibleBook] = useState('Genesis');
   const [bibleChapter, setBibleChapter] = useState(1);
@@ -264,27 +265,36 @@ export default function BiblicalGuidanceApp() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setCurrentUserId(user.id);
         const { data: rows, error } = await supabase
           .from('community_prayers')
-          .select('id, user_id, source_journal_id, text, date, category, prayer_count, answered, created_at')
+          .select('id, user_id, source_journal_id, text, date, category, prayer_count, answered, created_at, expiration_date, last_extended_at')
           .order('created_at', { ascending: false });
         if (!error && rows && rows.length > 0) {
-          setCommunityPrayers(rows.map(r => ({
+          const now = new Date();
+          const active = rows.filter(r => r.expiration_date && new Date(r.expiration_date) > now).map(r => ({
             id: r.id,
+            user_id: r.user_id,
             text: r.text,
             date: r.date,
             category: r.category || 'other',
             prayerCount: r.prayer_count ?? 0,
             answered: r.answered ?? false,
-            source_journal_id: r.source_journal_id
-          })));
+            source_journal_id: r.source_journal_id,
+            created_at: r.created_at,
+            expiration_date: r.expiration_date,
+            last_extended_at: r.last_extended_at
+          }));
+          setCommunityPrayers(active);
           const { data: supportRows } = await supabase
             .from('community_prayer_support')
             .select('prayer_id')
             .eq('user_id', user.id);
           if (supportRows) setPrayedForIds(supportRows.map(s => s.prayer_id));
-          return;
+        } else if (user) {
+          setCommunityPrayers([]);
         }
+        if (user) return;
       }
     } catch (e) {
       console.error('Supabase community load error', e);
@@ -1009,6 +1019,7 @@ setTimeout(() => setSavedResponse(false), 2000);
           category: entry.category || 'other'
         });
         if (shareToCommunity) {
+          const oneYearFromNow = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
           const { data: cp } = await supabase.from('community_prayers').insert({
             user_id: user.id,
             source_journal_id: entry.id,
@@ -1016,7 +1027,8 @@ setTimeout(() => setSavedResponse(false), 2000);
             date: entry.date,
             category: entry.category || 'other',
             prayer_count: 0,
-            answered: false
+            answered: false,
+            expiration_date: oneYearFromNow
           }).select('id').single();
           if (cp) {
             setCommunityPrayers(prev => [{ id: cp.id, text: entry.text, date: entry.date, category: entry.category || 'other', prayerCount: 0, answered: false }, ...prev]);
@@ -1043,6 +1055,7 @@ setTimeout(() => setSavedResponse(false), 2000);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        const oneYearFromNow = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
         const { data: cp, error } = await supabase.from('community_prayers').insert({
           user_id: user.id,
           source_journal_id: journalEntry.id,
@@ -1050,7 +1063,8 @@ setTimeout(() => setSavedResponse(false), 2000);
           date: journalEntry.date,
           category: journalEntry.category || 'other',
           prayer_count: 0,
-          answered: journalEntry.answered ?? false
+          answered: journalEntry.answered ?? false,
+          expiration_date: oneYearFromNow
         }).select('id').single();
         if (!error && cp) {
           setCommunityPrayers(prev => [{ id: cp.id, text: journalEntry.text, date: journalEntry.date, category: journalEntry.category || 'other', prayerCount: 0, answered: journalEntry.answered ?? false }, ...prev]);
@@ -1141,6 +1155,37 @@ setTimeout(() => setSavedResponse(false), 2000);
     ? communityPrayers 
     : communityPrayers.filter(p => p.category === filterCategory);
 
+  const SIX_MONTHS_MS = 180 * 24 * 60 * 60 * 1000;
+  const isStillBelievingEligible = (prayer) => {
+    if (!currentUserId || prayer.user_id !== currentUserId) return false;
+    const now = Date.now();
+    const createdAt = prayer.created_at ? new Date(prayer.created_at).getTime() : 0;
+    const lastExtended = prayer.last_extended_at ? new Date(prayer.last_extended_at).getTime() : null;
+    const showSinceCreated = lastExtended === null && (now - createdAt >= SIX_MONTHS_MS);
+    const showSinceExtended = lastExtended !== null && (now - lastExtended >= SIX_MONTHS_MS);
+    return showSinceCreated || showSinceExtended;
+  };
+
+  const extendPrayerOnWall = async (communityPrayerId) => {
+    if (!currentUserId) return;
+    try {
+      const prayer = communityPrayers.find(p => p.id === communityPrayerId);
+      if (!prayer?.expiration_date) return;
+      const newExpiration = new Date(new Date(prayer.expiration_date).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase.from('community_prayers').update({
+        expiration_date: newExpiration,
+        last_extended_at: nowIso
+      }).eq('id', communityPrayerId).eq('user_id', currentUserId);
+      if (!error) {
+        setCommunityPrayers(prev => prev.map(p => p.id === communityPrayerId ? { ...p, expiration_date: newExpiration, last_extended_at: nowIso } : p));
+        loadUserData();
+      }
+    } catch (e) {
+      console.error('Extend prayer error', e);
+    }
+  };
+
   const togglePrayerAnswered = async (id) => {
     const entry = prayerJournal.find(p => p.id === id);
     const newAnswered = entry ? !entry.answered : true;
@@ -1152,8 +1197,16 @@ setTimeout(() => setSavedResponse(false), 2000);
       if (user) {
         await supabase.from('prayer_journal').update({ answered: newAnswered }).eq('user_id', user.id).eq('id', id);
         if (sharedPrayerIds.includes(id)) {
-          await supabase.from('community_prayers').update({ answered: newAnswered }).eq('user_id', user.id).eq('source_journal_id', id);
-          setCommunityPrayers(prev => prev.map(p => (p.source_journal_id === id ? { ...p, answered: newAnswered } : p)));
+          const communityPrayer = communityPrayers.find(p => p.source_journal_id === id);
+          const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+          const oneYearFromCreated = communityPrayer?.created_at
+            ? new Date(new Date(communityPrayer.created_at).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()
+            : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+          await supabase.from('community_prayers').update({
+            answered: newAnswered,
+            expiration_date: newAnswered ? thirtyDaysFromNow : oneYearFromCreated
+          }).eq('user_id', user.id).eq('source_journal_id', id);
+          setCommunityPrayers(prev => prev.map(p => (p.source_journal_id === id ? { ...p, answered: newAnswered, expiration_date: newAnswered ? thirtyDaysFromNow : oneYearFromCreated } : p)));
         }
       }
     } catch (e) {
@@ -1631,6 +1684,21 @@ setTimeout(() => setSavedResponse(false), 2000);
             {sharedPrayerIds.includes(entry.id) && typeof entry.prayerCount === 'number' && (
               <p className="text-sm text-yellow-500/90 mb-2">{entry.prayerCount} {entry.prayerCount === 1 ? 'person' : 'people'} praying for this</p>
             )}
+            {(() => {
+              const communityPrayer = communityPrayers.find(cp => cp.source_journal_id === entry.id);
+              return communityPrayer && isStillBelievingEligible(communityPrayer) ? (
+                <div className="mb-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                  <p className="text-xs text-gray-400 mb-2">This prayer has been on the community wall for 6 months. Extend it for another year?</p>
+                  <button
+                    type="button"
+                    onClick={() => extendPrayerOnWall(communityPrayer.id)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-yellow-500/30 transition-all"
+                  >
+                    Still Believing
+                  </button>
+                </div>
+              ) : null;
+            })()}
             <div className="flex gap-2">
               <button
                 onClick={() => togglePrayerAnswered(entry.id)}
@@ -1663,7 +1731,41 @@ setTimeout(() => setSavedResponse(false), 2000);
  </div>
   );
 
-  const CommunityView = () => (
+  const CommunityView = () => {
+    const isPremium = userTier === 'premium' || userTier === 'church';
+    if (!isPremium) {
+      return (
+        <div className="space-y-4">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Community Prayer Wall</h2>
+            <p className="text-gray-400 text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
+            <div className="py-4 mb-5 border-y border-yellow-500/20 bg-gray-900/40 rounded-lg px-4">
+              <p className="text-center text-gray-200 text-lg italic max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                "For where two or three gather in my name, there am I with them."
+              </p>
+              <p className="text-center text-gray-300 text-sm mt-2 font-medium">— Matthew 18:20</p>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border-2 border-yellow-500/30 rounded-2xl shadow-lg p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-yellow-500" />
+            </div>
+            <h3 className="text-xl font-bold text-white font-playfair mb-2">Community Prayer Wall is for Premium members</h3>
+            <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
+              Upgrade to premium to join the community, share prayer requests, and pray for others. Your prayers stay in your journal forever.
+            </p>
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg hover:shadow-yellow-500/50 text-black font-bold px-6 py-3 rounded-xl transition-all"
+            >
+              Upgrade to Premium
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
     <div className="space-y-4">
       <div className="mb-6">
         <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Community Prayer Wall</h2>
@@ -1757,6 +1859,19 @@ setTimeout(() => setSavedResponse(false), 2000);
               )}
               <p className="text-gray-300 mb-4 leading-relaxed">{prayer.text}</p>
 
+              {isStillBelievingEligible(prayer) && (
+                <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                  <p className="text-xs text-gray-400 mb-2">Your prayer has been on the wall for 6 months. Extend it for another year?</p>
+                  <button
+                    type="button"
+                    onClick={() => extendPrayerOnWall(prayer.id)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-yellow-500/30 transition-all"
+                  >
+                    Still Believing
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => prayForRequest(prayer.id)}
@@ -1779,6 +1894,7 @@ setTimeout(() => setSavedResponse(false), 2000);
       )}
     </div>
   );
+  };
 
   const BibleView = () => (
     <div className="space-y-6">
@@ -2119,12 +2235,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 Journal {(userTier === 'free') && <Crown className="w-3 h-3" />}
               </button>
               <button
-                onClick={() => { 
-                  if (checkFeatureAccess('community')) {
-                    setCurrentView('community'); 
-                    setShowMenu(false);
-                  }
-                }}
+                onClick={() => { setCurrentView('community'); setShowMenu(false); }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
                   currentView === 'community' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
                 }`}
