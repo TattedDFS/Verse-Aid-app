@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users } from 'lucide-react';
+import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle } from 'lucide-react';
 import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClient';
 import { safeStorageGet, safeStorageSet } from './utils/storage';
 import { supabase } from './supabaseClient';
@@ -128,6 +128,32 @@ export default function BiblicalGuidanceApp() {
     generateReadingPlan();
   }, [isLoggedIn, username]);
 
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let channelCommunity;
+    let channelJournal;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      channelCommunity = supabase
+        .channel('community_prayers')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'community_prayers' }, () => {
+          loadCommunityPrayers();
+          loadUserData();
+        })
+        .subscribe();
+      channelJournal = supabase
+        .channel('prayer_journal')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'prayer_journal', filter: `user_id=eq.${user.id}` }, () => {
+          loadUserData();
+        })
+        .subscribe();
+    });
+    return () => {
+      if (channelCommunity) supabase.removeChannel(channelCommunity);
+      if (channelJournal) supabase.removeChannel(channelJournal);
+    };
+  }, [isLoggedIn]);
+
   const loadUserData = async () => {
     if (!isLoggedIn || !username) {
       // Check for premium status stored by session ID (for users who paid before logging in)
@@ -149,6 +175,36 @@ export default function BiblicalGuidanceApp() {
       } catch (err) {
         console.error('Error parsing saved responses for user', username, err);
       }
+    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: journalRows, error: jErr } = await supabase
+          .from('prayer_journal')
+          .select('id, text, date, answered, category')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (!jErr && journalRows && journalRows.length > 0) {
+          const { data: sharedRows } = await supabase
+            .from('community_prayers')
+            .select('source_journal_id, prayer_count')
+            .eq('user_id', user.id);
+          const sharedIds = sharedRows ? sharedRows.map(r => r.source_journal_id) : [];
+          const countByJournalId = sharedRows ? Object.fromEntries(sharedRows.map(r => [r.source_journal_id, r.prayer_count ?? 0])) : {};
+          setSharedPrayerIds(sharedIds);
+          setPrayerJournal(journalRows.map(r => ({
+            id: r.id,
+            text: r.text,
+            date: r.date,
+            answered: r.answered ?? false,
+            category: r.category || 'other',
+            prayerCount: countByJournalId[r.id] ?? 0
+          })));
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Supabase journal load error', e);
     }
     if (journalData && journalData.value) {
       try {
@@ -204,6 +260,34 @@ export default function BiblicalGuidanceApp() {
   };
 
   const loadCommunityPrayers = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: rows, error } = await supabase
+          .from('community_prayers')
+          .select('id, user_id, source_journal_id, text, date, category, prayer_count, answered, created_at')
+          .order('created_at', { ascending: false });
+        if (!error && rows && rows.length > 0) {
+          setCommunityPrayers(rows.map(r => ({
+            id: r.id,
+            text: r.text,
+            date: r.date,
+            category: r.category || 'other',
+            prayerCount: r.prayer_count ?? 0,
+            answered: r.answered ?? false,
+            source_journal_id: r.source_journal_id
+          })));
+          const { data: supportRows } = await supabase
+            .from('community_prayer_support')
+            .select('prayer_id')
+            .eq('user_id', user.id);
+          if (supportRows) setPrayedForIds(supportRows.map(s => s.prayer_id));
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Supabase community load error', e);
+    }
     const result = await safeStorageGet('community_prayers', true);
     if (result && result.value) {
       try {
@@ -911,14 +995,43 @@ setTimeout(() => setSavedResponse(false), 2000);
       category: prayerCategory || 'other'
     };
     setPrayerJournal([entry, ...prayerJournal]);
-    
-    if (shareToCommunity) {
-      const communityEntry = { ...entry, prayerCount: 0 };
-      const updatedCommunity = [communityEntry, ...communityPrayers];
-      setCommunityPrayers(updatedCommunity);
-      await safeStorageSet('community_prayers', JSON.stringify(updatedCommunity), true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('prayer_journal').insert({
+          id: entry.id,
+          user_id: user.id,
+          text: entry.text,
+          date: entry.date,
+          answered: false,
+          category: entry.category || 'other'
+        });
+        if (shareToCommunity) {
+          const { data: cp } = await supabase.from('community_prayers').insert({
+            user_id: user.id,
+            source_journal_id: entry.id,
+            text: entry.text,
+            date: entry.date,
+            category: entry.category || 'other',
+            prayer_count: 0,
+            answered: false
+          }).select('id').single();
+          if (cp) {
+            setCommunityPrayers(prev => [{ id: cp.id, text: entry.text, date: entry.date, category: entry.category || 'other', prayerCount: 0, answered: false }, ...prev]);
+            setSharedPrayerIds(prev => [...prev, entry.id]);
+          }
+        }
+      } else if (shareToCommunity) {
+        const communityEntry = { ...entry, source_journal_id: entry.id, prayerCount: 0 };
+        const updatedCommunity = [communityEntry, ...communityPrayers];
+        setCommunityPrayers(updatedCommunity);
+        await safeStorageSet('community_prayers', JSON.stringify(updatedCommunity), true);
+      }
+    } catch (e) {
+      console.error('Supabase add prayer error', e);
     }
-    
+
     setNewPrayerEntry('');
     setShareToCommunity(false);
     setPrayerCategory('');
@@ -926,19 +1039,35 @@ setTimeout(() => setSavedResponse(false), 2000);
   };
 
   const sharePrayerToCommunity = async (journalEntry) => {
-    const communityEntry = {
-      id: Date.now(),
-      text: journalEntry.text,
-      date: journalEntry.date,
-      prayerCount: 0,
-      category: journalEntry.category || 'other'
-    };
-    const updatedCommunity = [communityEntry, ...communityPrayers];
-    setCommunityPrayers(updatedCommunity);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: cp, error } = await supabase.from('community_prayers').insert({
+          user_id: user.id,
+          source_journal_id: journalEntry.id,
+          text: journalEntry.text,
+          date: journalEntry.date,
+          category: journalEntry.category || 'other',
+          prayer_count: 0,
+          answered: journalEntry.answered ?? false
+        }).select('id').single();
+        if (!error && cp) {
+          setCommunityPrayers(prev => [{ id: cp.id, text: journalEntry.text, date: journalEntry.date, category: journalEntry.category || 'other', prayerCount: 0, answered: journalEntry.answered ?? false }, ...prev]);
+          setSharedPrayerIds(prev => [...prev, journalEntry.id]);
+          setSharedPrayer(journalEntry.id);
+          setTimeout(() => setSharedPrayer(null), 2000);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Supabase share prayer error', e);
+    }
+    const communityEntry = { id: Date.now(), source_journal_id: journalEntry.id, text: journalEntry.text, date: journalEntry.date, prayerCount: 0, category: journalEntry.category || 'other' };
+    setCommunityPrayers([communityEntry, ...communityPrayers]);
     setSharedPrayerIds([...sharedPrayerIds, journalEntry.id]);
-    await safeStorageSet('community_prayers', JSON.stringify(updatedCommunity), true);
+    await safeStorageSet('community_prayers', JSON.stringify([communityEntry, ...communityPrayers]), true);
     setSharedPrayer(journalEntry.id);
-setTimeout(() => setSharedPrayer(null), 2000);
+    setTimeout(() => setSharedPrayer(null), 2000);
   };
 
   const deleteSavedResponse = async (index) => {
@@ -957,10 +1086,22 @@ setTimeout(() => setSharedPrayer(null), 2000);
   };
 
   const prayForRequest = async (id) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from('community_prayer_support').insert({ prayer_id: id, user_id: user.id });
+        if (!error) {
+          setPrayedForIds(prev => [...prev, id]);
+          const p = communityPrayers.find(c => c.id === id);
+          if (p) setCommunityPrayers(prev => prev.map(c => c.id === id ? { ...c, prayerCount: (c.prayerCount ?? 0) + 1 } : c));
+        }
+        return;
+      }
+    } catch (e) {
+      console.error('Supabase pray for error', e);
+    }
     setPrayedForIds([...prayedForIds, id]);
-    const updated = communityPrayers.map(p => 
-      p.id === id ? { ...p, prayerCount: p.prayerCount + 1 } : p
-    );
+    const updated = communityPrayers.map(p => p.id === id ? { ...p, prayerCount: (p.prayerCount ?? 0) + 1 } : p);
     setCommunityPrayers(updated);
     await safeStorageSet('community_prayers', JSON.stringify(updated), true);
   };
@@ -999,14 +1140,46 @@ setTimeout(() => setSharedPrayer(null), 2000);
     ? communityPrayers 
     : communityPrayers.filter(p => p.category === filterCategory);
 
-  const togglePrayerAnswered = (id) => {
-    setPrayerJournal(prayerJournal.map(p => 
-      p.id === id ? { ...p, answered: !p.answered } : p
+  const togglePrayerAnswered = async (id) => {
+    const entry = prayerJournal.find(p => p.id === id);
+    const newAnswered = entry ? !entry.answered : true;
+    setPrayerJournal(prayerJournal.map(p =>
+      p.id === id ? { ...p, answered: newAnswered } : p
     ));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('prayer_journal').update({ answered: newAnswered }).eq('user_id', user.id).eq('id', id);
+        if (sharedPrayerIds.includes(id)) {
+          await supabase.from('community_prayers').update({ answered: newAnswered }).eq('user_id', user.id).eq('source_journal_id', id);
+          setCommunityPrayers(prev => prev.map(p => (p.source_journal_id === id ? { ...p, answered: newAnswered } : p)));
+        }
+      }
+    } catch (e) {
+      console.error('Supabase toggle answered error', e);
+    }
   };
 
-  const deletePrayerEntry = (id) => {
+  const deletePrayerEntry = async (id) => {
+    const isShared = sharedPrayerIds.includes(id);
+    if (isShared) {
+      const ok = window.confirm('This prayer is on the community wall. Removing it will delete it from the wall too. Continue?');
+      if (!ok) return;
+    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('community_prayers').delete().eq('user_id', user.id).eq('source_journal_id', id);
+        await supabase.from('prayer_journal').delete().eq('user_id', user.id).eq('id', id);
+      }
+    } catch (e) {
+      console.error('Supabase delete prayer error', e);
+    }
     setPrayerJournal(prayerJournal.filter(p => p.id !== id));
+    if (isShared) {
+      setSharedPrayerIds(prev => prev.filter(x => x !== id));
+      setCommunityPrayers(prev => prev.filter(p => p.source_journal_id !== id));
+    }
   };
 
   const guidanceToneOptions = [
@@ -1448,6 +1621,9 @@ setTimeout(() => setSharedPrayer(null), 2000);
               </button>
             </div>
             <p className="text-gray-300 mb-3">{entry.text}</p>
+            {sharedPrayerIds.includes(entry.id) && typeof entry.prayerCount === 'number' && (
+              <p className="text-sm text-yellow-500/90 mb-2">{entry.prayerCount} {entry.prayerCount === 1 ? 'person' : 'people'} praying for this</p>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={() => togglePrayerAnswered(entry.id)}
@@ -1527,9 +1703,16 @@ setTimeout(() => setSharedPrayer(null), 2000);
         filteredCommunityPrayers.map((prayer) => {
           const hasPrayed = prayedForIds.includes(prayer.id);
           const category = prayerCategories.find(c => c.value === prayer.category);
-          
+          const isAnswered = prayer.answered === true;
           return (
-            <div key={prayer.id} className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 hover:border-yellow-500/40 transition-all">
+            <div
+              key={prayer.id}
+              className={`rounded-2xl shadow-lg p-6 transition-all ${
+                isAnswered
+                  ? 'bg-gradient-to-br from-gray-800/80 via-gray-900/90 to-gray-800/80 border border-green-500/30 hover:border-green-500/50'
+                  : 'bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 hover:border-yellow-500/40'
+              }`}
+            >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-yellow-500/10 border border-yellow-500/30 rounded-full flex items-center justify-center">
@@ -1540,15 +1723,26 @@ setTimeout(() => setSharedPrayer(null), 2000);
                     <p className="text-xs text-gray-500">{new Date(prayer.date).toLocaleDateString()}</p>
                   </div>
                 </div>
-                {category && (
-                  <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 text-xs rounded border border-yellow-500/20 font-medium">
-                    {category.emoji} {category.label}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {isAnswered && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30 font-medium">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Answered
+                    </span>
+                  )}
+                  {category && (
+                    <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 text-xs rounded border border-yellow-500/20 font-medium">
+                      {category.emoji} {category.label}
+                    </span>
+                  )}
+                </div>
               </div>
-              
+
+              {isAnswered && (
+                <p className="text-sm font-semibold text-green-400 mb-2">Answered — Thank you Lord</p>
+              )}
               <p className="text-gray-300 mb-4 leading-relaxed">{prayer.text}</p>
-              
+
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => prayForRequest(prayer.id)}
@@ -1562,7 +1756,7 @@ setTimeout(() => setSharedPrayer(null), 2000);
                   {hasPrayed ? "I'm Praying" : "I'll Pray"}
                 </button>
                 <span className="text-sm text-gray-400 font-medium">
-                  {prayer.prayerCount} {prayer.prayerCount === 1 ? 'person' : 'people'} praying
+                  {prayer.prayerCount ?? 0} {(prayer.prayerCount ?? 0) === 1 ? 'person' : 'people'} praying
                 </span>
               </div>
             </div>
