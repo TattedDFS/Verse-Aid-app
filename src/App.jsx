@@ -183,22 +183,22 @@ export default function BiblicalGuidanceApp() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('reading_progress')
-          .eq('id', user.id)
-          .single();
-        if (profile?.reading_progress) {
-          try {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('reading_progress')
+            .eq('id', user.id)
+            .single();
+          if (profile?.reading_progress) {
             const progress = JSON.parse(profile.reading_progress);
             if (Array.isArray(progress.completed_readings)) setCompletedReadings(progress.completed_readings);
             if (progress.selected_plan_day != null) setSelectedPlanDay(progress.selected_plan_day);
             if (progress.bible_book) setBibleBook(progress.bible_book);
             if (typeof progress.bible_chapter === 'number') setBibleChapter(progress.bible_chapter);
             readingProgressFromSupabase = true;
-          } catch (err) {
-            console.error('Error parsing reading progress in loadUserData:', err);
           }
+        } catch (_) {
+          // reading_progress column may not exist; do not break journal load
         }
         const { data: journalRows, error: jErr } = await supabase
           .from('prayer_journal')
@@ -701,7 +701,7 @@ export default function BiblicalGuidanceApp() {
         // Load premium status from Supabase
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_tier, subscription_status, saved_responses, reading_progress')
+          .select('subscription_tier, subscription_status, saved_responses')
           .eq('id', data.user.id)
           .single();
       
@@ -717,17 +717,23 @@ export default function BiblicalGuidanceApp() {
                 console.error('Error loading saved responses:', err);
               }
             }
-            if (profile.reading_progress) {
-              try {
-                const progress = JSON.parse(profile.reading_progress);
-                if (Array.isArray(progress.completed_readings)) setCompletedReadings(progress.completed_readings);
-                if (progress.selected_plan_day != null) setSelectedPlanDay(progress.selected_plan_day);
-                if (progress.bible_book) setBibleBook(progress.bible_book);
-                if (typeof progress.bible_chapter === 'number') setBibleChapter(progress.bible_chapter);
-              } catch (err) {
-                console.error('Error loading reading progress:', err);
-              }
+          }
+          // Load reading progress in a separate query so a missing column does not break tier/saved_responses
+          try {
+            const { data: progressRow } = await supabase
+              .from('profiles')
+              .select('reading_progress')
+              .eq('id', data.user.id)
+              .single();
+            if (progressRow?.reading_progress) {
+              const progress = JSON.parse(progressRow.reading_progress);
+              if (Array.isArray(progress.completed_readings)) setCompletedReadings(progress.completed_readings);
+              if (progress.selected_plan_day != null) setSelectedPlanDay(progress.selected_plan_day);
+              if (progress.bible_book) setBibleBook(progress.bible_book);
+              if (typeof progress.bible_chapter === 'number') setBibleChapter(progress.bible_chapter);
             }
+          } catch (err) {
+            console.error('Error loading reading progress on login:', err);
           }
       }
     }
