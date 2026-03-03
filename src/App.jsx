@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
+import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle, AlertTriangle, Lock, Settings, MessageCircle } from 'lucide-react';
 import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClient';
 import { safeStorageGet, safeStorageSet } from './utils/storage';
 import { supabase } from './supabaseClient';
@@ -1477,76 +1477,70 @@ setTimeout(() => setSavedResponse(false), 2000);
 
   const HomeView = () => (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
-        .font-playfair { font-family: 'Playfair Display', serif; }
-        .font-inter { font-family: 'Inter', sans-serif; }
-      `}</style>
-
            {dailyVerse && !showDailyVerse && (
         <div 
           onClick={() => setShowDailyVerse(true)}
-          className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 mb-8 cursor-pointer hover:border-yellow-500/40 hover:shadow-yellow-500/20 transition-all"
+          className="va-verse-of-day-card p-6 mb-8 cursor-pointer hover:shadow-[0_12px_48px_rgba(123,66,212,0.35)] transition-all"
         >
           <div className="flex items-start gap-3">
-            <Calendar className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-1" />
+            <Calendar className="w-6 h-6 text-[#e8a930] flex-shrink-0 mt-1" strokeWidth={1.5} />
             <div className="flex-1">
-              <h3 className="font-semibold text-yellow-500 mb-2 font-playfair">Today's Verse</h3>
-              <p className="text-sm text-gray-300 italic line-clamp-2">"{dailyVerse.text}"</p>
-              <p className="text-xs text-yellow-500 mt-1 font-bold">— {dailyVerse.reference}</p>
-              <p className="text-xs text-gray-400 mt-2">Tap to read reflection →</p>
+              <h3 className="va-font-playfair font-semibold text-[#e8a930] mb-2">Today's Verse</h3>
+              <p className="text-sm va-scripture text-white/95 line-clamp-2">"{dailyVerse.text}"</p>
+              <p className="text-xs va-verse-ref mt-1">— {dailyVerse.reference}</p>
+              <p className="text-xs va-muted mt-2">Tap to read reflection →</p>
             </div>
           </div>
         </div>
       )}
 
       {showDailyVerse && dailyVerse && (
-        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 mb-8">
+        <div className="va-verse-of-day-card p-8 mb-8">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-2xl font-bold text-yellow-500 font-playfair">Today's Verse & Reflection</h3>
+            <h3 className="text-2xl font-bold va-font-playfair text-white">Today's Verse & Reflection</h3>
             <div className="flex gap-2">
               <button 
                 onClick={saveDailyVerseToCollection}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-2 rounded-xl transition-all ${
                   savedDailyVerse 
-                    ? 'bg-yellow-500 text-black' 
-                    : 'bg-gray-800 hover:bg-gray-700 text-yellow-500 border border-yellow-500/20'
+                    ? 'va-btn-primary' 
+                    : 'va-btn-glass'
                 }`}
               >
-                <Star className={`w-5 h-5 ${savedDailyVerse ? 'fill-current' : ''}`} />
+                <Star className={`w-5 h-5 ${savedDailyVerse ? 'fill-current' : ''}`} strokeWidth={1.5} />
               </button>
-              <button onClick={() => setShowDailyVerse(false)} className="text-gray-400 hover:text-gray-300">
-                <X className="w-5 h-5" />
+              <button onClick={() => setShowDailyVerse(false)} className="va-muted hover:text-white p-2">
+                <X className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </div>
           </div>
           <div className="space-y-4">
-            <div className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6">
-              <p className="text-gray-300 italic mb-2">"{dailyVerse.text}"</p>
-              <p className="text-sm font-bold text-yellow-500">— {dailyVerse.reference}</p>
+            <div className="va-glass-card p-6 rounded-xl">
+              <p className="va-scripture text-white/95 mb-2">"{dailyVerse.text}"</p>
+              <p className="text-sm va-verse-ref">— {dailyVerse.reference}</p>
             </div>
-            <div className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6">
-              <p className="text-sm text-gray-300 leading-relaxed">{dailyVerse.reflection}</p>
+            <div className="va-glass-card p-6 rounded-xl">
+              <p className="text-sm text-white/90 leading-relaxed va-font-nunito">{dailyVerse.reflection}</p>
             </div>
           </div>
         </div>
       )}
 
-      <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 shadow-lg rounded-2xl p-8 mb-8 hover:border-yellow-500/40 hover:shadow-yellow-500/10 transition-all">
+      <div className="va-glass-card p-8 mb-8 hover:border-[rgba(166,110,232,0.25)] transition-all">
         {isLoggedIn && userTier === 'free' && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
+          <div className="mb-6 p-4 va-premium-banner">
             <div className="flex justify-between items-start gap-4">
               <div>
-                <p className="text-sm font-semibold text-yellow-500">
+                <p className="text-sm font-semibold text-[#e8a930]">
                   Daily Questions: {questionsToday}/3 used
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs va-muted mt-1">
                   Premium gives you unlimited questions, the full prayer journal, community wall, and the Bible-in-a-year plan—with no daily limits.
                 </p>
               </div>
               <button
                 onClick={() => setShowUpgradeModal(true)}
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black px-6 py-2 rounded-lg font-bold hover:shadow-lg hover:shadow-yellow-500/50 transition-all whitespace-nowrap"
+                className="va-btn-primary px-6 py-2 whitespace-nowrap"
               >
                 See Premium
               </button>
@@ -1555,10 +1549,10 @@ setTimeout(() => setSavedResponse(false), 2000);
         )}
 
         {isLoggedIn && (userTier === 'premium' || userTier === 'church') && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl shadow-lg">
+          <div className="mb-6 p-4 va-premium-banner">
             <div className="flex items-center gap-2">
-              <Crown className="w-5 h-5 text-black" />
-              <p className="text-sm font-bold text-black">
+              <Crown className="w-5 h-5 text-[#f5c842]" strokeWidth={1.5} />
+              <p className="text-sm font-bold text-white va-font-nunito">
                 {userTier === 'premium' ? 'PREMIUM' : `${churchName} Member`} - Unlimited Questions
               </p>
             </div>
@@ -1567,10 +1561,10 @@ setTimeout(() => setSavedResponse(false), 2000);
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-yellow-500 mb-1">
+            <label className="block text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">
               What's on your heart today?
             </label>
-            <p className="text-xs text-gray-400 mb-2">
+            <p className="text-xs va-muted mb-2">
               Share in your own words—VerseAid will listen gently and answer from the World English Version.
             </p>
             <textarea
@@ -1579,13 +1573,13 @@ setTimeout(() => setSavedResponse(false), 2000);
              key="main-question-textarea"
               autoFocus
               placeholder="Share your question, concern, or situation..."
-              className="w-full px-6 py-4 bg-gray-900 border border-yellow-500/20 rounded-xl text-gray-100 placeholder-gray-500 focus:border-yellow-500/50 focus:ring-2 focus:ring-yellow-500/20 resize-none transition-all"
+              className="va-input w-full px-6 py-4 rounded-xl resize-none"
               rows="5"
             />
           </div>
 
           <div className="mt-3">
-            <p className="text-xs font-semibold text-gray-400 mb-2">
+            <p className="text-xs font-semibold va-muted mb-2">
               Response style
             </p>
             <div className="flex flex-wrap gap-2">
@@ -1594,10 +1588,10 @@ setTimeout(() => setSavedResponse(false), 2000);
                   key={option.value}
                   type="button"
                   onClick={() => setGuidanceTone(option.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all va-font-nunito ${
                     guidanceTone === option.value
-                      ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black border-transparent shadow-lg shadow-yellow-500/40'
-                      : 'bg-gray-900 text-gray-300 border-yellow-500/20 hover:border-yellow-500/40'
+                      ? 'va-btn-primary border-transparent'
+                      : 'va-btn-glass'
                   }`}
                 >
                   {option.label}
@@ -1615,7 +1609,7 @@ setTimeout(() => setSavedResponse(false), 2000);
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 disabled:shadow-none text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-[1.02]"
+            className="w-full va-btn-primary py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
           >
             {loading ? (
               <>
@@ -1624,22 +1618,22 @@ setTimeout(() => setSavedResponse(false), 2000);
               </>
             ) : (
               <>
-                <Send className="w-5✨ Get Biblical Guidance h-5" />
-                Get Biblical Guidance
+                <span>✦</span>
+                Ask AI
               </>
             )}
           </button>
         </div>
 
         {!response && !loading && (
-          <div className="mt-8 pt-8 border-t border-yellow-500/10">
-            <p className="text-sm font-semibold text-gray-400 mb-4">Try asking:</p>
+          <div className="mt-8 pt-8 border-t border-[rgba(255,255,255,0.08)]">
+            <p className="text-sm font-semibold va-muted mb-4">Try asking:</p>
             <div className="space-y-2">
               {exampleQuestions.map((example, idx) => (
                 <button
                   key={idx}
                   onClick={() => setQuestion(example)}
-                  className="w-full text-left px-6 py-3 bg-gray-900/50 hover:bg-gray-800/80 border border-yellow-500/10 hover:border-yellow-500/30 text-gray-300 rounded-xl text-sm transition-all"
+                  className="w-full text-left px-6 py-3 va-btn-glass hover:bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.12)] rounded-xl text-sm transition-all"
                 >
                   {example}
                 </button>
@@ -1654,54 +1648,54 @@ setTimeout(() => setSavedResponse(false), 2000);
           <div className="flex gap-3 justify-center">
           <button
               onClick={saveResponse}
-              className={`flex items-center gap-2 px-6 py-3 font-bold rounded-xl transition-all duration-300 ${
+              className={`flex items-center gap-2 px-6 py-3 font-bold rounded-xl transition-all duration-300 va-font-nunito ${
                 savedResponse
-                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black scale-110 shadow-lg shadow-yellow-500/50'
-                  : 'bg-gray-900 border border-yellow-500/30 hover:border-yellow-500/50 text-yellow-500'
+                  ? 'va-btn-primary scale-110'
+                  : 'va-btn-glass'
               }`}
             >
-              <Star className={`w-4 h-4 transition-all duration-300 ${savedResponse ? 'fill-current scale-125' : ''}`} />
-              {savedResponse ? '✓ Saved!' : 'Save'}
+              <Star className={`w-4 h-4 transition-all duration-300 ${savedResponse ? 'fill-current scale-125' : ''}`} strokeWidth={1.5} />
+              {savedResponse ? 'Saved' : 'Save'}
             </button>
             <button
               onClick={shareResponse}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg hover:shadow-yellow-500/50 text-black font-bold rounded-xl transition-all"
+              className="va-btn-glass flex items-center gap-2 px-6 py-3 rounded-xl"
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-4 h-4" strokeWidth={1.5} />
               Share
             </button>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 hover:border-yellow-500/40 transition-all">
+          <div className="va-glass-card p-8 hover:border-[rgba(166,110,232,0.25)] transition-all">
             <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
-                <Heart className="w-6 h-6 text-black" />
+              <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
+                <Heart className="w-6 h-6 text-white" strokeWidth={1.5} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-yellow-500 mb-3 font-playfair">A Word of Understanding</h2>
-                <p className="text-gray-300 leading-relaxed">{response.compassionateResponse}</p>
+                <h2 className="text-2xl font-bold va-heading mb-3">A Word of Understanding</h2>
+                <p className="text-white/90 leading-relaxed va-font-nunito">{response.compassionateResponse}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8">
+          <div className="va-glass-card p-8">
             <div className="flex items-start gap-4 mb-6">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-6 h-6 text-black" />
+              <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-6 h-6 text-white" strokeWidth={1.5} />
               </div>
               <div className="flex-1">
-                <h2 className="text-2xl font-bold text-yellow-500 mb-4 font-playfair">Scripture for Your Journey</h2>
+                <h2 className="text-2xl font-bold va-heading mb-4">Scripture for Your Journey</h2>
                 <div className="space-y-4">
                   {response.verses.map((verse, idx) => (
                     <div
                       key={idx}
                       onClick={() => goToVerse(verse.reference)}
-                      className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6 cursor-pointer hover:border-yellow-500/40 hover:bg-gray-900/80 transition-all"
+                      className="va-glass-card p-6 rounded-xl cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
                     >
-                      <p className="text-gray-300 italic mb-3">"{verse.text}"</p>
+                      <p className="va-scripture text-white/95 mb-3">"{verse.text}"</p>
                       <div className="flex items-center justify-between mt-1">
-                        <p className="text-sm font-bold text-yellow-500">— {verse.reference}</p>
-                        <span className="text-xs text-gray-400">
+                        <p className="text-sm va-verse-ref">— {verse.reference}</p>
+                        <span className="text-xs va-muted">
                           Tap to open in Bible reader →
                         </span>
                       </div>
@@ -1712,19 +1706,19 @@ setTimeout(() => setSavedResponse(false), 2000);
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-yellow-500 mb-3 font-playfair">What Would Jesus Do?</h2>
-            <p className="text-gray-300 leading-relaxed">{response.wwjd}</p>
+          <div className="va-glass-card p-8">
+            <h2 className="text-2xl font-bold va-heading mb-3">What Would Jesus Do?</h2>
+            <p className="text-white/90 leading-relaxed va-font-nunito">{response.wwjd}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-yellow-500 mb-3 font-playfair">Words of Encouragement</h2>
-            <p className="text-gray-300 leading-relaxed">{response.encouragement}</p>
+          <div className="va-glass-card p-8">
+            <h2 className="text-2xl font-bold va-heading mb-3">Words of Encouragement</h2>
+            <p className="text-white/90 leading-relaxed va-font-nunito">{response.encouragement}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-yellow-500 mb-3 font-playfair">Keep the conversation going</h3>
-            <p className="text-xs text-gray-400 mb-3">
+          <div className="va-glass-card p-6">
+            <h3 className="text-lg font-bold va-heading mb-3">Keep the conversation going</h3>
+            <p className="text-xs va-muted mb-3">
               Tap a follow-up to add it to the question box. You can edit it before sending.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -1739,7 +1733,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                     window.scrollTo(0, 0);
                   }
                 }}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 border border-yellow-500/20 text-gray-200 hover:border-yellow-500/40 hover:bg-gray-800 transition-all"
+                className="va-btn-glass px-3 py-1.5 rounded-full text-xs font-semibold"
               >
                 Apply this to my situation
               </button>
@@ -1754,7 +1748,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                     window.scrollTo(0, 0);
                   }
                 }}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 border border-yellow-500/20 text-gray-200 hover:border-yellow-500/40 hover:bg-gray-800 transition-all"
+                className="va-btn-glass px-3 py-1.5 rounded-full text-xs font-semibold"
               >
                 Turn this into a prayer
               </button>
@@ -1769,7 +1763,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                     window.scrollTo(0, 0);
                   }
                 }}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 border border-yellow-500/20 text-gray-200 hover:border-yellow-500/40 hover:bg-gray-800 transition-all"
+                className="va-btn-glass px-3 py-1.5 rounded-full text-xs font-semibold"
               >
                 Show more related verses
               </button>
@@ -1784,7 +1778,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                     window.scrollTo(0, 0);
                   }
                 }}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 border border-yellow-500/20 text-gray-200 hover:border-yellow-500/40 hover:bg-gray-800 transition-all"
+                className="va-btn-glass px-3 py-1.5 rounded-full text-xs font-semibold"
               >
                 Help me take a next step
               </button>
@@ -1792,17 +1786,17 @@ setTimeout(() => setSavedResponse(false), 2000);
           </div>
 
           {userTier === 'free' && (
-            <div className="bg-gradient-to-br from-yellow-500/5 to-orange-500/5 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-bold text-yellow-500 mb-2 font-playfair">Enjoying this guidance?</h3>
-              <p className="text-xs text-gray-300 mb-3">
+            <div className="va-glass-card p-6">
+              <h3 className="text-lg font-bold va-heading mb-2">Enjoying this guidance?</h3>
+              <p className="text-xs va-muted mb-3">
                 Premium removes the 3-questions-a-day limit and unlocks the full prayer journal, community prayer wall, and Bible-in-a-year plan.
               </p>
               <button
                 type="button"
                 onClick={() => setShowUpgradeModal(true)}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-4 py-2 rounded-lg hover:shadow-lg hover:shadow-yellow-500/50 transition-all"
+                className="inline-flex items-center gap-2 va-btn-primary text-xs px-4 py-2 rounded-xl"
               >
-                <Crown className="w-4 h-4" />
+                <Crown className="w-4 h-4" strokeWidth={1.5} />
                 Learn about Premium
               </button>
             </div>
@@ -1815,7 +1809,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 setResponse(null);
                 setError('');
               }}
-              className="bg-gray-900 border border-yellow-500/30 hover:border-yellow-500/50 text-yellow-500 font-bold py-3 px-8 rounded-xl transition-all"
+              className="va-btn-glass font-bold py-3 px-8 rounded-xl"
             >
               Ask Another Question
             </button>
@@ -1828,13 +1822,13 @@ setTimeout(() => setSavedResponse(false), 2000);
   // Render other views (Saved, Journal, Community, Bible, Reading Plan) - continued from previous
   const SavedView = () => (
     <div className="space-y-4">
-      <h2 className="text-3xl font-bold text-white mb-4 font-playfair">Saved Responses</h2>
+      <h2 className="text-3xl font-bold va-heading mb-4">Saved Responses</h2>
       {savedResponses.length === 0 ? (
-        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 text-center">
-          <BookMarked className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400 mb-2">No saved responses yet.</p>
-          <p className="text-sm text-gray-500">
-            After you receive guidance on the Home tab, tap <span className="text-yellow-500 font-semibold">Save</span> to keep it here for later.
+        <div className="va-glass-card p-8 text-center">
+          <BookMarked className="w-12 h-12 va-nav-inactive mx-auto mb-4" strokeWidth={1.5} />
+          <p className="va-muted mb-2">No saved responses yet.</p>
+          <p className="text-sm va-muted">
+            After you receive guidance on the Home tab, tap <span className="text-[#e8a930] font-semibold">Save</span> to keep it here for later.
           </p>
         </div>
       ) : (
@@ -1849,17 +1843,17 @@ setTimeout(() => setSavedResponse(false), 2000);
           const showExtraLink = refFromProse && !verseRefs.some((r) => r === refFromProse);
 
           return (
-          <div key={idx} className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 hover:border-yellow-500/40 transition-all">
+          <div key={idx} className="va-glass-card p-6 hover:border-[rgba(166,110,232,0.25)] transition-all">
             <div className="flex justify-between items-start mb-3">
               <div>
-                <p className="text-sm text-gray-500 mb-2">{new Date(item.timestamp).toLocaleDateString()}</p>
-                <p className="font-bold text-gray-300 mb-3">Q: {item.question}</p>
+                <p className="text-sm va-muted mb-2">{new Date(item.timestamp).toLocaleDateString()}</p>
+                <p className="font-bold text-white/90 mb-3 va-font-nunito">Q: {item.question}</p>
               </div>
-              <button 
+              <button
                 onClick={() => deleteSavedResponse(idx)}
-                className="text-gray-500 hover:text-gray-300 transition-colors"
+                className="va-muted hover:text-white transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </div>
             <div className="space-y-2">
@@ -1867,12 +1861,12 @@ setTimeout(() => setSavedResponse(false), 2000);
                 <div
                   key={i}
                   onClick={() => goToVerse(v.reference)}
-                  className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6 cursor-pointer hover:border-yellow-500/40 hover:bg-gray-900/80 transition-all"
+                  className="va-glass-card p-6 rounded-xl cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
                 >
-                  <p className="text-sm italic text-gray-300 mb-3">"{v.text}"</p>
+                  <p className="text-sm va-scripture text-white/95 mb-3">"{v.text}"</p>
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs text-yellow-500 font-bold">— {v.reference}</p>
-                    <span className="text-xs text-gray-400">
+                    <p className="text-xs va-verse-ref">— {v.reference}</p>
+                    <span className="text-xs va-muted">
                       Tap to open in Bible reader →
                     </span>
                   </div>
@@ -1882,9 +1876,9 @@ setTimeout(() => setSavedResponse(false), 2000);
             {showExtraLink && (
               <div
                 onClick={() => goToVerse(refFromProse)}
-                className="mt-3 bg-gray-900 border border-yellow-500/20 rounded-xl p-4 cursor-pointer hover:border-yellow-500/40 hover:bg-gray-900/80 transition-all"
-              >
-                <span className="text-xs text-gray-400">
+                className="va-glass-card rounded-xl p-4 cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
+                >
+                <span className="text-xs va-muted">
                   Tap to open in Bible reader →
                 </span>
               </div>
@@ -1899,50 +1893,59 @@ setTimeout(() => setSavedResponse(false), 2000);
   const JournalView = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-3xl font-bold text-white font-playfair">Prayer Journal</h2>
+        <h2 className="text-3xl font-bold va-heading">Prayer Journal</h2>
         <button
           onClick={() => setShowPrayerModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg hover:shadow-yellow-500/50 text-black font-bold px-4 py-2 rounded-lg transition-all"
+          className="flex items-center gap-2 va-btn-primary px-4 py-2 rounded-xl"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" strokeWidth={1.5} />
           Add Prayer
         </button>
       </div>
 
       {prayerJournal.length === 0 ? (
-        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 text-center">
-          <Heart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400">Start your prayer journal by adding your first prayer request.</p>
+        <div className="va-glass-card p-8 text-center">
+          <Heart className="w-12 h-12 va-nav-inactive mx-auto mb-4" strokeWidth={1.5} />
+          <p className="va-muted">Start your prayer journal by adding your first prayer request.</p>
         </div>
       ) : (
-        prayerJournal.map((entry) => (
-          <div key={entry.id} className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 hover:border-yellow-500/40 transition-all">
+        prayerJournal.map((entry) => {
+          const isThanksgiving = entry.category === 'thanksgiving';
+          const IconBox = entry.answered
+            ? () => <div className="w-9 h-9 rounded-lg bg-emerald-500/30 border border-emerald-400/40 flex items-center justify-center flex-shrink-0"><CheckCircle className="w-5 h-5 text-emerald-400" strokeWidth={1.5} /></div>
+            : isThanksgiving
+            ? () => <div className="w-9 h-9 rounded-lg bg-[#e8a930]/30 border border-[#e8a930]/50 flex items-center justify-center flex-shrink-0"><Star className="w-5 h-5 text-[#e8a930]" strokeWidth={1.5} /></div>
+            : () => <div className="w-9 h-9 rounded-lg bg-[#7b42d4]/30 border border-[#a66ee8]/40 flex items-center justify-center flex-shrink-0"><MessageCircle className="w-5 h-5 text-[#a66ee8]" strokeWidth={1.5} /></div>;
+          return (
+          <div key={entry.id} className="va-glass-card p-6 hover:border-[rgba(166,110,232,0.25)] transition-all flex gap-4">
+            <IconBox />
+            <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start mb-3">
               <div>
-                <p className="text-sm text-gray-500">{new Date(entry.date).toLocaleDateString()}</p>
+                <p className="text-sm va-muted">{new Date(entry.date).toLocaleDateString()}</p>
                 {entry.category && (
-                  <span className="inline-block mt-1 px-2 py-1 bg-yellow-500/10 text-yellow-500 text-xs rounded border border-yellow-500/20 font-medium">
-                    {prayerCategories.find(c => c.value === entry.category)?.emoji} {prayerCategories.find(c => c.value === entry.category)?.label}
+                  <span className="inline-block mt-1 px-2 py-1 bg-[rgba(255,255,255,0.08)] text-[#c8c8e8] text-xs rounded-lg border border-[rgba(255,255,255,0.12)] font-medium va-font-nunito">
+                    {prayerCategories.find(c => c.value === entry.category)?.label}
                   </span>
                 )}
               </div>
-              <button onClick={() => deletePrayerEntry(entry.id)} className="text-gray-500 hover:text-gray-300">
-                <X className="w-4 h-4" />
+              <button onClick={() => deletePrayerEntry(entry.id)} className="va-muted hover:text-white">
+                <X className="w-4 h-4" strokeWidth={1.5} />
               </button>
             </div>
-            <p className="text-gray-300 mb-3">{entry.text}</p>
+            <p className="text-white/90 mb-3 va-font-nunito">{entry.text}</p>
             {sharedPrayerIds.includes(entry.id) && typeof entry.prayerCount === 'number' && (
-              <p className="text-sm text-yellow-500/90 mb-2">{entry.prayerCount} {entry.prayerCount === 1 ? 'person' : 'people'} praying for this</p>
+              <p className="text-sm text-[#e8a930]/90 mb-2 va-font-nunito">{entry.prayerCount} {entry.prayerCount === 1 ? 'person' : 'people'} praying for this</p>
             )}
             {(() => {
               const communityPrayer = communityPrayers.find(cp => cp.source_journal_id === entry.id);
               return communityPrayer && isStillBelievingEligible(communityPrayer) ? (
-                <div className="mb-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-                  <p className="text-xs text-gray-400 mb-2">This prayer has been on the community wall for 6 months. Extend it for another year?</p>
+                <div className="mb-3 p-3 va-glass-card rounded-xl">
+                  <p className="text-xs va-muted mb-2">This prayer has been on the community wall for 6 months. Extend it for another year?</p>
                   <button
                     type="button"
                     onClick={() => extendPrayerOnWall(communityPrayer.id)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-yellow-500/30 transition-all"
+                    className="va-btn-primary text-sm px-3 py-1.5 rounded-xl"
                   >
                     Still Believing
                   </button>
@@ -1952,31 +1955,33 @@ setTimeout(() => setSavedResponse(false), 2000);
             <div className="flex gap-2">
               <button
                 onClick={() => togglePrayerAnswered(entry.id)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-bold transition-all border ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-all va-font-nunito ${
                   entry.answered 
-                    ? 'bg-green-900/30 text-green-400 border-green-500/30 hover:bg-green-900/50' 
-                    : 'bg-gray-800/30 text-gray-400 border-gray-700/30 hover:bg-gray-800/50'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30' 
+                    : 'va-btn-glass'
                 }`}
               >
-                {entry.answered ? '✓ Answered' : 'Mark as Answered'}
+                {entry.answered ? 'Answered' : 'Mark as Answered'}
               </button>
               <button
                 onClick={() => sharePrayerToCommunity(entry)}
                 disabled={sharedPrayerIds.includes(entry.id)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-bold transition-all duration-300 ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-all duration-300 va-font-nunito ${
                   sharedPrayer === entry.id
-                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black scale-110 shadow-lg shadow-yellow-500/50'
+                    ? 'va-btn-primary scale-110'
                     : sharedPrayerIds.includes(entry.id)
-                    ? 'bg-green-900/30 text-green-400 cursor-not-allowed'
-                    : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20'
+                    ? 'bg-emerald-500/20 text-emerald-400 cursor-not-allowed'
+                    : 'va-btn-glass'
                 }`}
               >
-                <Share2 className={`w-4 h-4 transition-all duration-300 ${sharedPrayer === entry.id ? 'scale-125' : ''}`} />
-                {sharedPrayer === entry.id ? '✓ Shared!' : sharedPrayerIds.includes(entry.id) ? 'Shared' : 'Share'}
+                <Share2 className={`w-4 h-4 transition-all duration-300 ${sharedPrayer === entry.id ? 'scale-125' : ''}`} strokeWidth={1.5} />
+                {sharedPrayer === entry.id ? 'Shared' : sharedPrayerIds.includes(entry.id) ? 'Shared' : 'Share'}
               </button>
             </div>
+            </div>
           </div>
-        ))
+          );
+        })
       )}
  </div>
   );
@@ -1987,26 +1992,26 @@ setTimeout(() => setSavedResponse(false), 2000);
       return (
         <div className="space-y-4">
           <div className="mb-6">
-            <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Community Prayer Wall</h2>
-            <p className="text-gray-400 text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
-            <div className="py-4 mb-5 border-y border-yellow-500/20 bg-gray-900/40 rounded-lg px-4">
-              <p className="text-center text-gray-200 text-lg italic max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <h2 className="text-3xl font-bold va-heading mb-2">Community Prayer Wall</h2>
+            <p className="va-muted text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
+            <div className="py-4 mb-5 border-y border-[rgba(255,255,255,0.12)] va-glass-card rounded-xl px-4">
+              <p className="text-center text-white/90 text-lg va-scripture max-w-2xl mx-auto leading-relaxed">
                 "For where two or three gather in my name, there am I with them."
               </p>
-              <p className="text-center text-gray-300 text-sm mt-2 font-medium">— Matthew 18:20</p>
+              <p className="text-center va-verse-ref text-sm mt-2 font-medium">— Matthew 18:20</p>
             </div>
           </div>
-          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border-2 border-yellow-500/30 rounded-2xl shadow-lg p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-8 h-8 text-yellow-500" />
+          <div className="va-premium-banner p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-[rgba(166,110,232,0.2)] border-2 border-[rgba(166,110,232,0.4)] flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-[#a66ee8]" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-bold text-white font-playfair mb-2">Community Prayer Wall is for Premium members</h3>
-            <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
+            <h3 className="text-xl font-bold va-premium-banner-title mb-2">Community Prayer Wall is for Premium members</h3>
+            <p className="va-muted text-sm mb-6 max-w-md mx-auto">
               Upgrade to premium to join the community, share prayer requests, and pray for others. Your prayers stay in your journal forever.
             </p>
             <button
               onClick={() => setShowUpgradeModal(true)}
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg hover:shadow-yellow-500/50 text-black font-bold px-6 py-3 rounded-xl transition-all"
+              className="va-btn-primary px-6 py-3 rounded-xl"
             >
               Upgrade to Premium
             </button>
@@ -2018,23 +2023,38 @@ setTimeout(() => setSavedResponse(false), 2000);
     return (
     <div className="space-y-4">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Community Prayer Wall</h2>
-        <p className="text-gray-400 text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
+        <h2 className="text-3xl font-bold va-heading mb-2">Community Prayer Wall</h2>
+        <p className="va-muted text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
 
-        <div className="py-4 mb-5 border-y border-yellow-500/20 bg-gray-900/40 rounded-lg px-4">
-          <p className="text-center text-gray-200 text-lg italic max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+        <div className="py-4 mb-5 border-y border-[rgba(255,255,255,0.12)] va-glass-card rounded-xl px-4">
+          <p className="text-center text-white/90 text-lg va-scripture max-w-2xl mx-auto leading-relaxed">
             "For where two or three gather in my name, there am I with them."
           </p>
-          <p className="text-center text-gray-300 text-sm mt-2 font-medium">— Matthew 18:20</p>
+          <p className="text-center va-verse-ref text-sm mt-2 font-medium">— Matthew 18:20</p>
+        </div>
+
+        <div className="va-glass-card p-4 mb-4 flex flex-wrap gap-6 justify-center">
+          <div className="text-center">
+            <p className="va-stats-number">{communityPrayers.length}</p>
+            <p className="text-xs va-muted">Prayers</p>
+          </div>
+          <div className="text-center">
+            <p className="va-stats-number">{communityPrayers.filter(p => p.answered).length}</p>
+            <p className="text-xs va-muted">Answered</p>
+          </div>
+          <div className="text-center">
+            <p className="va-stats-number">{new Set(communityPrayers.map(p => p.user_id)).size}</p>
+            <p className="text-xs va-muted">Members</p>
+          </div>
         </div>
         
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setFilterCategory('all')}
-            className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all va-font-nunito ${
               filterCategory === 'all'
-                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black shadow-lg'
-                : 'bg-gray-900 text-gray-300 border border-yellow-500/20 hover:border-yellow-500/40'
+                ? 'va-btn-primary'
+                : 'va-btn-glass'
             }`}
           >
             All Prayers
@@ -2043,27 +2063,27 @@ setTimeout(() => setSavedResponse(false), 2000);
             <button
               key={cat.value}
               onClick={() => setFilterCategory(cat.value)}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all va-font-nunito ${
                 filterCategory === cat.value
-                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black shadow-lg'
-                  : 'bg-gray-900 text-gray-300 border border-yellow-500/20 hover:border-yellow-500/40'
+                  ? 'va-btn-primary'
+                  : 'va-btn-glass'
               }`}
             >
-              {cat.emoji} {cat.label}
+              {cat.label}
             </button>
           ))}
         </div>
       </div>
 
       {filteredCommunityPrayers.length === 0 ? (
-        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-8 text-center">
-          <Heart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400 mb-4">
+        <div className="va-glass-card p-8 text-center">
+          <Heart className="w-12 h-12 va-nav-inactive mx-auto mb-4" strokeWidth={1.5} />
+          <p className="va-muted mb-4">
             {filterCategory === 'all' 
               ? 'No community prayer requests yet.' 
               : `No prayers in this category yet.`}
           </p>
-          <p className="text-sm text-gray-500">Share a prayer request with the community!</p>
+          <p className="text-sm va-muted">Share a prayer request with the community!</p>
         </div>
       ) : (
         filteredCommunityPrayers.map((prayer) => {
@@ -2073,49 +2093,49 @@ setTimeout(() => setSavedResponse(false), 2000);
           return (
             <div
               key={prayer.id}
-              className={`rounded-2xl shadow-lg p-6 transition-all ${
+              className={`va-glass-card p-6 transition-all rounded-2xl ${
                 isAnswered
-                  ? 'bg-gradient-to-br from-gray-800/80 via-gray-900/90 to-gray-800/80 border border-green-500/30 hover:border-green-500/50'
-                  : 'bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 hover:border-yellow-500/40'
+                  ? 'border-emerald-500/30 hover:border-emerald-500/50'
+                  : 'hover:border-[rgba(166,110,232,0.25)]'
               }`}
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-yellow-500/10 border border-yellow-500/30 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-yellow-500" />
+                  <div className="w-8 h-8 va-glass-card rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-[#a66ee8]" strokeWidth={1.5} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-gray-300">Anonymous</p>
-                    <p className="text-xs text-gray-500">{new Date(prayer.date).toLocaleDateString()}</p>
+                    <p className="text-sm font-bold text-white/90 va-font-nunito">Anonymous</p>
+                    <p className="text-xs va-muted">{new Date(prayer.date).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {isAnswered && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30 font-medium">
-                      <CheckCircle className="w-3.5 h-3.5" />
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full border border-emerald-500/30 font-medium va-font-nunito">
+                      <CheckCircle className="w-3.5 h-3.5" strokeWidth={1.5} />
                       Answered
                     </span>
                   )}
                   {category && (
-                    <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 text-xs rounded border border-yellow-500/20 font-medium">
-                      {category.emoji} {category.label}
+                    <span className="px-2 py-1 bg-[rgba(255,255,255,0.08)] text-[#c8c8e8] text-xs rounded-lg border border-[rgba(255,255,255,0.12)] font-medium va-font-nunito">
+                      {category.label}
                     </span>
                   )}
                 </div>
               </div>
 
               {isAnswered && (
-                <p className="text-sm font-semibold text-green-400 mb-2">Answered — Thank you Lord</p>
+                <p className="text-sm font-semibold text-emerald-400 mb-2 va-font-nunito">Answered — Thank you Lord</p>
               )}
-              <p className="text-gray-300 mb-4 leading-relaxed">{prayer.text}</p>
+              <p className="text-white/90 mb-4 leading-relaxed va-font-nunito">{prayer.text}</p>
 
               {isStillBelievingEligible(prayer) && (
-                <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-                  <p className="text-xs text-gray-400 mb-2">Your prayer has been on the wall for 6 months. Extend it for another year?</p>
+                <div className="mb-4 p-3 va-glass-card rounded-xl">
+                  <p className="text-xs va-muted mb-2">Your prayer has been on the wall for 6 months. Extend it for another year?</p>
                   <button
                     type="button"
                     onClick={() => extendPrayerOnWall(prayer.id)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-yellow-500/30 transition-all"
+                    className="va-btn-primary text-sm px-3 py-1.5 rounded-xl"
                   >
                     Still Believing
                   </button>
@@ -2125,16 +2145,16 @@ setTimeout(() => setSavedResponse(false), 2000);
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => prayForRequest(prayer.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-bold ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-sm font-bold va-font-nunito ${
                     hasPrayed
-                      ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black shadow-lg'
-                      : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20'
+                      ? 'va-btn-primary'
+                      : 'va-btn-glass'
                   }`}
                 >
-                  <Heart className={`w-4 h-4 ${hasPrayed ? 'fill-current' : ''}`} />
+                  <Heart className={`w-4 h-4 ${hasPrayed ? 'fill-current' : ''}`} strokeWidth={1.5} />
                   {hasPrayed ? "I'm Praying" : "I'll Pray"}
                 </button>
-                <span className="text-sm text-gray-400 font-medium">
+                <span className="text-sm va-muted font-medium">
                   {prayer.prayerCount ?? 0} {(prayer.prayerCount ?? 0) === 1 ? 'person' : 'people'} praying
                 </span>
               </div>
@@ -2149,42 +2169,42 @@ setTimeout(() => setSavedResponse(false), 2000);
   const BibleView = () => (
     <div className="space-y-6">
       {loadingBible && (
-        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-12 text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-yellow-500 mx-auto mb-4" />
-          <p className="text-gray-400 font-medium">Loading Bible chapter...</p>
+        <div className="va-glass-card p-12 text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-[#7b42d4] mx-auto mb-4" strokeWidth={1.5} />
+          <p className="va-muted font-medium">Loading Bible chapter...</p>
         </div>
       )}
 
       {!loadingBible && !bibleText && (
-        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
-          <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Read the Bible</h2>
-          <p className="text-sm text-gray-400 mb-4">
+        <div className="va-glass-card p-6">
+          <h2 className="text-3xl font-bold va-heading mb-2">Read the Bible</h2>
+          <p className="text-sm va-muted mb-4">
             Choose a book and chapter to read from the World English Version. Tap verses in answers to jump straight here.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-semibold text-yellow-500 mb-2">Book</label>
+              <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Book</label>
               <select
                 value={bibleBook}
                 onChange={(e) => setBibleBook(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
+                className="va-input w-full px-4 py-2 rounded-xl text-white"
               >
                 {bibleBooks.map(book => (
-                  <option key={book.name} value={book.name}>{book.name}</option>
+                  <option key={book.name} value={book.name} className="bg-[#0d0d2b]">{book.name}</option>
                 ))}
               </select>
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-yellow-500 mb-2">Chapter</label>
+              <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Chapter</label>
               <select
                 value={bibleChapter}
                 onChange={(e) => setBibleChapter(parseInt(e.target.value))}
-                className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
+                className="va-input w-full px-4 py-2 rounded-xl text-white"
               >
                 {Array.from({ length: bibleBooks.find(b => b.name === bibleBook)?.chapters || 1 }, (_, i) => i + 1).map(ch => (
-                  <option key={ch} value={ch}>{ch}</option>
+                  <option key={ch} value={ch} className="bg-[#0d0d2b]">{ch}</option>
                 ))}
               </select>
             </div>
@@ -2195,9 +2215,9 @@ setTimeout(() => setSavedResponse(false), 2000);
               setHighlightedVerse(null);
               fetchBibleChapter(bibleBook, bibleChapter);
             }}
-            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
+            className="w-full va-btn-primary py-3 rounded-xl flex items-center justify-center gap-2"
           >
-            <BookOpen className="w-5 h-5" />
+            <BookOpen className="w-5 h-5" strokeWidth={1.5} />
             Read Chapter
           </button>
         </div>
@@ -2205,19 +2225,19 @@ setTimeout(() => setSavedResponse(false), 2000);
 
       {!loadingBible && bibleText && (
         <>
-          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
+          <div className="va-glass-card p-6">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-2xl font-bold text-yellow-500 font-playfair">
-                {bibleText.book} {bibleText.chapter} <span className="text-sm font-normal text-gray-500">(World English Version)</span>
+              <h3 className="text-2xl font-bold va-heading">
+                {bibleText.book} {bibleText.chapter} <span className="text-sm font-normal va-muted">(World English Version)</span>
               </h3>
               <button
                 onClick={() => {
                   setBibleText(null);
                   setHighlightedVerse(null);
                 }}
-                className="text-gray-500 hover:text-gray-300 transition-colors"
+                className="va-muted hover:text-white transition-colors"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6" strokeWidth={1.5} />
               </button>
             </div>
             
@@ -2225,14 +2245,14 @@ setTimeout(() => setSavedResponse(false), 2000);
               {bibleText.verses.map((v, idx) => (
                 <p
                   key={idx}
-                  className={`text-gray-300 leading-relaxed rounded-lg px-3 py-1 transition-colors ${
-                    highlightedVerse === v.verse ? 'bg-yellow-500/10 border border-yellow-500/40' : ''
+                  className={`va-scripture text-white/95 leading-relaxed rounded-lg px-3 py-1 transition-colors ${
+                    highlightedVerse === v.verse ? 'bg-[rgba(123,66,212,0.25)] border border-[rgba(166,110,232,0.4)]' : ''
                   }`}
                 >
                   <span
-                    className={`font-bold mr-2 ${
-                      highlightedVerse === v.verse ? 'text-yellow-400' : 'text-yellow-500'
-                    }`}
+                    className={`font-bold mr-2 va-verse-ref ${
+                    highlightedVerse === v.verse ? 'text-[#f5c842]' : ''
+                  }`}
                   >
                     {v.verse}
                   </span>
@@ -2244,37 +2264,37 @@ setTimeout(() => setSavedResponse(false), 2000);
             <button
               onClick={goToNextChapter}
               disabled={!hasNextChapter()}
-              className="w-full mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 disabled:shadow-none text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
+              className="w-full mt-4 va-btn-primary py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Next
             </button>
           </div>
 
-          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-white mb-4 font-playfair">Navigate to Another Chapter</h3>
+          <div className="va-glass-card p-6">
+            <h3 className="text-lg font-bold va-heading mb-4">Navigate to Another Chapter</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-semibold text-yellow-500 mb-2">Book</label>
+                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Book</label>
                 <select
                   value={bibleBook}
                   onChange={(e) => setBibleBook(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
+                  className="va-input w-full px-4 py-2 rounded-xl text-white"
                 >
                   {bibleBooks.map(book => (
-                    <option key={book.name} value={book.name}>{book.name}</option>
+                    <option key={book.name} value={book.name} className="bg-[#0d0d2b]">{book.name}</option>
                   ))}
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-yellow-500 mb-2">Chapter</label>
+                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Chapter</label>
                 <select
                   value={bibleChapter}
                   onChange={(e) => setBibleChapter(parseInt(e.target.value))}
-                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
+                  className="va-input w-full px-4 py-2 rounded-xl text-white"
                 >
                   {Array.from({ length: bibleBooks.find(b => b.name === bibleBook)?.chapters || 1 }, (_, i) => i + 1).map(ch => (
-                    <option key={ch} value={ch}>{ch}</option>
+                    <option key={ch} value={ch} className="bg-[#0d0d2b]">{ch}</option>
                   ))}
                 </select>
               </div>
@@ -2285,9 +2305,9 @@ setTimeout(() => setSavedResponse(false), 2000);
                 setHighlightedVerse(null);
                 fetchBibleChapter(bibleBook, bibleChapter);
               }}
-              className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
+              className="w-full va-btn-primary py-3 rounded-xl flex items-center justify-center gap-2"
             >
-              <BookOpen className="w-5 h-5" />
+              <BookOpen className="w-5 h-5" strokeWidth={1.5} />
               Go to Chapter
             </button>
           </div>
@@ -2304,22 +2324,22 @@ setTimeout(() => setSavedResponse(false), 2000);
 
     return (
       <div className="space-y-6">
-        <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
-          <h2 className="text-3xl font-bold text-white mb-2 font-playfair">Bible in a Year</h2>
-          <p className="text-gray-300 mb-4">Complete the entire Bible in 365 days</p>
+        <div className="va-glass-card p-6">
+          <h2 className="text-3xl font-bold va-heading mb-2">Bible in a Year</h2>
+          <p className="text-white/90 mb-4 va-font-nunito">Complete the entire Bible in 365 days</p>
           
-          <div className="bg-gray-900 border border-yellow-500/20 rounded-lg p-4 mb-4">
+          <div className="va-glass-card rounded-xl p-4 mb-4">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-bold text-gray-300">Progress</span>
-              <span className="text-sm text-gray-400 font-medium">
+              <span className="text-sm font-bold text-white/90 va-font-nunito">Progress</span>
+              <span className="text-sm va-muted font-medium">
                 {completedReadings.length} / {readingPlan.reduce((sum, day) => sum + day.readings.length, 0)} chapters
                 {' · '}
                 {getCompletedBooksCount()} / {bibleBooks.length} books
               </span>
             </div>
-            <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-[rgba(255,255,255,0.1)] rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all shadow-lg shadow-yellow-500/50"
+                className="bg-gradient-to-r from-[#7b42d4] to-[#e8a930] h-3 rounded-full transition-all"
                 style={{
                   width: `${(completedReadings.length / readingPlan.reduce((sum, day) => sum + day.readings.length, 0)) * 100}%`
                 }}
@@ -2335,16 +2355,16 @@ setTimeout(() => setSavedResponse(false), 2000);
           const dayOfYearForTitle = selectedPlanDay != null ? selectedPlanDay : dayOfYear;
           const isToday = selectedPlanDay == null || selectedPlanDay === dayOfYear;
           return planToShow ? (
-          <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
+          <div className="va-glass-card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white font-playfair">
-                {isToday ? '📅' : '📖'} Day {dayOfYearForTitle} - {isToday ? "Today's Reading" : 'Reading'}
+              <h3 className="text-xl font-bold va-heading">
+                Day {dayOfYearForTitle} — {isToday ? "Today's Reading" : 'Reading'}
               </h3>
               {selectedPlanDay != null && (
                 <button
                   type="button"
                   onClick={() => setSelectedPlanDay(null)}
-                  className="text-sm text-yellow-500 hover:text-yellow-400 font-medium"
+                  className="text-sm text-[#e8a930] hover:text-[#f5c842] font-medium va-font-nunito"
                 >
                   Show today
                 </button>
@@ -2354,7 +2374,7 @@ setTimeout(() => setSavedResponse(false), 2000);
               {planToShow.readings.map((reading, idx) => {
                 const isComplete = isReadingComplete(planToShow.day, reading);
                 return (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
+                  <div key={idx} className="flex items-center justify-between p-3 va-glass-card rounded-xl">
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
@@ -2369,7 +2389,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                           setHighlightedVerse(null);
                           fetchBibleChapter(reading.book, reading.chapter);
                         }}
-                        className={`font-bold text-left ${isComplete ? 'text-gray-500 line-through' : 'text-gray-300 hover:text-yellow-500'}`}
+                        className={`font-bold text-left va-font-nunito ${isComplete ? 'va-muted line-through' : 'text-white/90 hover:text-[#e8a930]'}`}
                       >
                         {reading.book} {reading.chapter}
                       </button>
@@ -2381,9 +2401,9 @@ setTimeout(() => setSavedResponse(false), 2000);
                         setHighlightedVerse(null);
                         fetchBibleChapter(reading.book, reading.chapter);
                       }}
-                      className="text-sm bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg text-black font-bold px-3 py-1 rounded-lg transition-all"
+                      className="text-sm va-btn-primary px-3 py-1.5 rounded-xl va-font-nunito"
                     >
-                      Read →
+                      Read
                     </button>
                   </div>
                 );
@@ -2393,8 +2413,8 @@ setTimeout(() => setSavedResponse(false), 2000);
           ) : null;
         })()}
 
-        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-white mb-4 font-playfair">All Days</h3>
+        <div className="va-glass-card p-6">
+          <h3 className="text-xl font-bold va-heading mb-4">All Days</h3>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {readingPlan.map((day, idx) => {
               const dayComplete = day.readings.every(r => isReadingComplete(day.day, r));
@@ -2406,20 +2426,20 @@ setTimeout(() => setSavedResponse(false), 2000);
                   tabIndex={0}
                   onClick={() => setSelectedPlanDay(day.day)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPlanDay(day.day); } }}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${dayComplete ? 'bg-green-900/20 border-green-500/30 hover:bg-green-900/30' : 'bg-gray-900/50 border-gray-700/30 hover:bg-gray-800/70 hover:border-yellow-500/20'}`}
+                  className={`p-3 rounded-xl border cursor-pointer transition-colors va-font-nunito ${dayComplete ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'va-glass-card hover:border-[rgba(166,110,232,0.25)]'}`}
                 >
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-gray-300 mb-1">
+                      <div className="font-bold text-white/90 mb-1">
                         Day {day.day} {dayComplete && '✓'}
                       </div>
-                      <div className="text-sm text-gray-400 flex flex-wrap gap-x-1 gap-y-0.5">
+                      <div className="text-sm va-muted flex flex-wrap gap-x-1 gap-y-0.5">
                         {day.readings.map((r, ri) => {
                           const complete = isReadingComplete(day.day, r);
                           return (
                             <span key={ri}>
                               {ri > 0 && ', '}
-                              <span className={complete ? 'text-green-400/90' : 'text-gray-400'}>
+                              <span className={complete ? 'text-emerald-400/90' : ''}>
                                 {r.book} {r.chapter}
                               </span>
                             </span>
@@ -2438,9 +2458,9 @@ setTimeout(() => setSavedResponse(false), 2000);
                           fetchBibleChapter(firstReading.book, firstReading.chapter);
                           setCurrentView('bible');
                         }}
-                        className="text-sm text-yellow-500 hover:text-yellow-400 font-semibold whitespace-nowrap"
+                        className="text-sm text-[#e8a930] hover:text-[#f5c842] font-semibold whitespace-nowrap va-font-nunito"
                       >
-                        Go to chapters →
+                        Go to chapters
                       </button>
                     )}
                   </div>
@@ -2454,51 +2474,46 @@ setTimeout(() => setSavedResponse(false), 2000);
   };
 
   return (
-    <div className="min-h-screen bg-black font-inter">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
-        .font-playfair { font-family: 'Playfair Display', serif; }
-        .font-inter { font-family: 'Inter', sans-serif; }
-      `}</style>
-      
-      <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-yellow-500/20 sticky top-0 z-50 backdrop-blur-sm">
+    <div className="min-h-screen va-app-bg va-font-nunito text-white">
+      <header className="va-glass-card border-b border-[rgba(255,255,255,0.12)] sticky top-0 z-50 backdrop-blur-md rounded-none">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <BookOpen className="w-10 h-10 text-yellow-500" />
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent font-playfair">
-                VerseAid
+              <BookOpen className="w-10 h-10 va-nav-active flex-shrink-0" strokeWidth={1.5} />
+              <h1 className="text-3xl font-bold va-logo-text va-font-playfair flex items-center gap-1">
+                <span className="va-logo-text">VerseAid</span>
+                <span className="text-white/90">✦</span>
               </h1>
             </div>
             <div className="flex items-center gap-4">
               {isLoggedIn ? (
                 <>
-                  <button onClick={() => setShowMenu(!showMenu)} className="md:hidden text-yellow-500">
-                    <Menu className="w-6 h-6" />
+                  <button onClick={() => setShowMenu(!showMenu)} className="md:hidden text-[#a66ee8]">
+                    <Menu className="w-6 h-6" strokeWidth={1.5} />
                   </button>
                   <div className="hidden md:flex items-center gap-4">
                     {(userTier === 'premium' || userTier === 'church') && (
-                      <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-yellow-500/50">
+                      <span className="va-btn-primary text-xs px-4 py-1.5 rounded-full">
                         {userTier === 'premium' ? 'PREMIUM' : churchName.toUpperCase()}
                       </span>
                     )}
                     {userTier === 'free' && (
                       <button
                         onClick={() => setShowUpgradeModal(true)}
-                        className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-4 py-1.5 rounded-full hover:shadow-lg hover:shadow-yellow-500/50 transition-all"
+                        className="va-btn-primary text-xs px-4 py-1.5 rounded-full"
                       >
                         Upgrade 
                       </button>
                     )}
-                    <span className="text-gray-400 text-sm">Hi, <span className="text-yellow-500 font-semibold">{username}</span></span>
+                    <span className="va-muted text-sm">Hi, <span className="text-[#e8a930] font-semibold">{username}</span></span>
 <button
   onClick={() => setShowSettingsModal(true)}
-  className="text-gray-400 hover:text-yellow-500 transition-colors"
+  className="va-nav-inactive hover:text-[#a66ee8] transition-colors p-1"
   title="Settings"
 >
-  ⚙️
+  <Settings className="w-5 h-5" strokeWidth={1.5} />
 </button>
-<button onClick={handleLogout} className="text-yellow-500 hover:text-yellow-400 font-semibold text-sm">
+<button onClick={handleLogout} className="text-[#e8a930] hover:text-[#f5c842] font-semibold text-sm">
   Sign Out
 </button>
                   </div>
@@ -2506,7 +2521,7 @@ setTimeout(() => setSavedResponse(false), 2000);
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="text-yellow-500 hover:text-yellow-400 font-semibold text-sm"
+                  className="text-[#e8a930] hover:text-[#f5c842] font-semibold text-sm"
                 >
                   Sign In
                 </button>
@@ -2516,24 +2531,24 @@ setTimeout(() => setSavedResponse(false), 2000);
         </div>
 
         {isLoggedIn && (
-          <div className={`${showMenu ? 'block' : 'hidden'} md:block border-t border-yellow-500/10`}>
+          <div className={`${showMenu ? 'block' : 'hidden'} md:block border-t border-[rgba(255,255,255,0.08)]`}>
             <div className="max-w-7xl mx-auto px-6 py-2 flex gap-2 overflow-x-auto">
               <button
                 onClick={() => { setCurrentView('home'); setShowMenu(false); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
-                  currentView === 'home' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'home' ? 'va-btn-primary text-white' : 'va-nav-inactive hover:text-[#a66ee8]'
                 }`}
               >
-                <Home className="w-4 h-4" />
+                <Home className="w-4 h-4" strokeWidth={1.5} />
                 Home
               </button>
               <button
                 onClick={() => { setCurrentView('saved'); setShowMenu(false); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
-                  currentView === 'saved' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'saved' ? 'va-btn-primary text-white' : 'va-nav-inactive hover:text-[#a66ee8]'
                 }`}
               >
-                <Star className="w-4 h-4" />
+                <Star className="w-4 h-4" strokeWidth={1.5} />
                 Saved
               </button>
               <button
@@ -2543,32 +2558,32 @@ setTimeout(() => setSavedResponse(false), 2000);
                     setShowMenu(false);
                   }
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
-                  currentView === 'journal' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'journal' ? 'va-btn-primary text-white' : 'va-nav-inactive hover:text-[#a66ee8]'
                 }`}
               >
-                <BookMarked className="w-4 h-4" />
-                Journal {(userTier === 'free') && <Crown className="w-3 h-3" />}
+                <BookMarked className="w-4 h-4" strokeWidth={1.5} />
+                Journal {(userTier === 'free') && <Lock className="w-3 h-3" />}
               </button>
               <button
                 onClick={() => { setCurrentView('community'); setShowMenu(false); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
-                  currentView === 'community' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'community' ? 'va-btn-primary text-white' : 'va-nav-inactive hover:text-[#a66ee8]'
                 }`}
               >
-                <Heart className="w-4 h-4" />
-                Community {(userTier === 'free') && <Crown className="w-3 h-3" />}
+                <Heart className="w-4 h-4" strokeWidth={1.5} />
+                Community {(userTier === 'free') && <Lock className="w-3 h-3" />}
               </button>
               <button
                 onClick={() => { 
                   setCurrentView('bible'); 
                   setShowMenu(false);
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
-                  currentView === 'bible' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'bible' ? 'va-btn-primary text-white' : 'va-nav-inactive hover:text-[#a66ee8]'
                 }`}
               >
-                <BookOpen className="w-4 h-4" />
+                <BookOpen className="w-4 h-4" strokeWidth={1.5} />
                 Bible
               </button>
               <button
@@ -2578,19 +2593,19 @@ setTimeout(() => setSavedResponse(false), 2000);
                     setShowMenu(false);
                   }
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
-                  currentView === 'reading-plan' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'reading-plan' ? 'va-btn-primary text-white' : 'va-nav-inactive hover:text-[#a66ee8]'
                 }`}
               >
-                <Calendar className="w-4 h-4" />
-                Reading Plan {(userTier === 'free') && <Crown className="w-3 h-3" />}
+                <Calendar className="w-4 h-4" strokeWidth={1.5} />
+                Reading Plan {(userTier === 'free') && <Lock className="w-3 h-3" />}
               </button>
             </div>
           </div>
         )}
       </header>
 
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 pb-12">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 pb-24">
         {currentView === 'home' && HomeView()}
         {currentView === 'saved' && <SavedView />}
         {currentView === 'journal' && <JournalView />}
@@ -2599,15 +2614,24 @@ setTimeout(() => setSavedResponse(false), 2000);
         {currentView === 'reading-plan' && <ReadingPlanView />}
       </div>
 
+      <button
+        type="button"
+        onClick={() => { setCurrentView('home'); }}
+        className="va-floating-btn fixed bottom-20 right-6 z-40"
+        title="Ask AI"
+      >
+        ✦
+      </button>
+
       {showAuthModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-md w-full">
+        <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
+          <div className="va-glass-modal p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white font-playfair">
+              <h2 className="text-2xl font-bold va-heading">
                 {showForgotPassword ? 'Reset Password' : (authMode === 'login' ? 'Sign In' : 'Create Account')}
               </h2>
-              <button onClick={() => { setShowAuthModal(false); setShowForgotPassword(false); setResetEmailSent(false); setError(''); }} className="text-gray-500 hover:text-gray-300">
-                <X className="w-6 h-6" />
+              <button onClick={() => { setShowAuthModal(false); setShowForgotPassword(false); setResetEmailSent(false); setError(''); }} className="va-muted hover:text-white">
+                <X className="w-6 h-6" strokeWidth={1.5} />
               </button>
             </div>
 
@@ -2615,16 +2639,16 @@ setTimeout(() => setSavedResponse(false), 2000);
               <div className="space-y-4">
                 {resetEmailSent ? (
                   <div className="text-center py-4">
-                    <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Send className="w-8 h-8 text-black" />
+                    <div className="w-16 h-16 va-btn-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Send className="w-8 h-8 text-white" strokeWidth={1.5} />
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2">Check Your Email</h3>
-                    <p className="text-gray-400 text-sm mb-6">
-                      If an account exists with <span className="text-yellow-500">{forgotPasswordEmail}</span>, we've sent password reset instructions to that address.
+                    <h3 className="text-lg font-bold va-heading mb-2">Check Your Email</h3>
+                    <p className="va-muted text-sm mb-6">
+                      If an account exists with <span className="text-[#e8a930]">{forgotPasswordEmail}</span>, we've sent password reset instructions to that address.
                     </p>
                     <button
                       onClick={() => { setShowForgotPassword(false); setResetEmailSent(false); setForgotPasswordEmail(''); setAuthMode('login'); }}
-                      className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
+                      className="w-full va-btn-primary py-3 rounded-lg"
                     >
                       Back to Sign In
                     </button>
@@ -2632,11 +2656,11 @@ setTimeout(() => setSavedResponse(false), 2000);
                 ) : (
                   <form onSubmit={(e) => { e.preventDefault(); handleForgotPassword(); }}>
                     <div className="space-y-4">
-                      <p className="text-gray-400 text-sm">
+                    <p className="va-muted text-sm">
                         Enter the email address associated with your account and we'll send you a link to reset your password.
                       </p>
                       <div>
-                        <label htmlFor="forgot-email" className="block text-sm font-semibold text-yellow-500 mb-1">Email Address</label>
+                        <label htmlFor="forgot-email" className="block text-sm font-semibold text-[#e8a930] mb-1">Email Address</label>
                         <input
                           type="email"
                           id="forgot-email"
@@ -2644,7 +2668,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                           autoComplete="email"
                           value={forgotPasswordEmail}
                           onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                          className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                          className="w-full px-4 py-2 va-input rounded-lg"
                           placeholder="Enter your email"
                           autoFocus
                         />
@@ -2658,7 +2682,7 @@ setTimeout(() => setSavedResponse(false), 2000);
 
                       <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
+                        className="w-full va-btn-primary py-3 rounded-lg"
                       >
                         Send Reset Link
                       </button>
@@ -2667,7 +2691,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                         <button
                           type="button"
                           onClick={() => { setShowForgotPassword(false); setError(''); setForgotPasswordEmail(''); }}
-                          className="text-sm text-gray-400 hover:text-gray-300"
+                          className="text-sm va-muted hover:text-white/90"
                         >
                           Back to Sign In
                         </button>
@@ -2680,7 +2704,7 @@ setTimeout(() => setSavedResponse(false), 2000);
               <form onSubmit={(e) => { e.preventDefault(); handleAuth(); }} autoComplete="on">
                 <div className="space-y-4">
                   <div>
-                  <label htmlFor="auth-email" className="block text-sm font-semibold text-yellow-500 mb-1">Email</label>
+                  <label htmlFor="auth-email" className="block text-sm font-semibold text-[#e8a930] mb-1">Email</label>
                   <input
                    type="email"
                    id="auth-email"
@@ -2688,7 +2712,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                    autoComplete="email"
                    value={authEmail}
                    onChange={(e) => setAuthEmail(e.target.value)}
-                   className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                   className="w-full px-4 py-2 va-input rounded-lg"
                    placeholder="Enter email"
                   />
 
@@ -2696,7 +2720,7 @@ setTimeout(() => setSavedResponse(false), 2000);
 
                   {authMode === 'signup' && (
                     <div>
-                      <label htmlFor="auth-username" className="block text-sm font-semibold text-yellow-500 mb-1">Username</label>
+                      <label htmlFor="auth-username" className="block text-sm font-semibold text-[#e8a930] mb-1">Username</label>
                       <input
                         type="text"
                         id="auth-username"
@@ -2704,14 +2728,14 @@ setTimeout(() => setSavedResponse(false), 2000);
                         autoComplete="username"
                         value={authUsername}
                         onChange={(e) => setAuthUsername(e.target.value)}
-                        className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                        className="w-full px-4 py-2 va-input rounded-lg"
                         placeholder="Enter username"
                       />
                     </div>
                   )}
 
 <div>
-                    <label htmlFor="auth-password" className="block text-sm font-semibold text-yellow-500 mb-1">Password</label>
+                    <label htmlFor="auth-password" className="block text-sm font-semibold text-[#e8a930] mb-1">Password</label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -2720,13 +2744,13 @@ setTimeout(() => setSavedResponse(false), 2000);
                         autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
                         value={authPassword}
                         onChange={(e) => setAuthPassword(e.target.value)}
-                        className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20 pr-16"
+                        className="va-input w-full px-4 py-2 rounded-lg pr-16"
                         placeholder="Enter password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-yellow-500 font-bold hover:text-yellow-400"
+                        className="text-sm text-[#e8a930] font-bold hover:text-[#f5c842]"
                       >
                         {showPassword ? 'HIDE' : 'SHOW'}
                       </button>
@@ -2741,7 +2765,7 @@ setTimeout(() => setSavedResponse(false), 2000);
 
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
+                    className="w-full va-btn-primary py-3 rounded-lg"
                   >
                     {authMode === 'login' ? 'Sign In' : 'Create Account'}
                   </button>
@@ -2751,7 +2775,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                       <button
                         type="button"
                         onClick={() => { setShowForgotPassword(true); setError(''); }}
-                        className="text-sm text-yellow-500 hover:text-yellow-400"
+                        className="text-sm text-[#e8a930] hover:text-[#f5c842]"
                       >
                         Forgot your password?
                       </button>
@@ -2762,15 +2786,15 @@ setTimeout(() => setSavedResponse(false), 2000);
                     <button
                       type="button"
                       onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setError(''); setAuthEmail(''); }}
-                      className="text-sm text-gray-400 hover:text-gray-300"
+                      className="text-sm va-muted hover:text-white/90"
                     >
                       {authMode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                     </button>
                   </div>
 
                   {authMode === 'signup' && (
-                    <div className="pt-4 border-t border-gray-800">
-                      <p className="text-xs text-gray-500 text-center">
+                    <div className="pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                      <p className="text-xs va-muted text-center">
                         Free tier includes 3 questions daily, Bible reader, and community features
                       </p>
                     </div>
@@ -2783,63 +2807,63 @@ setTimeout(() => setSavedResponse(false), 2000);
       )}
 
       {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="relative bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-3xl p-6 w-full md:w-1/2 max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors z-10">
-              <X className="w-5 h-5" />
+        <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="relative va-glass-modal p-6 w-full md:w-1/2 max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full va-btn-glass z-10">
+              <X className="w-5 h-5" strokeWidth={1.5} />
             </button>
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-center text-white font-playfair">
-                Choose Your <span className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">Premium</span> Plan
+              <h2 className="text-2xl font-bold text-center va-heading">
+                Choose Your <span className="va-premium-banner-title">Premium</span> Plan
               </h2>
             </div>
 
             <div className="grid md:grid-cols-2 gap-5">
-              <div className="border-2 border-yellow-500/30 rounded-2xl p-5 bg-gradient-to-br from-gray-900 to-black hover:border-yellow-500/50 transition-all hover:shadow-2xl hover:shadow-yellow-500/20">
+              <div className="va-glass-card p-5 hover:border-[rgba(166,110,232,0.4)] transition-all">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
-                    <Crown className="w-5 h-5 text-black" />
+                  <div className="w-10 h-10 rounded-full va-btn-primary flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-white" strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-2xl font-bold text-white font-playfair">Premium</h3>
+                  <h3 className="text-2xl font-bold va-heading">Premium</h3>
                 </div>
 
-                <div className="mb-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
-                  <p className="text-sm font-bold text-yellow-500 mb-1">✨ 3-Day Free Trial</p>
-                  <p className="text-xs text-gray-300 leading-relaxed">
+                <div className="mb-4 p-3 va-premium-banner rounded-xl">
+                  <p className="text-sm font-bold text-[#e8a930] mb-1">3-Day Free Trial</p>
+                  <p className="text-xs text-white/80 leading-relaxed va-font-nunito">
                     Start your 3-day free trial today. Enter your payment information at checkout—you won't be charged until after the trial ends. Cancel anytime before the trial ends to avoid charges.
                   </p>
                 </div>
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-yellow-500">$4.99</span>
-                    <span className="text-gray-400 text-sm">per month</span>
+                    <span className="text-2xl font-bold text-[#e8a930]">$4.99</span>
+                    <span className="va-muted text-sm">per month</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-yellow-500">$49.99</span>
-                    <span className="text-gray-400 text-sm">per year</span>
+                    <span className="text-2xl font-bold text-[#e8a930]">$49.99</span>
+                    <span className="va-muted text-sm">per year</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-yellow-500">$89.99</span>
-                    <span className="text-gray-400 text-sm">lifetime (one-time)</span>
+                    <span className="text-2xl font-bold text-[#e8a930]">$89.99</span>
+                    <span className="va-muted text-sm">lifetime (one-time)</span>
                   </div>
                 </div>
 
                 <ul className="space-y-2 mb-5">
-                  <li className="flex items-start gap-2 text-gray-300 text-sm">
-                    <span className="text-yellow-500">✓</span>
+                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
+                    <span className="text-[#e8a930]">✓</span>
                     <span><strong className="text-white">Unlimited questions</strong> daily</span>
                   </li>
-                  <li className="flex items-start gap-2 text-gray-300 text-sm">
-                    <span className="text-yellow-500">✓</span>
+                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
+                    <span className="text-[#e8a930]">✓</span>
                     <span><strong className="text-white">Community Prayer Wall</strong> access</span>
                   </li>
-                  <li className="flex items-start gap-2 text-gray-300 text-sm">
-                    <span className="text-yellow-500">✓</span>
+                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
+                    <span className="text-[#e8a930]">✓</span>
                     <span><strong className="text-white">Prayer Journal</strong> with tracking</span>
                   </li>
-                  <li className="flex items-start gap-2 text-gray-300 text-sm">
-                    <span className="text-yellow-500">✓</span>
+                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
+                    <span className="text-[#e8a930]">✓</span>
                     <span><strong className="text-white">Bible-in-a-Year</strong> reading plan</span>
                   </li>
                 </ul>
@@ -2847,7 +2871,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 <button
                   onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_MONTHLY, true, 'Monthly Premium')}
                   disabled={stripeLoading}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 text-black font-bold py-2.5 rounded-xl transition-all transform hover:scale-105 mb-2 text-sm"
+                  className="w-full va-btn-primary py-2.5 rounded-xl mb-2 text-sm disabled:opacity-60"
                 >
                   {stripeLoading ? (
                     <>
@@ -2862,7 +2886,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 <button
                   onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_ANNUAL, true, 'Annual Premium')}
                   disabled={stripeLoading}
-                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-2.5 rounded-xl transition-all transform hover:scale-105 mb-2 disabled:border-gray-600 disabled:text-gray-500 text-sm"
+                  className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all mb-2 text-sm disabled:opacity-50"
                 >
                   Start 3-Day Trial - Annual $49.99/yr
                 </button>
@@ -2870,53 +2894,53 @@ setTimeout(() => setSavedResponse(false), 2000);
                 <button
                   onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_LIFETIME, false, 'Lifetime Premium')}
                   disabled={stripeLoading}
-                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-2.5 rounded-xl transition-all transform hover:scale-105 disabled:border-gray-600 disabled:text-gray-500 text-sm"
+                  className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm disabled:opacity-50"
                 >
                   Lifetime Premium - $89.99 once
                 </button>
 
-                <div className="mt-4 pt-3 border-t border-yellow-500/10">
-                  <p className="text-xs text-gray-400 text-center leading-relaxed">
-                    <strong className="text-gray-300">Important:</strong> Your card will be automatically charged after the 3-day trial unless you cancel before the trial ends. You can cancel your subscription anytime from the link in your Stripe email receipt or by contacting support. Lifetime purchases are one-time payments with no recurring charges.
+                <div className="mt-4 pt-3 border-t border-[rgba(255,255,255,0.1)]">
+                  <p className="text-xs va-muted text-center leading-relaxed">
+                    <strong className="text-white/80">Important:</strong> Your card will be automatically charged after the 3-day trial unless you cancel before the trial ends. You can cancel your subscription anytime from the link in your Stripe email receipt or by contacting support. Lifetime purchases are one-time payments with no recurring charges.
                   </p>
                 </div>
               </div>
 
-              <div className="border-2 border-yellow-500/30 rounded-2xl p-5 bg-gradient-to-br from-gray-900 to-black hover:border-yellow-500/50 transition-all hover:shadow-2xl hover:shadow-yellow-500/20">
+              <div className="va-glass-card p-5 hover:border-[rgba(166,110,232,0.4)] transition-all">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-black" />
+                  <div className="w-10 h-10 rounded-full va-btn-primary flex items-center justify-center">
+                    <Users className="w-5 h-5 text-white" strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-2xl font-bold text-white font-playfair">Church</h3>
+                  <h3 className="text-2xl font-bold va-heading">Church</h3>
                 </div>
 
                 <div className="mb-6">
-                  <span className="text-2xl font-bold text-yellow-500">Custom Pricing</span>
-                  <p className="text-gray-400 text-sm mt-2">For churches & ministries</p>
+                  <span className="text-2xl font-bold text-[#e8a930]">Custom Pricing</span>
+                  <p className="va-muted text-sm mt-2">For churches & ministries</p>
                 </div>
 
                 <ul className="space-y-3 mb-6">
-                  <li className="flex items-start gap-2 text-gray-300 text-sm">
-                    <span className="text-yellow-500">✓</span>
+                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
+                    <span className="text-[#e8a930]">✓</span>
                     <span><strong className="text-white">All Premium features</strong> for unlimited members</span>
                   </li>
-                  <li className="flex items-start gap-2 text-gray-300 text-sm">
-                    <span className="text-yellow-500">✓</span>
+                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
+                    <span className="text-[#e8a930]">✓</span>
                     <span>Custom branding with church logo</span>
                   </li>
-                  <li className="flex items-start gap-2 text-gray-300 text-sm">
-                    <span className="text-yellow-500">✓</span>
+                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
+                    <span className="text-[#e8a930]">✓</span>
                     <span>Private church prayer wall</span>
                   </li>
-                  <li className="flex items-start gap-2 text-gray-300 text-sm">
-                    <span className="text-yellow-500">✓</span>
+                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
+                    <span className="text-[#e8a930]">✓</span>
                     <span>Admin dashboard & analytics</span>
                   </li>
                 </ul>
 
                 <button
                   onClick={() => setShowContactForm(true)}
-                  className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold py-3 rounded-xl transition-all transform hover:scale-105"
+                  className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-3 rounded-xl transition-all"
                 >
                   Request Information
                 </button>
@@ -2927,25 +2951,25 @@ setTimeout(() => setSavedResponse(false), 2000);
       )}
       
 {showSettingsModal && (
-  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-    <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-lg w-full my-8">
+  <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div className="va-glass-modal p-6 max-w-lg w-full my-8">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white font-playfair">Account Settings</h2>
-        <button onClick={() => { setShowSettingsModal(false); setSettingsMessage(''); setSettingsError(''); }} className="text-gray-500 hover:text-gray-300">
-          <X className="w-6 h-6" />
+        <h2 className="text-2xl font-bold va-heading">Account Settings</h2>
+        <button onClick={() => { setShowSettingsModal(false); setSettingsMessage(''); setSettingsError(''); }} className="va-muted hover:text-white">
+          <X className="w-6 h-6" strokeWidth={1.5} />
         </button>
       </div>
 
-      <div className="flex gap-2 mb-6 border-b border-yellow-500/20 pb-3">
+      <div className="flex gap-2 mb-6 border-b border-[rgba(255,255,255,0.12)] pb-3">
         <button
           onClick={() => setSettingsTab('account')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${settingsTab === 'account' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all va-font-nunito ${settingsTab === 'account' ? 'va-btn-primary text-white' : 'va-muted hover:text-[#a66ee8]'}`}
         >
           Account
         </button>
         <button
           onClick={() => setSettingsTab('subscription')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${settingsTab === 'subscription' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-yellow-500'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all va-font-nunito ${settingsTab === 'subscription' ? 'va-btn-primary text-white' : 'va-muted hover:text-[#a66ee8]'}`}
         >
           Subscription
         </button>
@@ -2965,17 +2989,17 @@ setTimeout(() => setSavedResponse(false), 2000);
       {settingsTab === 'account' && (
         <div className="space-y-5">
           <div>
-            <p className="text-sm text-gray-400 mb-4">Signed in as <span className="text-yellow-500 font-semibold">{username}</span></p>
+            <p className="text-sm va-muted mb-4">Signed in as <span className="text-[#e8a930] font-semibold">{username}</span></p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-yellow-500 mb-2">Update Email</label>
+            <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Update Email</label>
             <input
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               placeholder="Enter new email address"
-              className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+              className="w-full px-4 py-2 va-input rounded-lg"
             />
             <button
               onClick={async () => {
@@ -2989,27 +3013,27 @@ setTimeout(() => setSavedResponse(false), 2000);
                 setSettingsMessage('Confirmation sent to your new email address. Please check your inbox.');
                 setNewEmail('');
               }}
-              className="mt-2 w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold py-2 rounded-lg hover:shadow-lg transition-all"
+              className="mt-2 w-full va-btn-primary py-2 rounded-xl"
             >
               Update Email
             </button>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-yellow-500 mb-2">Update Password</label>
+            <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Update Password</label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Enter new password"
-              className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20 mb-2"
+              className="va-input w-full px-4 py-2 rounded-lg mb-2"
             />
             <input
               type="password"
               value={confirmNewPassword}
               onChange={(e) => setConfirmNewPassword(e.target.value)}
               placeholder="Confirm new password"
-              className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+              className="w-full px-4 py-2 va-input rounded-lg"
             />
             <button
               onClick={async () => {
@@ -3025,7 +3049,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 setNewPassword('');
                 setConfirmNewPassword('');
               }}
-              className="mt-2 w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold py-2 rounded-lg hover:shadow-lg transition-all"
+              className="mt-2 w-full va-btn-primary py-2 rounded-xl"
             >
               Update Password
             </button>
@@ -3035,19 +3059,19 @@ setTimeout(() => setSavedResponse(false), 2000);
 
       {settingsTab === 'subscription' && (
         <div className="space-y-5">
-          <div className="p-4 bg-gray-900 border border-yellow-500/20 rounded-xl">
-            <p className="text-sm font-semibold text-gray-400 mb-1">Current Plan</p>
+          <div className="va-glass-card p-4 rounded-xl">
+            <p className="text-sm font-semibold va-muted mb-1">Current Plan</p>
             {userTier === 'premium' ? (
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🛡️</span>
-                <span className="text-yellow-500 font-bold text-lg">Premium</span>
+                <span className="text-[#e8a930] font-bold text-lg">Premium</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-gray-300 font-bold text-lg">Free</span>
+                <span className="text-white/90 font-bold text-lg">Free</span>
                 <button
                   onClick={() => { setShowSettingsModal(false); setShowUpgradeModal(true); }}
-                  className="ml-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-3 py-1 rounded-full"
+                  className="ml-2 va-btn-primary text-xs px-3 py-1 rounded-full"
                 >
                   Upgrade ✨
                 </button>
@@ -3058,13 +3082,13 @@ setTimeout(() => setSavedResponse(false), 2000);
           {userTier === 'premium' && (
             <>
               <div>
-                <label className="block text-sm font-semibold text-yellow-500 mb-2">Update Payment Method</label>
-                <p className="text-xs text-gray-400 mb-3">You'll be redirected to Stripe to securely update your card information.</p>
+                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Update Payment Method</label>
+                <p className="text-xs va-muted mb-3">You'll be redirected to Stripe to securely update your card information.</p>
                 <button
                   onClick={() => {
                     window.open('https://billing.stripe.com/p/login/test_00g000000000000', '_blank');
                   }}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold py-2 rounded-lg hover:shadow-lg transition-all"
+                  className="w-full va-btn-primary py-2 rounded-xl"
                 >
                   Manage Payment Method
                 </button>
@@ -3072,7 +3096,7 @@ setTimeout(() => setSavedResponse(false), 2000);
 
               <div className="pt-4 border-t border-red-500/20">
                 <label className="block text-sm font-semibold text-red-400 mb-2">Cancel Subscription</label>
-                <p className="text-xs text-gray-400 mb-3">Your premium access will remain until the end of your current billing period.</p>
+                <p className="text-xs va-muted mb-3">Your premium access will remain until the end of your current billing period.</p>
                 <button
                   onClick={async () => {
                     if (!window.confirm('Are you sure you want to cancel your subscription? You will keep premium access until the end of your billing period.')) return;
@@ -3120,66 +3144,66 @@ setTimeout(() => setSavedResponse(false), 2000);
 )}
 
       {showContactForm && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-lg w-full my-8">
+        <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="va-glass-modal p-6 max-w-lg w-full my-8">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-white font-playfair">Church Edition Inquiry</h2>
-                <p className="text-sm text-gray-400 mt-1">We'll contact you within 24 hours</p>
+                <h2 className="text-2xl font-bold va-heading">Church Edition Inquiry</h2>
+                <p className="text-sm va-muted mt-1">We'll contact you within 24 hours</p>
               </div>
-              <button onClick={() => setShowContactForm(false)} className="text-gray-500 hover:text-gray-300">
-                <X className="w-6 h-6" />
+              <button onClick={() => setShowContactForm(false)} className="va-muted hover:text-white">
+                <X className="w-6 h-6" strokeWidth={1.5} />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-yellow-500 mb-2">Your Name *</label>
+                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Your Name *</label>
                 <input
                   type="text"
                   value={contactInfo.name}
                   onChange={(e) => setContactInfo({...contactInfo, name: e.target.value})}
                   placeholder="John Smith"
-                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                  className="w-full px-4 py-2 va-input rounded-lg"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-yellow-500 mb-2">Email Address *</label>
+                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Email Address *</label>
                 <input
                   type="email"
                   value={contactInfo.email}
                   onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
                   placeholder="john@church.com"
-                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                  className="w-full px-4 py-2 va-input rounded-lg"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-yellow-500 mb-2">Church/Ministry Name</label>
+                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Church/Ministry Name</label>
                 <input
                   type="text"
                   value={contactInfo.churchName}
                   onChange={(e) => setContactInfo({...contactInfo, churchName: e.target.value})}
                   placeholder="Grace Community Church"
-                  className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-yellow-500/20"
+                  className="w-full px-4 py-2 va-input rounded-lg"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-yellow-500 mb-2">Message (Optional)</label>
+                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Message (Optional)</label>
                 <textarea
                   value={contactInfo.message}
                   onChange={(e) => setContactInfo({...contactInfo, message: e.target.value})}
                   placeholder="Tell us about your church..."
-                  className="w-full px-4 py-3 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 resize-none focus:ring-2 focus:ring-yellow-500/20"
+                  className="va-input w-full px-4 py-3 rounded-lg resize-none"
                   rows="3"
                 />
               </div>
 
               <button
                 onClick={submitContactForm}
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 text-black font-bold py-3 rounded-lg transition-all"
+                className="w-full va-btn-primary py-3 rounded-lg"
               >
                 Submit Request
               </button>
@@ -3188,21 +3212,21 @@ setTimeout(() => setSavedResponse(false), 2000);
         </div>
       )}
 {showPrayerModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-white mb-4 font-playfair">Add Prayer Request</h3>
+        <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
+          <div className="va-glass-modal p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold va-heading mb-4">Add Prayer Request</h3>
             
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-yellow-500 mb-2">Category</label>
+              <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Category</label>
               <select
                 value={prayerCategory}
                 onChange={(e) => setPrayerCategory(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 focus:ring-2 focus:ring-yellow-500/20"
+                className="va-input w-full px-4 py-2 rounded-xl"
               >
                 <option value="">Select a category (optional)</option>
                 {prayerCategories.map(cat => (
                   <option key={cat.value} value={cat.value}>
-                    {cat.emoji} {cat.label}
+                    {cat.label}
                   </option>
                 ))}
               </select>
@@ -3212,7 +3236,7 @@ setTimeout(() => setSavedResponse(false), 2000);
               value={newPrayerEntry}
               onChange={(e) => setNewPrayerEntry(e.target.value)}
               placeholder="What would you like to pray about?"
-              className="w-full px-4 py-3 bg-gray-900 border border-yellow-500/20 rounded-lg text-gray-300 placeholder-gray-500 mb-4 resize-none focus:ring-2 focus:ring-yellow-500/20"
+              className="va-input w-full px-4 py-3 rounded-xl mb-4 resize-none"
               rows="4"
               autoComplete="off"
               autoCorrect="off"
@@ -3220,7 +3244,7 @@ setTimeout(() => setSavedResponse(false), 2000);
               spellCheck="false"
             />
             
-            <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <div className="mb-4 p-4 va-glass-card rounded-xl">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -3229,8 +3253,8 @@ setTimeout(() => setSavedResponse(false), 2000);
                   className="mt-1"
                 />
                 <div>
-                  <p className="text-sm font-bold text-yellow-500">Share to Community</p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-sm font-bold text-[#e8a930] va-font-nunito">Share to Community</p>
+                  <p className="text-xs va-muted mt-1">
                     Let others pray for your request. All prayers are anonymous.
                   </p>
                 </div>
@@ -3240,7 +3264,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             <div className="flex gap-3">
               <button
                 onClick={addPrayerEntry}
-                className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-lg text-black font-bold py-2 rounded-lg"
+                className="flex-1 va-btn-primary py-2 rounded-xl"
               >
                 Add Prayer
               </button>
@@ -3251,7 +3275,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                   setShareToCommunity(false);
                   setPrayerCategory('');
                 }}
-                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2 rounded-lg"
+                className="flex-1 va-btn-glass font-bold py-2 rounded-xl"
               >
                 Cancel
               </button>
@@ -3261,15 +3285,15 @@ setTimeout(() => setSavedResponse(false), 2000);
       )}
 
       {deletePrayerConfirmId !== null && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-2xl p-6 max-w-md w-full shadow-xl shadow-black/50">
+        <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
+          <div className="va-glass-modal p-6 max-w-md w-full shadow-xl">
             <div className="flex items-start gap-4 mb-5">
               <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-6 h-6 text-amber-400" />
+                <AlertTriangle className="w-6 h-6 text-amber-400" strokeWidth={1.5} />
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-white font-playfair mb-1">Remove from community wall?</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
+                <h3 className="text-xl font-bold va-heading mb-1">Remove from community wall?</h3>
+                <p className="va-muted text-sm leading-relaxed">
                   This prayer is on the community wall. Removing it will delete it from the wall too. This cannot be undone.
                 </p>
               </div>
@@ -3277,7 +3301,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setDeletePrayerConfirmId(null)}
-                className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-xl border border-gray-600/50 hover:border-gray-500 transition-all"
+                className="flex-1 va-btn-glass font-bold rounded-xl py-3"
               >
                 Cancel
               </button>
@@ -3292,15 +3316,15 @@ setTimeout(() => setSavedResponse(false), 2000);
         </div>
       )}
 
-<footer className="border-t border-yellow-500/10 py-12 mt-20">
+<footer className="border-t border-[rgba(255,255,255,0.1)] py-12 mt-20">
   <div className="max-w-7xl mx-auto px-6 text-center">
-    <p className="text-gray-500 text-sm mb-3">© 2025 VerseAid - Premium Biblical guidance powered by AI</p>
+    <p className="va-muted text-sm mb-3">© 2025 VerseAid - Premium Biblical guidance powered by AI</p>
     <div className="flex justify-center gap-4 text-sm">
-      <a href="/privacy-policy.html" className="text-yellow-500 hover:text-yellow-400">Privacy Policy</a>
-      <span className="text-gray-600">•</span>
-      <a href="/terms-of-service.html" className="text-yellow-500 hover:text-yellow-400">Terms of Service</a>
-      <span className="text-gray-600">•</span>
-      <a href="mailto:verseaid.ai@gmail.com" className="text-yellow-500 hover:text-yellow-400">Contact</a>
+      <a href="/privacy-policy.html" className="text-[#e8a930] hover:text-[#f5c842]">Privacy Policy</a>
+      <span className="va-muted">•</span>
+      <a href="/terms-of-service.html" className="text-[#e8a930] hover:text-[#f5c842]">Terms of Service</a>
+      <span className="va-muted">•</span>
+      <a href="mailto:verseaid.ai@gmail.com" className="text-[#e8a930] hover:text-[#f5c842]">Contact</a>
     </div>
   </div>
 </footer>

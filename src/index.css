@@ -1,0 +1,222 @@
+/* VerseAid – Visual redesign – fonts, colors, glassmorphism */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Nunito:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --midnight: #09091f;
+  --deep-navy: #0d0d2b;
+  --purple-dark: #1a0a35;
+  --purple-mid: #3d1a7a;
+  --purple-accent: #7b42d4;
+  --purple-light: #a66ee8;
+  --gold: #e8a930;
+  --gold-light: #f5c842;
+  --gold-dim: #c98d1a;
+  --silver: #c8c8e8;
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-bg-strong: rgba(255, 255, 255, 0.1);
+}
+
+/* Base app background */
+.va-app-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(123, 66, 212, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(232, 169, 48, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, #09091f 0%, #05051a 100%);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Font classes */
+.va-font-playfair { font-family: 'Playfair Display', serif; }
+.va-font-garamond { font-family: 'EB Garamond', serif; font-style: italic; }
+.va-font-nunito { font-family: 'Nunito', sans-serif; }
+
+/* Section titles */
+.va-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Scripture/verse body text */
+.va-scripture {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+}
+
+/* Verse reference (gold) */
+.va-verse-ref {
+  font-family: 'Playfair Display', serif;
+  color: #e8a930;
+  font-weight: 700;
+}
+
+/* Headings/titles – white or gradient */
+.va-title-gradient {
+  background: linear-gradient(135deg, #fff, #c8c8e8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: 'Playfair Display', serif;
+}
+
+/* Logo text gradient */
+.va-logo-text {
+  background: linear-gradient(120deg, #fff, #f5c842, #e8a930);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: 'Playfair Display', serif;
+}
+
+/* Glass cards and modals */
+.va-glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+}
+
+.va-glass-modal {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+}
+
+/* Verse of the day card */
+.va-verse-of-day-card {
+  background: linear-gradient(135deg, rgba(123, 66, 212, 0.45) 0%, rgba(61, 26, 122, 0.6) 60%, rgba(232, 169, 48, 0.15) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(166, 110, 232, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 8px 40px rgba(123, 66, 212, 0.3);
+}
+
+/* Primary button */
+.va-btn-primary {
+  background: linear-gradient(135deg, #7b42d4, #c98d1a);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(123, 66, 212, 0.4);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+}
+
+.va-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 24px rgba(123, 66, 212, 0.5);
+}
+
+.va-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Save / Share glass buttons */
+.va-btn-glass {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+}
+
+.va-btn-glass:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Secondary/muted text */
+.va-muted {
+  color: rgba(200, 200, 232, 0.55);
+}
+
+/* Community wall stats numbers */
+.va-stats-number {
+  font-family: 'Playfair Display', serif;
+  color: #e8a930;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* Premium/upgrade banner */
+.va-premium-banner {
+  background: linear-gradient(120deg, #3d1a7a 0%, #1a0a35 40%, #0d0820 100%);
+  border: 1px solid rgba(166, 110, 232, 0.35);
+  border-radius: 20px;
+}
+
+.va-premium-banner-title {
+  font-family: 'Playfair Display', serif;
+  background: linear-gradient(135deg, #fff, #f5c842);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Floating AI button */
+.va-floating-btn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7b42d4, #c98d1a);
+  box-shadow: 0 6px 28px rgba(123, 66, 212, 0.55);
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  animation: va-float 3s ease-in-out infinite;
+}
+
+@keyframes va-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Nav icon active (cards / active tab) */
+.va-nav-active {
+  color: rgba(166, 110, 232, 0.85);
+  stroke: rgba(166, 110, 232, 0.85);
+}
+
+/* Nav icon inactive */
+.va-nav-inactive {
+  color: rgba(200, 200, 232, 0.4);
+  stroke: rgba(200, 200, 232, 0.4);
+}
+
+/* Inputs and selects – glass style */
+.va-input {
+  background: var(--deep-navy);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+}
+
+.va-input::placeholder {
+  color: rgba(200, 200, 232, 0.5);
+}
+
+.va-input:focus {
+  outline: none;
+  border-color: rgba(166, 110, 232, 0.5);
+  box-shadow: 0 0 0 2px rgba(123, 66, 212, 0.2);
+}
+
+/* Modal overlay */
+.va-modal-overlay {
+  background: rgba(9, 9, 31, 0.85);
+  backdrop-filter: blur(8px);
+}
