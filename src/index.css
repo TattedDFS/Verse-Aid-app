@@ -99,6 +99,10 @@
   box-shadow: 0 8px 40px rgba(123, 66, 212, 0.3);
 }
 
+.va-verse-of-day-card .va-scripture {
+  font-size: 22px;
+}
+
 /* Primary button */
 .va-btn-primary {
   background: linear-gradient(135deg, #7b42d4, #c98d1a);
