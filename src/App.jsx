@@ -186,20 +186,24 @@ export default function BiblicalGuidanceApp() {
         try {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('reading_progress')
+            .select('reading_plan_progress, reading_plan_day')
             .eq('id', user.id)
             .single();
-          if (profile?.reading_progress) {
-            const progress = JSON.parse(profile.reading_progress);
-            if (Array.isArray(progress.completed_readings)) setCompletedReadings(progress.completed_readings);
-            else setCompletedReadings([]);
-            setSelectedPlanDay(progress.selected_plan_day != null ? progress.selected_plan_day : null);
-            setBibleBook(progress.bible_book || 'Genesis');
-            setBibleChapter(typeof progress.bible_chapter === 'number' ? progress.bible_chapter : 1);
+          if (profile) {
+            if (profile.reading_plan_progress != null) {
+              const raw = profile.reading_plan_progress;
+              const progress = typeof raw === 'string' ? JSON.parse(raw) : raw;
+              const keys = planProgressToCompletedReadings(progress);
+              setCompletedReadings(keys);
+            } else {
+              setCompletedReadings([]);
+            }
+            const dayVal = profile.reading_plan_day;
+            setSelectedPlanDay(dayVal != null && dayVal !== '' ? Number(dayVal) : null);
             readingProgressFromSupabase = true;
           }
         } catch (_) {
-          // reading_progress column may not exist; do not break journal load
+          // reading_plan_* columns may not exist; do not break journal load
         }
         const { data: journalRows, error: jErr } = await supabase
           .from('prayer_journal')
@@ -501,6 +505,54 @@ export default function BiblicalGuidanceApp() {
     return count;
   };
 
+  const getCompletedBooksList = () => {
+    const booksInPlan = {};
+    readingPlan.forEach((d) => {
+      d.readings.forEach((r) => {
+        if (!booksInPlan[r.book]) booksInPlan[r.book] = [];
+        booksInPlan[r.book].push({ day: d.day, chapter: r.chapter });
+      });
+    });
+    const list = [];
+    Object.keys(booksInPlan).forEach((book) => {
+      const entries = booksInPlan[book];
+      const allComplete = entries.every(
+        ({ day, chapter }) => completedReadings.includes(`${day}-${book}-${chapter}`)
+      );
+      if (allComplete && entries.length > 0) list.push(book);
+    });
+    return list;
+  };
+
+  const completedReadingsToPlanProgress = (keys) => {
+    const progress = {};
+    keys.forEach((key) => {
+      const parts = key.split('-');
+      if (parts.length < 3) return;
+      const day = parts[0];
+      const chapter = parseInt(parts[parts.length - 1], 10);
+      const book = parts.slice(1, -1).join('-');
+      if (!progress[day]) progress[day] = [];
+      progress[day].push({ book, chapter });
+    });
+    return progress;
+  };
+
+  const planProgressToCompletedReadings = (planProgress) => {
+    if (!planProgress || typeof planProgress !== 'object') return [];
+    const keys = [];
+    Object.keys(planProgress).forEach((day) => {
+      const readings = planProgress[day];
+      if (!Array.isArray(readings)) return;
+      readings.forEach((r) => {
+        if (r && r.book != null && r.chapter != null) {
+          keys.push(`${day}-${r.book}-${r.chapter}`);
+        }
+      });
+    });
+    return keys;
+  };
+
   const isReadingComplete = (day, reading) => {
     const key = `${day}-${reading.book}-${reading.chapter}`;
     return completedReadings.includes(key);
@@ -523,21 +575,23 @@ export default function BiblicalGuidanceApp() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const readingProgress = {
-        completed_readings: completedReadings,
-        selected_plan_day: selectedPlanDay,
-        bible_book: bibleBook,
-        bible_chapter: bibleChapter
+      const reading_plan_progress = completedReadingsToPlanProgress(completedReadings);
+      const reading_plan_day = selectedPlanDay != null ? selectedPlanDay : null;
+      const completed_books = getCompletedBooksList();
+      const updatePayload = {
+        reading_plan_progress: reading_plan_progress,
+        reading_plan_day: reading_plan_day,
+        completed_books: completed_books
       };
       const { error } = await supabase
         .from('profiles')
-        .update({ reading_progress: JSON.stringify(readingProgress) })
+        .update(updatePayload)
         .eq('id', user.id);
       if (error) console.error('Error saving reading progress to Supabase:', error);
     } catch (err) {
       console.error('Error saving reading progress:', err);
     }
-  }, [completedReadings, selectedPlanDay, bibleBook, bibleChapter]);
+  }, [completedReadings, selectedPlanDay]);
 
   const saveUserDataRef = React.useRef(saveUserData);
   saveUserDataRef.current = saveUserData;
@@ -548,7 +602,7 @@ export default function BiblicalGuidanceApp() {
       saveReadingProgressToSupabase();
     }, 600);
     return () => clearTimeout(t);
-  }, [isLoggedIn, completedReadings, selectedPlanDay, bibleBook, bibleChapter, saveReadingProgressToSupabase]);
+  }, [isLoggedIn, completedReadings, selectedPlanDay, saveReadingProgressToSupabase]);
 
   useEffect(() => {
     if (isLoggedIn && username) {
@@ -747,23 +801,27 @@ export default function BiblicalGuidanceApp() {
               }
             }
           }
-          // Load reading progress in a separate query so a missing column does not break tier/saved_responses
+          // Load reading plan progress from new columns
           try {
             const { data: progressRow } = await supabase
               .from('profiles')
-              .select('reading_progress')
+              .select('reading_plan_progress, reading_plan_day')
               .eq('id', data.user.id)
               .single();
-            if (progressRow?.reading_progress) {
-              const progress = JSON.parse(progressRow.reading_progress);
-              if (Array.isArray(progress.completed_readings)) setCompletedReadings(progress.completed_readings);
-              else setCompletedReadings([]);
-              setSelectedPlanDay(progress.selected_plan_day != null ? progress.selected_plan_day : null);
-              setBibleBook(progress.bible_book || 'Genesis');
-              setBibleChapter(typeof progress.bible_chapter === 'number' ? progress.bible_chapter : 1);
+            if (progressRow) {
+              if (progressRow.reading_plan_progress != null) {
+                const raw = progressRow.reading_plan_progress;
+                const progress = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                const keys = planProgressToCompletedReadings(progress);
+                setCompletedReadings(keys);
+              } else {
+                setCompletedReadings([]);
+              }
+              const dayVal = progressRow.reading_plan_day;
+              setSelectedPlanDay(dayVal != null && dayVal !== '' ? Number(dayVal) : null);
             }
           } catch (err) {
-            console.error('Error loading reading progress on login:', err);
+            console.error('Error loading reading plan progress on login:', err);
           }
       }
     }
@@ -799,15 +857,16 @@ export default function BiblicalGuidanceApp() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const readingProgress = {
-          completed_readings: completedReadings,
-          selected_plan_day: selectedPlanDay,
-          bible_book: bibleBook,
-          bible_chapter: bibleChapter
-        };
+        const reading_plan_progress = completedReadingsToPlanProgress(completedReadings);
+        const reading_plan_day = selectedPlanDay != null ? selectedPlanDay : null;
+        const completed_books = getCompletedBooksList();
         await supabase
           .from('profiles')
-          .update({ reading_progress: JSON.stringify(readingProgress) })
+          .update({
+            reading_plan_progress: reading_plan_progress,
+            reading_plan_day: reading_plan_day,
+            completed_books: completed_books
+          })
           .eq('id', user.id);
       }
       await supabase.auth.signOut();
