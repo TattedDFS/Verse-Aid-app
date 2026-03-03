@@ -165,6 +165,7 @@ export default function BiblicalGuidanceApp() {
       return;
     }
     
+    let readingProgressFromSupabase = false;
     const [savedData, journalData, readingsData, userData] = await Promise.all([
       safeStorageGet(`saved_${username}`),
       safeStorageGet(`journal_${username}`),
@@ -182,6 +183,23 @@ export default function BiblicalGuidanceApp() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('reading_progress')
+          .eq('id', user.id)
+          .single();
+        if (profile?.reading_progress) {
+          try {
+            const progress = JSON.parse(profile.reading_progress);
+            if (Array.isArray(progress.completed_readings)) setCompletedReadings(progress.completed_readings);
+            if (progress.selected_plan_day != null) setSelectedPlanDay(progress.selected_plan_day);
+            if (progress.bible_book) setBibleBook(progress.bible_book);
+            if (typeof progress.bible_chapter === 'number') setBibleChapter(progress.bible_chapter);
+            readingProgressFromSupabase = true;
+          } catch (err) {
+            console.error('Error parsing reading progress in loadUserData:', err);
+          }
+        }
         const { data: journalRows, error: jErr } = await supabase
           .from('prayer_journal')
           .select('id, text, date, answered, category')
@@ -216,7 +234,7 @@ export default function BiblicalGuidanceApp() {
         console.error('Error parsing journal for user', username, err);
       }
     }
-    if (readingsData && readingsData.value) {
+    if (readingsData && readingsData.value && !readingProgressFromSupabase) {
       try {
         setCompletedReadings(JSON.parse(readingsData.value));
       } catch (err) {
@@ -683,7 +701,7 @@ export default function BiblicalGuidanceApp() {
         // Load premium status from Supabase
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_tier, subscription_status, saved_responses')
+          .select('subscription_tier, subscription_status, saved_responses, reading_progress')
           .eq('id', data.user.id)
           .single();
       
@@ -697,6 +715,17 @@ export default function BiblicalGuidanceApp() {
                 setSavedResponses(JSON.parse(profile.saved_responses));
               } catch (err) {
                 console.error('Error loading saved responses:', err);
+              }
+            }
+            if (profile.reading_progress) {
+              try {
+                const progress = JSON.parse(profile.reading_progress);
+                if (Array.isArray(progress.completed_readings)) setCompletedReadings(progress.completed_readings);
+                if (progress.selected_plan_day != null) setSelectedPlanDay(progress.selected_plan_day);
+                if (progress.bible_book) setBibleBook(progress.bible_book);
+                if (typeof progress.bible_chapter === 'number') setBibleChapter(progress.bible_chapter);
+              } catch (err) {
+                console.error('Error loading reading progress:', err);
               }
             }
           }
@@ -732,6 +761,19 @@ export default function BiblicalGuidanceApp() {
 
   const handleLogout = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const readingProgress = {
+          completed_readings: completedReadings,
+          selected_plan_day: selectedPlanDay,
+          bible_book: bibleBook,
+          bible_chapter: bibleChapter
+        };
+        await supabase
+          .from('profiles')
+          .update({ reading_progress: JSON.stringify(readingProgress) })
+          .eq('id', user.id);
+      }
       await supabase.auth.signOut();
     } catch (err) {
       console.error('Sign out error:', err);
@@ -742,6 +784,10 @@ export default function BiblicalGuidanceApp() {
       setQuestionsToday(0);
       setSavedResponses([]);
       setPrayerJournal([]);
+      setCompletedReadings([]);
+      setSelectedPlanDay(null);
+      setBibleBook('Genesis');
+      setBibleChapter(1);
       setCurrentView('home');
     }
   };
@@ -2272,8 +2318,18 @@ setTimeout(() => setSavedResponse(false), 2000);
                       <div className="font-bold text-gray-300 mb-1">
                         Day {day.day} {dayComplete && '✓'}
                       </div>
-                      <div className="text-sm text-gray-400">
-                        {day.readings.map(r => `${r.book} ${r.chapter}`).join(', ')}
+                      <div className="text-sm text-gray-400 flex flex-wrap gap-x-1 gap-y-0.5">
+                        {day.readings.map((r, ri) => {
+                          const complete = isReadingComplete(day.day, r);
+                          return (
+                            <span key={ri}>
+                              {ri > 0 && ', '}
+                              <span className={complete ? 'text-green-400/90' : 'text-gray-400'}>
+                                {r.book} {r.chapter}
+                              </span>
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                     {firstReading && (
