@@ -403,6 +403,34 @@ export default function BiblicalGuidanceApp() {
     return match ? match[1].trim() : null;
   };
 
+  const goToNextChapter = () => {
+    const bookIndex = bibleBooks.findIndex((b) => b.name === bibleBook);
+    const currentBook = bibleBooks[bookIndex];
+    if (!currentBook) return;
+    if (bibleChapter < currentBook.chapters) {
+      setHighlightedVerse(null);
+      setBibleChapter(bibleChapter + 1);
+      fetchBibleChapter(bibleBook, bibleChapter + 1);
+      return;
+    }
+    if (bookIndex < bibleBooks.length - 1) {
+      const nextBook = bibleBooks[bookIndex + 1];
+      setHighlightedVerse(null);
+      setBibleBook(nextBook.name);
+      setBibleChapter(1);
+      fetchBibleChapter(nextBook.name, 1);
+    }
+  };
+
+  const hasNextChapter = () => {
+    const bookIndex = bibleBooks.findIndex((b) => b.name === bibleBook);
+    const currentBook = bibleBooks[bookIndex];
+    if (!currentBook) return false;
+    if (bibleChapter < currentBook.chapters) return true;
+    if (bookIndex < bibleBooks.length - 1) return true;
+    return false;
+  };
+
   const markReadingComplete = (day, reading) => {
     const key = `${day}-${reading.book}-${reading.chapter}`;
     if (!completedReadings.includes(key)) {
@@ -2027,6 +2055,14 @@ setTimeout(() => setSavedResponse(false), 2000);
                 </p>
               ))}
             </div>
+
+            <button
+              onClick={goToNextChapter}
+              disabled={!hasNextChapter()}
+              className="w-full mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-2xl hover:shadow-yellow-500/50 disabled:from-gray-700 disabled:to-gray-600 disabled:shadow-none text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
+            >
+              Next
+            </button>
           </div>
 
           <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
