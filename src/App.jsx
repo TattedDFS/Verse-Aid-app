@@ -80,7 +80,8 @@ export default function BiblicalGuidanceApp() {
   const [loadingBible, setLoadingBible] = useState(false);
   const [readingPlan, setReadingPlan] = useState([]);
   const [completedReadings, setCompletedReadings] = useState([]);
-  
+  const [selectedPlanDay, setSelectedPlanDay] = useState(null);
+
   const [dailyVerse, setDailyVerse] = useState(null);
   const [showDailyVerse, setShowDailyVerse] = useState(false);
   const [guidanceTone, setGuidanceTone] = useState('gentle');
@@ -404,6 +405,7 @@ export default function BiblicalGuidanceApp() {
   };
 
   const goToNextChapter = () => {
+    markCurrentChapterCompleteIfInPlan();
     const bookIndex = bibleBooks.findIndex((b) => b.name === bibleBook);
     const currentBook = bibleBooks[bookIndex];
     if (!currentBook) return;
@@ -436,6 +438,48 @@ export default function BiblicalGuidanceApp() {
     if (!completedReadings.includes(key)) {
       setCompletedReadings([...completedReadings, key]);
     }
+  };
+
+  const unmarkReadingComplete = (day, reading) => {
+    const key = `${day}-${reading.book}-${reading.chapter}`;
+    setCompletedReadings(completedReadings.filter((k) => k !== key));
+  };
+
+  const toggleReadingComplete = (day, reading) => {
+    if (isReadingComplete(day, reading)) {
+      unmarkReadingComplete(day, reading);
+    } else {
+      markReadingComplete(day, reading);
+    }
+  };
+
+  const markCurrentChapterCompleteIfInPlan = () => {
+    const dayEntry = readingPlan.find((d) =>
+      d.readings.some((r) => r.book === bibleBook && r.chapter === bibleChapter)
+    );
+    if (dayEntry) {
+      const reading = dayEntry.readings.find((r) => r.book === bibleBook && r.chapter === bibleChapter);
+      if (reading) markReadingComplete(dayEntry.day, reading);
+    }
+  };
+
+  const getCompletedBooksCount = () => {
+    const booksInPlan = {};
+    readingPlan.forEach((d) => {
+      d.readings.forEach((r) => {
+        if (!booksInPlan[r.book]) booksInPlan[r.book] = [];
+        booksInPlan[r.book].push({ day: d.day, chapter: r.chapter });
+      });
+    });
+    let count = 0;
+    Object.keys(booksInPlan).forEach((book) => {
+      const entries = booksInPlan[book];
+      const allComplete = entries.every(
+        ({ day, chapter }) => completedReadings.includes(`${day}-${book}-${chapter}`)
+      );
+      if (allComplete && entries.length > 0) count++;
+    });
+    return count;
   };
 
   const isReadingComplete = (day, reading) => {
@@ -2128,6 +2172,8 @@ setTimeout(() => setSavedResponse(false), 2000);
               <span className="text-sm font-bold text-gray-300">Progress</span>
               <span className="text-sm text-gray-400 font-medium">
                 {completedReadings.length} / {readingPlan.reduce((sum, day) => sum + day.readings.length, 0)} chapters
+                {' · '}
+                {getCompletedBooksCount()} / {bibleBooks.length} books
               </span>
             </div>
             <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
@@ -2141,22 +2187,39 @@ setTimeout(() => setSavedResponse(false), 2000);
           </div>
         </div>
 
-        {todaysPlan && (
+        {(() => {
+          const planToShow = selectedPlanDay != null
+            ? readingPlan.find((d) => d.day === selectedPlanDay)
+            : todaysPlan;
+          const dayOfYearForTitle = selectedPlanDay != null ? selectedPlanDay : dayOfYear;
+          const isToday = selectedPlanDay == null || selectedPlanDay === dayOfYear;
+          return planToShow ? (
           <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
-            <h3 className="text-xl font-bold text-white mb-4 font-playfair">
-              📅 Day {dayOfYear} - Today's Reading
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white font-playfair">
+                {isToday ? '📅' : '📖'} Day {dayOfYearForTitle} - {isToday ? "Today's Reading" : 'Reading'}
+              </h3>
+              {selectedPlanDay != null && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlanDay(null)}
+                  className="text-sm text-yellow-500 hover:text-yellow-400 font-medium"
+                >
+                  Show today
+                </button>
+              )}
+            </div>
             <div className="space-y-3">
-              {todaysPlan.readings.map((reading, idx) => {
-                const isComplete = isReadingComplete(todaysPlan.day, reading);
+              {planToShow.readings.map((reading, idx) => {
+                const isComplete = isReadingComplete(planToShow.day, reading);
                 return (
                   <div key={idx} className="flex items-center justify-between p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
                         checked={isComplete}
-                        onChange={() => markReadingComplete(todaysPlan.day, reading)}
-                        className="w-5 h-5"
+                        onChange={() => toggleReadingComplete(planToShow.day, reading)}
+                        className="w-5 h-5 cursor-pointer"
                       />
                       <button
                         onClick={() => {
@@ -2186,20 +2249,49 @@ setTimeout(() => setSavedResponse(false), 2000);
               })}
             </div>
           </div>
-        )}
+          ) : null;
+        })()}
 
         <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6">
           <h3 className="text-xl font-bold text-white mb-4 font-playfair">All Days</h3>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {readingPlan.map((day, idx) => {
               const dayComplete = day.readings.every(r => isReadingComplete(day.day, r));
+              const firstReading = day.readings[0];
               return (
-                <div key={idx} className={`p-3 rounded-lg border ${dayComplete ? 'bg-green-900/20 border-green-500/30' : 'bg-gray-900/50 border-gray-700/30'}`}>
-                  <div className="font-bold text-gray-300 mb-1">
-                    Day {day.day} {dayComplete && '✓'}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {day.readings.map(r => `${r.book} ${r.chapter}`).join(', ')}
+                <div
+                  key={idx}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedPlanDay(day.day)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPlanDay(day.day); } }}
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${dayComplete ? 'bg-green-900/20 border-green-500/30 hover:bg-green-900/30' : 'bg-gray-900/50 border-gray-700/30 hover:bg-gray-800/70 hover:border-yellow-500/20'}`}
+                >
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-gray-300 mb-1">
+                        Day {day.day} {dayComplete && '✓'}
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        {day.readings.map(r => `${r.book} ${r.chapter}`).join(', ')}
+                      </div>
+                    </div>
+                    {firstReading && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBibleBook(firstReading.book);
+                          setBibleChapter(firstReading.chapter);
+                          setHighlightedVerse(null);
+                          fetchBibleChapter(firstReading.book, firstReading.chapter);
+                          setCurrentView('bible');
+                        }}
+                        className="text-sm text-yellow-500 hover:text-yellow-400 font-semibold whitespace-nowrap"
+                      >
+                        Go to chapters →
+                      </button>
+                    )}
                   </div>
                 </div>
               );
