@@ -192,9 +192,10 @@ export default function BiblicalGuidanceApp() {
           if (profile?.reading_progress) {
             const progress = JSON.parse(profile.reading_progress);
             if (Array.isArray(progress.completed_readings)) setCompletedReadings(progress.completed_readings);
-            if (progress.selected_plan_day != null) setSelectedPlanDay(progress.selected_plan_day);
-            if (progress.bible_book) setBibleBook(progress.bible_book);
-            if (typeof progress.bible_chapter === 'number') setBibleChapter(progress.bible_chapter);
+            else setCompletedReadings([]);
+            setSelectedPlanDay(progress.selected_plan_day != null ? progress.selected_plan_day : null);
+            setBibleBook(progress.bible_book || 'Genesis');
+            setBibleChapter(typeof progress.bible_chapter === 'number' ? progress.bible_chapter : 1);
             readingProgressFromSupabase = true;
           }
         } catch (_) {
@@ -518,8 +519,36 @@ export default function BiblicalGuidanceApp() {
     ]);
   }, [isLoggedIn, username, savedResponses, prayerJournal, completedReadings, userTier, questionsToday, lastQuestionDate, churchCode, churchName]);
 
+  const saveReadingProgressToSupabase = React.useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const readingProgress = {
+        completed_readings: completedReadings,
+        selected_plan_day: selectedPlanDay,
+        bible_book: bibleBook,
+        bible_chapter: bibleChapter
+      };
+      const { error } = await supabase
+        .from('profiles')
+        .update({ reading_progress: JSON.stringify(readingProgress) })
+        .eq('id', user.id);
+      if (error) console.error('Error saving reading progress to Supabase:', error);
+    } catch (err) {
+      console.error('Error saving reading progress:', err);
+    }
+  }, [completedReadings, selectedPlanDay, bibleBook, bibleChapter]);
+
   const saveUserDataRef = React.useRef(saveUserData);
   saveUserDataRef.current = saveUserData;
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const t = setTimeout(() => {
+      saveReadingProgressToSupabase();
+    }, 600);
+    return () => clearTimeout(t);
+  }, [isLoggedIn, completedReadings, selectedPlanDay, bibleBook, bibleChapter, saveReadingProgressToSupabase]);
 
   useEffect(() => {
     if (isLoggedIn && username) {
@@ -728,9 +757,10 @@ export default function BiblicalGuidanceApp() {
             if (progressRow?.reading_progress) {
               const progress = JSON.parse(progressRow.reading_progress);
               if (Array.isArray(progress.completed_readings)) setCompletedReadings(progress.completed_readings);
-              if (progress.selected_plan_day != null) setSelectedPlanDay(progress.selected_plan_day);
-              if (progress.bible_book) setBibleBook(progress.bible_book);
-              if (typeof progress.bible_chapter === 'number') setBibleChapter(progress.bible_chapter);
+              else setCompletedReadings([]);
+              setSelectedPlanDay(progress.selected_plan_day != null ? progress.selected_plan_day : null);
+              setBibleBook(progress.bible_book || 'Genesis');
+              setBibleChapter(typeof progress.bible_chapter === 'number' ? progress.bible_chapter : 1);
             }
           } catch (err) {
             console.error('Error loading reading progress on login:', err);
