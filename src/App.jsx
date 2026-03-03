@@ -396,6 +396,13 @@ export default function BiblicalGuidanceApp() {
     }
   };
 
+  // Extract first Bible verse reference from text (e.g. "John 3:16", "Psalm 23:1", "1 Corinthians 13:4")
+  const extractFirstVerseReference = (text) => {
+    if (!text || typeof text !== 'string') return null;
+    const match = text.match(/\b((?:[1-3]\s+)?[A-Za-z]+(?:\s+[A-Za-z]+)*\s+\d+:\d+)\b/);
+    return match ? match[1].trim() : null;
+  };
+
   const markReadingComplete = (day, reading) => {
     const key = `${day}-${reading.book}-${reading.chapter}`;
     if (!completedReadings.includes(key)) {
@@ -1618,7 +1625,17 @@ setTimeout(() => setSavedResponse(false), 2000);
           </p>
         </div>
       ) : (
-        savedResponses.map((item, idx) => (
+        savedResponses.map((item, idx) => {
+          const proseText = [
+            item.compassionateResponse,
+            item.wwjd,
+            item.encouragement
+          ].filter(Boolean).join(' ');
+          const refFromProse = extractFirstVerseReference(proseText);
+          const verseRefs = (item.verses || []).map((v) => v.reference);
+          const showExtraLink = refFromProse && !verseRefs.some((r) => r === refFromProse);
+
+          return (
           <div key={idx} className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-yellow-500/20 rounded-2xl shadow-lg p-6 hover:border-yellow-500/40 transition-all">
             <div className="flex justify-between items-start mb-3">
               <div>
@@ -1633,15 +1650,35 @@ setTimeout(() => setSavedResponse(false), 2000);
               </button>
             </div>
             <div className="space-y-2">
-              {item.verses.map((v, i) => (
-                <div key={i} className="bg-gray-900 border border-yellow-500/20 rounded-lg p-3">
-                  <p className="text-sm italic text-gray-300">"{v.text}"</p>
-                  <p className="text-xs text-yellow-500 mt-1 font-bold">— {v.reference}</p>
+              {(item.verses || []).map((v, i) => (
+                <div
+                  key={i}
+                  onClick={() => goToVerse(v.reference)}
+                  className="bg-gray-900 border border-yellow-500/20 rounded-xl p-6 cursor-pointer hover:border-yellow-500/40 hover:bg-gray-900/80 transition-all"
+                >
+                  <p className="text-sm italic text-gray-300 mb-3">"{v.text}"</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-yellow-500 font-bold">— {v.reference}</p>
+                    <span className="text-xs text-gray-400">
+                      Tap to open in Bible reader →
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
+            {showExtraLink && (
+              <div
+                onClick={() => goToVerse(refFromProse)}
+                className="mt-3 bg-gray-900 border border-yellow-500/20 rounded-xl p-4 cursor-pointer hover:border-yellow-500/40 hover:bg-gray-900/80 transition-all"
+              >
+                <span className="text-xs text-gray-400">
+                  Tap to open in Bible reader →
+                </span>
+              </div>
+            )}
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );
