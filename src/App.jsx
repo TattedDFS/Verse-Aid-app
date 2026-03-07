@@ -4,6 +4,38 @@ import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClien
 import { safeStorageGet, safeStorageSet } from './utils/storage';
 import { supabase } from './supabaseClient';
 
+const PeopleQuestionInput = React.memo(({ onSubmit, placeholder, disabled }) => {
+  const [value, setValue] = useState('');
+  const handleSubmit = () => {
+    const q = value.trim();
+    if (!q || disabled) return;
+    onSubmit(q);
+    setValue('');
+  };
+  return (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+        placeholder={placeholder}
+        className="va-input flex-1 px-4 py-3 rounded-xl text-white placeholder-[rgba(255,255,255,0.4)]"
+      />
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={!value.trim() || disabled}
+        className="va-btn-primary px-4 py-3 rounded-xl va-font-nunito disabled:opacity-50"
+      >
+        {disabled ? <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.5} /> : 'Ask'}
+      </button>
+    </div>
+  );
+});
+
+PeopleQuestionInput.displayName = 'PeopleQuestionInput';
+
 export default function BiblicalGuidanceApp() {
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState(null);
@@ -94,6 +126,17 @@ export default function BiblicalGuidanceApp() {
   const [chaptersLoaded, setChaptersLoaded] = useState([]);
   const loadedChaptersRef = useRef([]);
   const [bibleBookmark, setBibleBookmark] = useState(null);
+
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [peopleProfile, setPeopleProfile] = useState(null);
+  const [loadingPeopleProfile, setLoadingPeopleProfile] = useState(false);
+  const [peopleQuestionExpanded, setPeopleQuestionExpanded] = useState(false);
+  const [peopleAnswers, setPeopleAnswers] = useState([]);
+  const [loadingPeopleAnswer, setLoadingPeopleAnswer] = useState(false);
+
+  const BIBLICAL_FIGURES = [
+    'Adam', 'Eve', 'Cain', 'Abel', 'Seth', 'Noah', 'Shem', 'Ham', 'Japheth', 'Abraham', 'Sarah', 'Hagar', 'Ishmael', 'Isaac', 'Rebekah', 'Esau', 'Jacob', 'Rachel', 'Leah', 'Joseph', 'Moses', 'Aaron', 'Miriam', 'Joshua', 'Caleb', 'Deborah', 'Gideon', 'Samson', 'Ruth', 'Naomi', 'Boaz', 'Hannah', 'Eli', 'Samuel', 'Saul', 'David', 'Jonathan', 'Bathsheba', 'Solomon', 'Elijah', 'Elisha', 'Jezebel', 'Ahab', 'Isaiah', 'Jeremiah', 'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi', 'Job', 'Esther', 'Mordecai', 'Nehemiah', 'Ezra', 'Rahab', 'Jael', 'Abigail', 'Tamar', 'Dinah', 'Zilpah', 'Bilhah', 'Lot', 'Melchizedek', 'Balaam', 'Phinehas', 'Achan', 'Jephthah', 'Othniel', 'Ehud', 'Barak', 'Abimelech', 'Tola', 'Jair', 'Ibzan', 'Elon', 'Abdon', 'Hophni', 'Jesse', 'Goliath', 'Absalom', 'Amnon', 'Joab', 'Benaiah', 'Nathan', 'Zadok', 'Shimei', 'Mephibosheth', 'Hiram', 'Jeroboam', 'Rehoboam', 'Asa', 'Jehoshaphat', 'Joram', 'Athaliah', 'Joash', 'Amaziah', 'Uzziah', 'Jotham', 'Ahaz', 'Hezekiah', 'Manasseh', 'Josiah', 'Jehoiakim', 'Zedekiah', 'Nebuchadnezzar', 'Cyrus', 'Darius', 'Xerxes', 'Shadrach', 'Meshach', 'Abednego', 'Mary mother of Jesus', 'Joseph husband of Mary', 'Elizabeth', 'Zechariah father of John', 'John the Baptist', 'Jesus', 'Peter', 'Andrew', 'James son of Zebedee', 'John son of Zebedee', 'Philip', 'Bartholomew', 'Matthew', 'Thomas', 'James son of Alphaeus', 'Thaddaeus', 'Simon the Zealot', 'Judas Iscariot', 'Mary Magdalene', 'Mary of Bethany', 'Martha', 'Lazarus', 'Nicodemus', 'Joseph of Arimathea', 'Zacchaeus', 'Bartimaeus', 'Stephen', 'Philip the Evangelist', 'Paul', 'Barnabas', 'Silas', 'Timothy', 'Titus', 'Luke', 'Mark', 'Lydia', 'Priscilla', 'Aquila', 'Apollos', 'Cornelius', 'Ananias', 'Sapphira', 'Herod the Great', 'Herod Antipas', 'Pontius Pilate', 'Caiaphas', 'Annas', 'John Mark', 'Onesimus', 'Philemon', 'Phoebe', 'Junia', 'Anna the prophetess', 'Simeon', 'the Samaritan Woman at the Well'
+  ].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
   const prayerCategories = [
     { value: 'health', label: 'Health & Healing', emoji: '🏥' },
@@ -1262,12 +1305,62 @@ export default function BiblicalGuidanceApp() {
 
   const checkFeatureAccess = (feature) => {
     if (userTier === 'premium' || userTier === 'church') return true;
-    const premiumFeatures = ['community', 'journal', 'reading-plan'];
+    const premiumFeatures = ['community', 'journal', 'reading-plan', 'people'];
     if (premiumFeatures.includes(feature)) {
       setShowUpgradeModal(true);
       return false;
     }
     return true;
+  };
+
+  const fetchPeopleProfile = async (name) => {
+    if (!name || loadingPeopleProfile) return;
+    setLoadingPeopleProfile(true);
+    setPeopleProfile(null);
+    try {
+      const res = await anthropicRequest({
+        maxTokens: 4000,
+        messages: [{
+          role: 'user',
+          content: `You are a Biblical reference assistant. Return a JSON object only (no markdown, no code fence) for this Biblical figure: "${name}". Use exactly these keys: name (string), testament (string: "Old" or "New"), category (string, e.g. Prophet, King, Apostle, Judge, Priest, Patriarch, Matriarch, Disciple), hometown (string), parents (string), siblings (string), children (string), spouse (string), summary (string, 2-3 sentences), story (string, their full story and role in the Bible), interactions_with_god (string), key_scriptures (array of strings, 3-5 verses with reference and text, e.g. "Genesis 1:1 - In the beginning..."), significance (string). For any unknown or not applicable field use null or empty string.`
+        }]
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error?.message || 'API error');
+      let text = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(text);
+      setPeopleProfile(parsed);
+    } catch (err) {
+      console.error('fetchPeopleProfile error', err);
+      setPeopleProfile({ error: 'Could not load profile. Please try again.' });
+    } finally {
+      setLoadingPeopleProfile(false);
+    }
+  };
+
+  const submitPeopleQuestion = async (q) => {
+    if (!q || !q.trim() || !selectedPerson || loadingPeopleAnswer) return;
+    const questionText = q.trim();
+    setLoadingPeopleAnswer(true);
+    try {
+      const res = await anthropicRequest({
+        maxTokens: 1500,
+        messages: [{
+          role: 'user',
+          content: `The user is asking a question about the Biblical figure "${selectedPerson}". Their question: "${questionText}". Answer based on Scripture and the person's role in the Bible. Be concise and clear. Reply with plain text only, no JSON.`
+        }]
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error?.message || 'API error');
+      const answer = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : 'Sorry, I could not generate an answer.';
+      setPeopleAnswers(prev => [...prev, { question: questionText, answer }]);
+    } catch (err) {
+      console.error('submitPeopleQuestion error', err);
+      setPeopleAnswers(prev => [...prev, { question: questionText, answer: 'Something went wrong. Please try again.' }]);
+    } finally {
+      setLoadingPeopleAnswer(false);
+    }
   };
 
   const guidanceToneDescriptions = {
@@ -2565,6 +2658,220 @@ setTimeout(() => setSavedResponse(false), 2000);
     </div>
   );
 
+  const PeopleView = () => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const isPremium = userTier === 'premium' || userTier === 'church';
+    if (!isPremium) {
+      return (
+        <div className="space-y-4">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold va-heading mb-2">Biblical People</h2>
+            <p className="va-muted text-sm mb-4">Explore profiles of key figures from Scripture.</p>
+          </div>
+          <div className="va-premium-banner p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-[rgba(166,110,232,0.2)] border-2 border-[rgba(166,110,232,0.4)] flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-[#a66ee8]" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-xl font-bold va-premium-banner-title mb-2">People is for Premium members</h3>
+            <p className="va-muted text-sm mb-6 max-w-md mx-auto">
+              Upgrade to premium to browse and search 200+ Biblical figures and read AI-generated profiles.
+            </p>
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="va-btn-primary px-6 py-3 rounded-xl"
+            >
+              Upgrade to Premium
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const openProfile = (name) => {
+      setSelectedPerson(name);
+      setPeopleProfile(null);
+      setPeopleAnswers([]);
+      setPeopleQuestionExpanded(false);
+      fetchPeopleProfile(name);
+    };
+
+    const na = (v) => (v == null || v === '') ? 'Not recorded in Scripture' : v;
+    const profile = peopleProfile && !peopleProfile.error ? peopleProfile : null;
+
+    const filteredFigures = searchTerm.trim()
+      ? BIBLICAL_FIGURES.filter(n => n.toLowerCase().includes(searchTerm.toLowerCase()))
+      : BIBLICAL_FIGURES;
+
+    return (
+      <div className="space-y-6">
+        <div className="mb-6">
+          <h2 className="text-3xl font-bold va-heading mb-2">Biblical People</h2>
+          <p className="va-muted text-sm mb-4">Search or select a name to view their profile.</p>
+        </div>
+
+        {!selectedPerson && (
+          <>
+        <div className="va-glass-card p-4">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && filteredFigures.length === 1) {
+                openProfile(filteredFigures[0]);
+              }
+            }}
+            placeholder="Search by name..."
+            className="w-full px-4 py-3 rounded-xl text-white placeholder-white bg-transparent border border-white border-opacity-20"
+          />
+        </div>
+
+        <div className="va-glass-card p-4 max-h-[320px] overflow-y-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {filteredFigures.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => openProfile(name)}
+                className="text-left px-3 py-2 rounded-xl text-sm font-medium va-font-nunito va-btn-glass hover:border-[rgba(166,110,232,0.3)] transition-colors"
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+          </>
+        )}
+
+        {selectedPerson && (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedPerson(null);
+              setPeopleProfile(null);
+              setPeopleAnswers([]);
+              setPeopleQuestionExpanded(false);
+            }}
+            className="va-btn-glass mb-4 px-4 py-2 rounded-xl text-sm font-medium va-font-nunito flex items-center gap-2 hover:border-[rgba(166,110,232,0.3)] transition-colors"
+          >
+            ← Back to People
+          </button>
+        )}
+
+        {loadingPeopleProfile && (
+          <div className="va-glass-card p-12 text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-[#7b42d4] mx-auto mb-4" strokeWidth={1.5} />
+            <p className="va-muted font-medium">Loading profile...</p>
+          </div>
+        )}
+
+        {!loadingPeopleProfile && profile && (
+          <div className="va-glass-card p-6 space-y-6">
+            <h3 className="text-2xl font-bold va-heading border-b border-[rgba(255,255,255,0.12)] pb-3">{profile.name || selectedPerson}</h3>
+
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Testament</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.testament)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Category</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.category)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Hometown</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.hometown)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Parents</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.parents)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Siblings</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.siblings)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Children</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.children)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Spouse</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.spouse)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Summary</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.summary)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Story</h4>
+              <p className="va-font-nunito text-white/90 whitespace-pre-wrap">{na(profile.story)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Interactions with God</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.interactions_with_god)}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Key Scriptures</h4>
+              <div className="space-y-2">
+                {Array.isArray(profile.key_scriptures) && profile.key_scriptures.length > 0
+                  ? profile.key_scriptures.map((ref, i) => (
+                      <p key={i} className="va-font-nunito text-white/90 text-sm va-scripture pl-2 border-l-2 border-[rgba(232,169,48,0.4)]">{ref}</p>
+                    ))
+                  : <p className="va-font-nunito text-white/90">{na(null)}</p>}
+              </div>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Significance</h4>
+              <p className="va-font-nunito text-white/90">{na(profile.significance)}</p>
+            </div>
+
+            <div className="pt-4 border-t border-[rgba(255,255,255,0.12)]">
+              <button
+                type="button"
+                onClick={() => setPeopleQuestionExpanded(!peopleQuestionExpanded)}
+                className="va-btn-primary w-full py-3 rounded-xl flex items-center justify-center gap-2 va-font-nunito"
+              >
+                <MessageCircle className="w-5 h-5" strokeWidth={1.5} />
+                Have a question about {profile.name || selectedPerson}?
+              </button>
+              {peopleQuestionExpanded && (
+                <div className="mt-4 space-y-3">
+                  <PeopleQuestionInput
+                    onSubmit={(questionText) => submitPeopleQuestion(questionText)}
+                    placeholder="Ask anything about this figure..."
+                    disabled={loadingPeopleAnswer}
+                  />
+                  {peopleAnswers.length > 0 && (
+                    <div className="space-y-4 mt-4">
+                      {peopleAnswers.map((item, i) => (
+                        <div key={i} className="va-glass-card p-4 rounded-xl">
+                          <p className="text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Q: {item.question}</p>
+                          <p className="va-font-nunito text-white/90 text-sm whitespace-pre-wrap">{item.answer}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-white/50 va-font-nunito mt-6 pt-4">
+              All information is drawn from Scripture. Details not recorded in the Bible are noted as such.
+            </p>
+          </div>
+        )}
+
+        {!loadingPeopleProfile && peopleProfile && peopleProfile.error && (
+          <div className="va-glass-card p-6 text-center">
+            <p className="va-muted">{peopleProfile.error}</p>
+            <button type="button" onClick={() => fetchPeopleProfile(selectedPerson)} className="va-btn-primary mt-4 px-4 py-2 rounded-xl">
+              Try again
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const ReadingPlanView = () => {
     const today = new Date();
     const startOfYear = new Date(today.getFullYear(), 0, 1);
@@ -2849,6 +3156,18 @@ setTimeout(() => setSavedResponse(false), 2000);
                 <Calendar className="w-4 h-4" strokeWidth={1.5} />
                 Reading Plan {(userTier === 'free') && <Lock className="w-3 h-3" />}
               </button>
+              <button
+                onClick={() => {
+                  setCurrentView('people');
+                  setShowMenu(false);
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap font-semibold text-sm transition-all ${
+                  currentView === 'people' ? 'va-btn-primary text-white' : 'va-nav-inactive hover:text-[#a66ee8]'
+                }`}
+              >
+                <Users className="w-4 h-4" strokeWidth={1.5} />
+                People {(userTier === 'free') && <Lock className="w-3 h-3" />}
+              </button>
             </div>
           </div>
         )}
@@ -2861,6 +3180,7 @@ setTimeout(() => setSavedResponse(false), 2000);
         {currentView === 'community' && <CommunityView />}
         {currentView === 'bible' && <BibleView />}
         {currentView === 'reading-plan' && <ReadingPlanView />}
+        {currentView === 'people' && <PeopleView />}
       </div>
 
       <button
