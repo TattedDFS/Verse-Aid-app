@@ -47,6 +47,11 @@
   font-style: italic;
 }
 
+/* Bible reader verse text only */
+.va-bible-verse-text {
+  font-family: 'Merriweather', serif;
+}
+
 /* Verse reference (gold) */
 .va-verse-ref {
   font-family: 'Playfair Display', serif;

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle, AlertTriangle, Lock, Settings, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle, AlertTriangle, Lock, Settings, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClient';
 import { safeStorageGet, safeStorageSet } from './utils/storage';
 import { supabase } from './supabaseClient';
@@ -87,6 +87,13 @@ export default function BiblicalGuidanceApp() {
   const [guidanceTone, setGuidanceTone] = useState('gentle');
   const [highlightedVerse, setHighlightedVerse] = useState(null);
   const [bibleCache, setBibleCache] = useState({});
+  const [showBibleBookGrid, setShowBibleBookGrid] = useState(true);
+  const [bibleVerseFontSize, setBibleVerseFontSize] = useState(16);
+  const [loadedChapters, setLoadedChapters] = useState([]);
+  const [isLoadingNext, setIsLoadingNext] = useState(false);
+  const [chaptersLoaded, setChaptersLoaded] = useState([]);
+  const loadedChaptersRef = useRef([]);
+  const [bibleBookmark, setBibleBookmark] = useState(null);
 
   const prayerCategories = [
     { value: 'health', label: 'Health & Healing', emoji: '🏥' },
@@ -186,7 +193,7 @@ export default function BiblicalGuidanceApp() {
         try {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('reading_plan_progress, reading_plan_day')
+            .select('reading_plan_progress, reading_plan_day, bible_bookmark_book, bible_bookmark_chapter')
             .eq('id', user.id)
             .single();
           if (profile) {
@@ -200,7 +207,20 @@ export default function BiblicalGuidanceApp() {
             }
             const dayVal = profile.reading_plan_day;
             setSelectedPlanDay(dayVal != null && dayVal !== '' ? Number(dayVal) : null);
+            if (profile.bible_bookmark_book != null && profile.bible_bookmark_chapter != null) {
+              setBibleBookmark(`${profile.bible_bookmark_book}:${profile.bible_bookmark_chapter}`);
+            } else {
+              setBibleBookmark(null);
+            }
             readingProgressFromSupabase = true;
+          }
+          const { data: bookmarkRow, error: bookmarkErr } = await supabase
+            .from('profiles')
+            .select('bible_bookmark')
+            .eq('id', user.id)
+            .single();
+          if (!bookmarkErr && bookmarkRow && bookmarkRow.bible_bookmark != null && bookmarkRow.bible_bookmark !== '') {
+            setBibleBookmark(bookmarkRow.bible_bookmark);
           }
         } catch (_) {
           // reading_plan_* columns may not exist; do not break journal load
@@ -362,15 +382,26 @@ export default function BiblicalGuidanceApp() {
     setReadingPlan(plan);
   };
 
-  const fetchBibleChapter = async (book, chapter) => {
+  const fetchBibleChapter = async (book, chapter, options = {}) => {
+    const { append = false } = options;
     const cacheKey = `${book}-${chapter}`;
     if (bibleCache[cacheKey]) {
-      setBibleText(bibleCache[cacheKey]);
+      const cached = bibleCache[cacheKey];
+      if (append) {
+        setLoadedChapters(prev => [...prev, cached]);
+        setChaptersLoaded(prev => [...prev, cached.chapter]);
+      } else {
+        setLoadedChapters([cached]);
+        setChaptersLoaded([cached.chapter]);
+      }
+      setBibleText(cached);
+      setBibleBook(cached.book);
+      setBibleChapter(cached.chapter);
       setCurrentView('bible');
       return;
     }
 
-    setLoadingBible(true);
+    if (!append) setLoadingBible(true);
     try {
       // Use free Bible API (World English Bible) — no API key, reliable chapter text
       const ref = `${book} ${chapter}`;
@@ -393,14 +424,23 @@ export default function BiblicalGuidanceApp() {
         chapter: data.verses[0].chapter ?? chapter,
         verses: data.verses.map((v) => ({ verse: v.verse, text: (v.text || '').trim() }))
       };
+      if (append) {
+        setLoadedChapters(prev => [...prev, parsed]);
+        setChaptersLoaded(prev => [...prev, parsed.chapter]);
+      } else {
+        setLoadedChapters([parsed]);
+        setChaptersLoaded([parsed.chapter]);
+      }
       setBibleText(parsed);
+      setBibleBook(parsed.book);
+      setBibleChapter(parsed.chapter);
       setBibleCache(prev => ({ ...prev, [cacheKey]: parsed }));
       setCurrentView('bible');
     } catch (err) {
       console.error('Error fetching Bible text:', err);
       alert('Error loading Bible text: ' + (err.message || 'Check your connection and try again.'));
     } finally {
-      setLoadingBible(false);
+      if (!append) setLoadingBible(false);
     }
   };
 
@@ -455,6 +495,96 @@ export default function BiblicalGuidanceApp() {
     if (bookIndex < bibleBooks.length - 1) return true;
     return false;
   };
+
+  const getNextChapter = (book, chapter) => {
+    const bookIndex = bibleBooks.findIndex((b) => b.name === book);
+    const currentBook = bibleBooks[bookIndex];
+    if (!currentBook) return null;
+    if (chapter < currentBook.chapters) return { book, chapter: chapter + 1 };
+    if (bookIndex < bibleBooks.length - 1) {
+      const nextBook = bibleBooks[bookIndex + 1];
+      return { book: nextBook.name, chapter: 1 };
+    }
+    return null;
+  };
+
+  const getPrevChapter = (book, chapter) => {
+    const bookIndex = bibleBooks.findIndex((b) => b.name === book);
+    const currentBook = bibleBooks[bookIndex];
+    if (!currentBook) return null;
+    if (chapter > 1) return { book, chapter: chapter - 1 };
+    if (bookIndex > 0) {
+      const prevBook = bibleBooks[bookIndex - 1];
+      return { book: prevBook.name, chapter: prevBook.chapters };
+    }
+    return null;
+  };
+
+  loadedChaptersRef.current = loadedChapters;
+
+  useEffect(() => {
+    if (currentView !== 'bible' || loadedChapters.length === 0) return;
+    const handleScroll = () => {
+      if (isLoadingNext) return;
+      const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 300);
+      if (!nearBottom) return;
+      const latest = loadedChaptersRef.current;
+      if (!latest || latest.length === 0) return;
+      const last = latest[latest.length - 1];
+      const next = getNextChapter(last.book, last.chapter);
+      if (!next) return;
+      setIsLoadingNext(true);
+      fetchBibleChapter(next.book, next.chapter, { append: true }).finally(() => {
+        setIsLoadingNext(false);
+      });
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentView, loadedChapters.length, isLoadingNext]);
+
+  useEffect(() => {
+    if (currentView !== 'bible' || !isLoggedIn) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('bible_bookmark')
+          .eq('id', user.id)
+          .single();
+        if (!cancelled && profile != null) {
+          if (profile.bible_bookmark != null && profile.bible_bookmark !== '') {
+            setBibleBookmark(profile.bible_bookmark);
+          } else {
+            setBibleBookmark(null);
+          }
+        }
+      } catch (_) {}
+    })();
+    return () => { cancelled = true; };
+  }, [currentView, isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('bible_bookmark')
+          .eq('id', user.id)
+          .single();
+        if (!cancelled && !error && data && data.bible_bookmark != null && data.bible_bookmark !== '') {
+          setBibleBookmark(data.bible_bookmark);
+        }
+      } catch (_) {}
+    })();
+    return () => { cancelled = true; };
+  }, [isLoggedIn]);
 
   const markReadingComplete = (day, reading) => {
     const key = `${day}-${reading.book}-${reading.chapter}`;
@@ -592,6 +722,27 @@ export default function BiblicalGuidanceApp() {
       console.error('Error saving reading progress:', err);
     }
   }, [completedReadings, selectedPlanDay]);
+
+  const saveBibleBookmark = React.useCallback(async (bookmarkValue) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const payload = bookmarkValue != null && bookmarkValue !== ''
+        ? { bible_bookmark: bookmarkValue }
+        : { bible_bookmark: null };
+      const { error } = await supabase
+        .from('profiles')
+        .update(payload)
+        .eq('id', user.id);
+      if (error) {
+        console.error('Error saving Bible bookmark to Supabase:', error);
+        return;
+      }
+      setBibleBookmark(bookmarkValue && bookmarkValue !== '' ? bookmarkValue : null);
+    } catch (err) {
+      console.error('Error saving Bible bookmark:', err);
+    }
+  }, []);
 
   const saveUserDataRef = React.useRef(saveUserData);
   saveUserDataRef.current = saveUserData;
@@ -884,6 +1035,7 @@ export default function BiblicalGuidanceApp() {
       setBibleBook('Genesis');
       setBibleChapter(1);
       setCurrentView('home');
+      setBibleBookmark(null);
     }
   };
 
@@ -1548,17 +1700,6 @@ setTimeout(() => setSavedResponse(false), 2000);
           </div>
         )}
 
-        {isLoggedIn && (userTier === 'premium' || userTier === 'church') && (
-          <div className="mb-6 p-4 va-premium-banner">
-            <div className="flex items-center gap-2">
-              <Crown className="w-5 h-5 text-[#f5c842]" strokeWidth={1.5} />
-              <p className="text-sm font-bold text-white va-font-nunito">
-                {userTier === 'premium' ? 'PREMIUM' : `${churchName} Member`} - Unlimited Questions
-              </p>
-            </div>
-          </div>
-        )}
-
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">
@@ -1619,7 +1760,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             ) : (
               <>
                 <span>✦</span>
-                Ask AI
+                Seek & Find
               </>
             )}
           </button>
@@ -2168,6 +2309,27 @@ setTimeout(() => setSavedResponse(false), 2000);
 
   const BibleView = () => (
     <div className="space-y-6">
+      {bibleBookmark && (
+        <button
+          type="button"
+          onClick={() => {
+            const colonIdx = bibleBookmark.indexOf(':');
+            const book = colonIdx !== -1 ? bibleBookmark.slice(0, colonIdx) : bibleBook;
+            const chapter = colonIdx !== -1 ? parseInt(bibleBookmark.slice(colonIdx + 1), 10) : bibleChapter;
+            if (!book || !chapter) return;
+            setBibleBook(book);
+            setBibleChapter(chapter);
+            setHighlightedVerse(null);
+            fetchBibleChapter(book, chapter);
+          }}
+          className="w-full va-verse-of-day-card p-4 flex items-center justify-center gap-3 hover:shadow-[0_12px_48px_rgba(123,66,212,0.35)] transition-all text-left"
+        >
+          <BookOpen className="w-6 h-6 text-[#e8a930] flex-shrink-0" strokeWidth={1.5} />
+          <span className="va-font-playfair font-semibold text-[#e8a930]">Continue Reading</span>
+          <span className="text-sm va-muted">— {bibleBookmark.replace(':', ' ')}</span>
+        </button>
+      )}
+
       {loadingBible && (
         <div className="va-glass-card p-12 text-center">
           <Loader2 className="w-12 h-12 animate-spin text-[#7b42d4] mx-auto mb-4" strokeWidth={1.5} />
@@ -2182,44 +2344,73 @@ setTimeout(() => setSavedResponse(false), 2000);
             Choose a book and chapter to read from the World English Version. Tap verses in answers to jump straight here.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Book</label>
-              <select
-                value={bibleBook}
-                onChange={(e) => setBibleBook(e.target.value)}
-                className="va-input w-full px-4 py-2 rounded-xl text-white"
-              >
-                {bibleBooks.map(book => (
-                  <option key={book.name} value={book.name} className="bg-[#0d0d2b]">{book.name}</option>
+          {showBibleBookGrid ? (
+            <>
+              <h3 className="text-lg font-bold va-heading mb-3">Old Testament</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-6">
+                {bibleBooks.slice(0, 39).map(book => (
+                  <button
+                    key={book.name}
+                    type="button"
+                    onClick={() => {
+                      setBibleBook(book.name);
+                      setBibleChapter(1);
+                      setShowBibleBookGrid(false);
+                    }}
+                    className="va-btn-glass text-left px-3 py-2.5 rounded-xl text-sm font-medium va-font-nunito hover:border-[rgba(166,110,232,0.3)] transition-colors"
+                  >
+                    {book.name}
+                  </button>
                 ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Chapter</label>
-              <select
-                value={bibleChapter}
-                onChange={(e) => setBibleChapter(parseInt(e.target.value))}
-                className="va-input w-full px-4 py-2 rounded-xl text-white"
+              </div>
+              <h3 className="text-lg font-bold va-heading mb-3">New Testament</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
+                {bibleBooks.slice(39, 66).map(book => (
+                  <button
+                    key={book.name}
+                    type="button"
+                    onClick={() => {
+                      setBibleBook(book.name);
+                      setBibleChapter(1);
+                      setShowBibleBookGrid(false);
+                    }}
+                    className="va-btn-glass text-left px-3 py-2.5 rounded-xl text-sm font-medium va-font-nunito hover:border-[rgba(166,110,232,0.3)] transition-colors"
+                  >
+                    {book.name}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowBibleBookGrid(true)}
+                className="text-sm text-[#a66ee8] hover:text-[#c8c8e8] font-semibold mb-4 va-font-nunito"
               >
+                ← Change book
+              </button>
+              <p className="text-sm va-muted mb-2">
+                <span className="text-[#e8a930] font-semibold">{bibleBook}</span> — choose chapter
+              </p>
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                 {Array.from({ length: bibleBooks.find(b => b.name === bibleBook)?.chapters || 1 }, (_, i) => i + 1).map(ch => (
-                  <option key={ch} value={ch} className="bg-[#0d0d2b]">{ch}</option>
+                  <button
+                    key={ch}
+                    type="button"
+                    onClick={() => {
+                      setHighlightedVerse(null);
+                      setBibleChapter(ch);
+                      fetchBibleChapter(bibleBook, ch);
+                    }}
+                    className="va-btn-glass aspect-square rounded-xl text-sm font-semibold va-font-nunito hover:border-[rgba(166,110,232,0.3)] transition-colors flex items-center justify-center"
+                  >
+                    {ch}
+                  </button>
                 ))}
-              </select>
-            </div>
-          </div>
-          
-          <button
-            onClick={() => {
-              setHighlightedVerse(null);
-              fetchBibleChapter(bibleBook, bibleChapter);
-            }}
-            className="w-full va-btn-primary py-3 rounded-xl flex items-center justify-center gap-2"
-          >
-            <BookOpen className="w-5 h-5" strokeWidth={1.5} />
-            Read Chapter
-          </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -2234,6 +2425,9 @@ setTimeout(() => setSavedResponse(false), 2000);
                 onClick={() => {
                   setBibleText(null);
                   setHighlightedVerse(null);
+                  setShowBibleBookGrid(true);
+                  setLoadedChapters([]);
+                  setChaptersLoaded([]);
                 }}
                 className="va-muted hover:text-white transition-colors"
               >
@@ -2241,76 +2435,131 @@ setTimeout(() => setSavedResponse(false), 2000);
               </button>
             </div>
             
-            <div className="space-y-3">
-              {bibleText.verses.map((v, idx) => (
-                <p
-                  key={idx}
-                  className={`va-scripture text-white/95 leading-relaxed rounded-lg px-3 py-1 transition-colors ${
-                    highlightedVerse === v.verse ? 'bg-[rgba(123,66,212,0.25)] border border-[rgba(166,110,232,0.4)]' : ''
-                  }`}
-                >
-                  <span
-                    className={`font-bold mr-2 va-verse-ref ${
-                    highlightedVerse === v.verse ? 'text-[#f5c842]' : ''
-                  }`}
-                  >
-                    {v.verse}
-                  </span>
-                  {v.text}
-                </p>
-              ))}
-            </div>
-
-            <button
-              onClick={goToNextChapter}
-              disabled={!hasNextChapter()}
-              className="w-full mt-4 va-btn-primary py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-
-          <div className="va-glass-card p-6">
-            <h3 className="text-lg font-bold va-heading mb-4">Navigate to Another Chapter</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Book</label>
-                <select
-                  value={bibleBook}
-                  onChange={(e) => setBibleBook(e.target.value)}
-                  className="va-input w-full px-4 py-2 rounded-xl text-white"
-                >
-                  {bibleBooks.map(book => (
-                    <option key={book.name} value={book.name} className="bg-[#0d0d2b]">{book.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Chapter</label>
-                <select
-                  value={bibleChapter}
-                  onChange={(e) => setBibleChapter(parseInt(e.target.value))}
-                  className="va-input w-full px-4 py-2 rounded-xl text-white"
-                >
-                  {Array.from({ length: bibleBooks.find(b => b.name === bibleBook)?.chapters || 1 }, (_, i) => i + 1).map(ch => (
-                    <option key={ch} value={ch} className="bg-[#0d0d2b]">{ch}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm va-muted va-font-nunito">Text size</span>
+              <button
+                type="button"
+                onClick={() => setBibleVerseFontSize(prev => Math.max(12, prev - 2))}
+                disabled={bibleVerseFontSize <= 12}
+                className="va-btn-glass w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold va-font-nunito disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Decrease font size"
+              >
+                A-
+              </button>
+              <button
+                type="button"
+                onClick={() => setBibleVerseFontSize(prev => Math.min(28, prev + 2))}
+                disabled={bibleVerseFontSize >= 28}
+                className="va-btn-glass w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold va-font-nunito disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Increase font size"
+              >
+                A+
+              </button>
             </div>
             
-            <button
-              onClick={() => {
-                setHighlightedVerse(null);
-                fetchBibleChapter(bibleBook, bibleChapter);
-              }}
-              className="w-full va-btn-primary py-3 rounded-xl flex items-center justify-center gap-2"
-            >
-              <BookOpen className="w-5 h-5" strokeWidth={1.5} />
-              Go to Chapter
-            </button>
+            {loadedChapters.length > 0 && (
+              <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
+                {getPrevChapter(bibleBook, bibleChapter) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const prev = getPrevChapter(bibleBook, bibleChapter);
+                      if (prev) {
+                        setHighlightedVerse(null);
+                        fetchBibleChapter(prev.book, prev.chapter);
+                      }
+                    }}
+                    className="va-btn-glass px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium va-font-nunito"
+                    title="Previous chapter"
+                  >
+                    <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                    Previous
+                  </button>
+                )}
+                {getNextChapter(bibleBook, bibleChapter) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = getNextChapter(bibleBook, bibleChapter);
+                      if (next) {
+                        setHighlightedVerse(null);
+                        fetchBibleChapter(next.book, next.chapter);
+                      }
+                    }}
+                    className="va-btn-glass px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium va-font-nunito"
+                    title="Next chapter"
+                  >
+                    Next
+                    <ChevronRight className="w-5 h-5" strokeWidth={1.5} />
+                  </button>
+                )}
+              </div>
+            )}
+            
+            <div className="space-y-6" style={{ fontSize: `${bibleVerseFontSize}px` }}>
+              {(loadedChapters.length > 0 ? loadedChapters : [bibleText]).map((chData, chIdx) => (
+                <div key={`${chData.book}-${chData.chapter}-${chIdx}`}>
+                  <h4 className="text-lg font-bold va-heading mb-3 pt-2 border-t border-[rgba(255,255,255,0.08)] first:border-t-0 first:pt-0 flex items-center gap-2">
+                    <span>{chData.book} {chData.chapter}</span>
+                    {isLoggedIn && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const key = `${chData.book}:${chData.chapter}`;
+                          if (bibleBookmark === key) {
+                            saveBibleBookmark(null);
+                          } else {
+                            saveBibleBookmark(key);
+                          }
+                        }}
+                        className={`p-1 rounded-lg hover:bg-white/10 transition-colors ${
+                          bibleBookmark === `${chData.book}:${chData.chapter}` ? 'text-[#e8a930]' : 'va-muted'
+                        }`}
+                        title={bibleBookmark === `${chData.book}:${chData.chapter}` ? 'Remove bookmark' : 'Bookmark this chapter'}
+                        aria-label={bibleBookmark === `${chData.book}:${chData.chapter}` ? `Remove bookmark ${chData.book} ${chData.chapter}` : `Bookmark ${chData.book} ${chData.chapter}`}
+                      >
+                        <BookMarked
+                          className="w-4 h-4"
+                          strokeWidth={1.5}
+                          fill={bibleBookmark === `${chData.book}:${chData.chapter}` ? 'currentColor' : 'none'}
+                        />
+                      </button>
+                    )}
+                  </h4>
+                  <div className="space-y-3">
+                    {chData.verses.map((v, idx) => (
+                      <p
+                        key={idx}
+                        className={`va-scripture va-bible-verse-text text-white/95 leading-relaxed rounded-lg px-3 py-1 transition-colors ${
+                          highlightedVerse === v.verse && bibleBook === chData.book && bibleChapter === chData.chapter
+                            ? 'bg-[rgba(123,66,212,0.25)] border border-[rgba(166,110,232,0.4)]'
+                            : ''
+                        }`}
+                      >
+                        <span
+                          className={`font-bold mr-2 va-verse-ref ${
+                            highlightedVerse === v.verse && bibleBook === chData.book && bibleChapter === chData.chapter
+                              ? 'text-[#f5c842]'
+                              : ''
+                          }`}
+                        >
+                          {v.verse}
+                        </span>
+                        {v.text}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {isLoadingNext && (
+                <div className="py-4 flex items-center justify-center gap-2 va-muted text-sm">
+                  <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.5} />
+                  Loading...
+                </div>
+              )}
+            </div>
           </div>
+
         </>
       )}
     </div>
@@ -2563,7 +2812,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 }`}
               >
                 <BookMarked className="w-4 h-4" strokeWidth={1.5} />
-                Journal {(userTier === 'free') && <Lock className="w-3 h-3" />}
+                My Prayers {(userTier === 'free') && <Lock className="w-3 h-3" />}
               </button>
               <button
                 onClick={() => { setCurrentView('community'); setShowMenu(false); }}
@@ -2572,7 +2821,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 }`}
               >
                 <Heart className="w-4 h-4" strokeWidth={1.5} />
-                Community {(userTier === 'free') && <Lock className="w-3 h-3" />}
+                Prayer Wall {(userTier === 'free') && <Lock className="w-3 h-3" />}
               </button>
               <button
                 onClick={() => { 
