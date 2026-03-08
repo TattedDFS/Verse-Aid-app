@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle, AlertTriangle, Lock, Settings, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarked, Plus, X, Menu, Home, Crown, Users, CheckCircle, AlertTriangle, Lock, Settings, MessageCircle, ChevronLeft, ChevronRight, Hand, Globe } from 'lucide-react';
 import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClient';
 import { safeStorageGet, safeStorageSet } from './utils/storage';
 import { supabase } from './supabaseClient';
@@ -1722,11 +1722,13 @@ setTimeout(() => setSavedResponse(false), 2000);
 
   const HomeView = () => (
     <>
-           {dailyVerse && !showDailyVerse && (
-        <div 
-          onClick={() => setShowDailyVerse(true)}
-          className="va-verse-of-day-card p-6 mb-8 cursor-pointer hover:shadow-[0_12px_48px_rgba(123,66,212,0.35)] transition-all"
-        >
+      {dailyVerse && !showDailyVerse && (
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div
+            onClick={() => setShowDailyVerse(true)}
+            style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }}
+            className="va-verse-of-day-card p-6 mb-8 cursor-pointer hover:shadow-[0_12px_48px_rgba(123,66,212,0.35)] transition-all"
+          >
           <div className="flex items-start gap-3">
             <Calendar className="w-6 h-6 text-[#e8a930] flex-shrink-0 mt-1" strokeWidth={1.5} />
             <div className="flex-1">
@@ -1736,11 +1738,13 @@ setTimeout(() => setSavedResponse(false), 2000);
               <p className="text-xs va-muted mt-2">Tap to read reflection →</p>
             </div>
           </div>
+          </div>
         </div>
       )}
 
       {showDailyVerse && dailyVerse && (
-        <div className="va-verse-of-day-card p-8 mb-8">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="va-verse-of-day-card p-8 mb-8">
           <div className="flex justify-between items-start mb-4">
             <h3 className="text-2xl font-bold va-font-playfair text-white">Today's Verse & Reflection</h3>
             <div className="flex gap-2">
@@ -1760,18 +1764,24 @@ setTimeout(() => setSavedResponse(false), 2000);
             </div>
           </div>
           <div className="space-y-4">
-            <div className="va-glass-card p-6 rounded-xl">
-              <p className="va-scripture text-white/95 mb-2">"{dailyVerse.text}"</p>
-              <p className="text-sm va-verse-ref">— {dailyVerse.reference}</p>
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 rounded-xl">
+                <p className="va-scripture text-white/95 mb-2">"{dailyVerse.text}"</p>
+                <p className="text-sm va-verse-ref">— {dailyVerse.reference}</p>
+              </div>
             </div>
-            <div className="va-glass-card p-6 rounded-xl">
-              <p className="text-sm text-white/90 leading-relaxed va-font-nunito">{dailyVerse.reflection}</p>
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 rounded-xl">
+                <p className="text-sm text-white/90 leading-relaxed va-font-nunito">{dailyVerse.reflection}</p>
             </div>
+          </div>
+          </div>
           </div>
         </div>
       )}
 
-      <div className="va-glass-card p-8 mb-8 hover:border-[rgba(166,110,232,0.25)] transition-all">
+      <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+        <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', minHeight: '100%' }} className="p-8 mb-8 hover:border-[rgba(166,110,232,0.25)] transition-all">
         {isLoggedIn && userTier === 'free' && (
           <div className="mb-6 p-4 va-premium-banner">
             <div className="flex justify-between items-start gap-4">
@@ -1875,6 +1885,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {response && (
@@ -1900,7 +1911,8 @@ setTimeout(() => setSavedResponse(false), 2000);
             </button>
           </div>
 
-          <div className="va-glass-card p-8 hover:border-[rgba(166,110,232,0.25)] transition-all">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-8 hover:border-[rgba(166,110,232,0.25)] transition-all">
             <div className="flex items-start gap-4 mb-4">
               <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
                 <Heart className="w-6 h-6 text-white" strokeWidth={1.5} />
@@ -1910,9 +1922,11 @@ setTimeout(() => setSavedResponse(false), 2000);
                 <p className="text-white/90 leading-relaxed va-font-nunito">{response.compassionateResponse}</p>
               </div>
             </div>
+            </div>
           </div>
 
-          <div className="va-glass-card p-8">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-8">
             <div className="flex items-start gap-4 mb-6">
               <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
                 <BookOpen className="w-6 h-6 text-white" strokeWidth={1.5} />
@@ -1923,15 +1937,20 @@ setTimeout(() => setSavedResponse(false), 2000);
                   {response.verses.map((verse, idx) => (
                     <div
                       key={idx}
-                      onClick={() => goToVerse(verse.reference)}
-                      className="va-glass-card p-6 rounded-xl cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
+                      style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}
                     >
-                      <p className="va-scripture text-white/95 mb-3">"{verse.text}"</p>
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-sm va-verse-ref">— {verse.reference}</p>
-                        <span className="text-xs va-muted">
-                          Tap to open in Bible reader →
-                        </span>
+                      <div
+                        onClick={() => goToVerse(verse.reference)}
+                        style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }}
+                        className="p-6 rounded-xl cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
+                      >
+                        <p className="va-scripture text-white/95 mb-3">"{verse.text}"</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-sm va-verse-ref">— {verse.reference}</p>
+                          <span className="text-xs va-muted">
+                            Tap to open in Bible reader →
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1940,17 +1959,22 @@ setTimeout(() => setSavedResponse(false), 2000);
             </div>
           </div>
 
-          <div className="va-glass-card p-8">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-8">
             <h2 className="text-2xl font-bold va-heading mb-3">What Would Jesus Do?</h2>
             <p className="text-white/90 leading-relaxed va-font-nunito">{response.wwjd}</p>
+            </div>
           </div>
 
-          <div className="va-glass-card p-8">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-8">
             <h2 className="text-2xl font-bold va-heading mb-3">Words of Encouragement</h2>
             <p className="text-white/90 leading-relaxed va-font-nunito">{response.encouragement}</p>
+            </div>
           </div>
 
-          <div className="va-glass-card p-6">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6">
             <h3 className="text-lg font-bold va-heading mb-3">Keep the conversation going</h3>
             <p className="text-xs va-muted mb-3">
               Tap a follow-up to add it to the question box. You can edit it before sending.
@@ -2018,9 +2042,11 @@ setTimeout(() => setSavedResponse(false), 2000);
               </button>
             </div>
           </div>
+          </div>
 
           {userTier === 'free' && (
-            <div className="va-glass-card p-6">
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6">
               <h3 className="text-lg font-bold va-heading mb-2">Enjoying this guidance?</h3>
               <p className="text-xs va-muted mb-3">
                 Premium removes the 3-questions-a-day limit and unlocks the full prayer journal, community prayer wall, and Bible-in-a-year plan.
@@ -2033,6 +2059,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 <Crown className="w-4 h-4" strokeWidth={1.5} />
                 Learn about Premium
               </button>
+              </div>
             </div>
           )}
 
@@ -2049,6 +2076,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             </button>
           </div>
         </div>
+        </div>
       )}
     </>
   );
@@ -2058,12 +2086,14 @@ setTimeout(() => setSavedResponse(false), 2000);
     <div className="space-y-4">
       <h2 className="text-3xl font-bold va-heading mb-4">Saved Responses</h2>
       {savedResponses.length === 0 ? (
-        <div className="va-glass-card p-8 text-center">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-8 text-center">
           <BookMarked className="w-12 h-12 va-nav-inactive mx-auto mb-4" strokeWidth={1.5} />
           <p className="va-muted mb-2">No saved responses yet.</p>
           <p className="text-sm va-muted">
             After you receive guidance on the Home tab, tap <span className="text-[#e8a930] font-semibold">Save</span> to keep it here for later.
           </p>
+          </div>
         </div>
       ) : (
         savedResponses.map((item, idx) => {
@@ -2077,7 +2107,8 @@ setTimeout(() => setSavedResponse(false), 2000);
           const showExtraLink = refFromProse && !verseRefs.some((r) => r === refFromProse);
 
           return (
-          <div key={idx} className="va-glass-card p-6 hover:border-[rgba(166,110,232,0.25)] transition-all">
+          <div key={idx} style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 hover:border-[rgba(166,110,232,0.25)] transition-all">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <p className="text-sm va-muted mb-2">{new Date(item.timestamp).toLocaleDateString()}</p>
@@ -2092,31 +2123,37 @@ setTimeout(() => setSavedResponse(false), 2000);
             </div>
             <div className="space-y-2">
               {(item.verses || []).map((v, i) => (
-                <div
-                  key={i}
-                  onClick={() => goToVerse(v.reference)}
-                  className="va-glass-card p-6 rounded-xl cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
-                >
-                  <p className="text-sm va-scripture text-white/95 mb-3">"{v.text}"</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs va-verse-ref">— {v.reference}</p>
-                    <span className="text-xs va-muted">
-                      Tap to open in Bible reader →
-                    </span>
+                <div key={i} style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                  <div
+                    onClick={() => goToVerse(v.reference)}
+                    style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }}
+                    className="p-6 rounded-xl cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
+                  >
+                    <p className="text-sm va-scripture text-white/95 mb-3">"{v.text}"</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs va-verse-ref">— {v.reference}</p>
+                      <span className="text-xs va-muted">
+                        Tap to open in Bible reader →
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
             {showExtraLink && (
-              <div
-                onClick={() => goToVerse(refFromProse)}
-                className="va-glass-card rounded-xl p-4 cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
+              <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                <div
+                  onClick={() => goToVerse(refFromProse)}
+                  style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }}
+                  className="rounded-xl p-4 cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
                 >
                 <span className="text-xs va-muted">
                   Tap to open in Bible reader →
                 </span>
+                </div>
               </div>
             )}
+            </div>
           </div>
           );
         })
@@ -2138,9 +2175,11 @@ setTimeout(() => setSavedResponse(false), 2000);
       </div>
 
       {prayerJournal.length === 0 ? (
-        <div className="va-glass-card p-8 text-center">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-8 text-center">
           <Heart className="w-12 h-12 va-nav-inactive mx-auto mb-4" strokeWidth={1.5} />
           <p className="va-muted">Start your prayer journal by adding your first prayer request.</p>
+          </div>
         </div>
       ) : (
         prayerJournal.map((entry) => {
@@ -2151,7 +2190,8 @@ setTimeout(() => setSavedResponse(false), 2000);
             ? () => <div className="w-9 h-9 rounded-lg bg-[#e8a930]/30 border border-[#e8a930]/50 flex items-center justify-center flex-shrink-0"><Star className="w-5 h-5 text-[#e8a930]" strokeWidth={1.5} /></div>
             : () => <div className="w-9 h-9 rounded-lg bg-[#7b42d4]/30 border border-[#a66ee8]/40 flex items-center justify-center flex-shrink-0"><MessageCircle className="w-5 h-5 text-[#a66ee8]" strokeWidth={1.5} /></div>;
           return (
-          <div key={entry.id} className="va-glass-card p-6 hover:border-[rgba(166,110,232,0.25)] transition-all flex gap-4">
+          <div key={entry.id} style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 hover:border-[rgba(166,110,232,0.25)] transition-all flex gap-4">
             <IconBox />
             <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start mb-3">
@@ -2174,7 +2214,8 @@ setTimeout(() => setSavedResponse(false), 2000);
             {(() => {
               const communityPrayer = communityPrayers.find(cp => cp.source_journal_id === entry.id);
               return communityPrayer && isStillBelievingEligible(communityPrayer) ? (
-                <div className="mb-3 p-3 va-glass-card rounded-xl">
+                <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                  <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="mb-3 p-3 rounded-xl">
                   <p className="text-xs va-muted mb-2">This prayer has been on the community wall for 6 months. Extend it for another year?</p>
                   <button
                     type="button"
@@ -2183,10 +2224,11 @@ setTimeout(() => setSavedResponse(false), 2000);
                   >
                     Still Believing
                   </button>
+                  </div>
                 </div>
               ) : null;
             })()}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => togglePrayerAnswered(entry.id)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-all va-font-nunito ${
@@ -2213,7 +2255,8 @@ setTimeout(() => setSavedResponse(false), 2000);
               </button>
             </div>
             </div>
-          </div>
+            </div>
+            </div>
           );
         })
       )}
@@ -2228,11 +2271,13 @@ setTimeout(() => setSavedResponse(false), 2000);
           <div className="mb-6">
             <h2 className="text-3xl font-bold va-heading mb-2">Community Prayer Wall</h2>
             <p className="va-muted text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
-            <div className="py-4 mb-5 border-y border-[rgba(255,255,255,0.12)] va-glass-card rounded-xl px-4">
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="py-4 mb-5 border-y border-[rgba(255,255,255,0.12)] rounded-xl px-4">
               <p className="text-center text-white/90 text-lg va-scripture max-w-2xl mx-auto leading-relaxed">
                 "For where two or three gather in my name, there am I with them."
               </p>
               <p className="text-center va-verse-ref text-sm mt-2 font-medium">— Matthew 18:20</p>
+              </div>
             </div>
           </div>
           <div className="va-premium-banner p-8 text-center">
@@ -2260,14 +2305,17 @@ setTimeout(() => setSavedResponse(false), 2000);
         <h2 className="text-3xl font-bold va-heading mb-2">Community Prayer Wall</h2>
         <p className="va-muted text-sm mb-4">Join others in prayer. All requests are anonymous.</p>
 
-        <div className="py-4 mb-5 border-y border-[rgba(255,255,255,0.12)] va-glass-card rounded-xl px-4">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="py-4 mb-5 border-y border-[rgba(255,255,255,0.12)] rounded-xl px-4">
           <p className="text-center text-white/90 text-lg va-scripture max-w-2xl mx-auto leading-relaxed">
             "For where two or three gather in my name, there am I with them."
           </p>
           <p className="text-center va-verse-ref text-sm mt-2 font-medium">— Matthew 18:20</p>
+          </div>
         </div>
 
-        <div className="va-glass-card p-4 mb-4 flex flex-wrap gap-6 justify-center">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-4 mb-4 flex flex-wrap gap-6 justify-center">
           <div className="text-center">
             <p className="va-stats-number">{communityPrayers.length}</p>
             <p className="text-xs va-muted">Prayers</p>
@@ -2279,6 +2327,7 @@ setTimeout(() => setSavedResponse(false), 2000);
           <div className="text-center">
             <p className="va-stats-number">{new Set(communityPrayers.map(p => p.user_id)).size}</p>
             <p className="text-xs va-muted">Members</p>
+          </div>
           </div>
         </div>
         
@@ -2310,7 +2359,8 @@ setTimeout(() => setSavedResponse(false), 2000);
       </div>
 
       {filteredCommunityPrayers.length === 0 ? (
-        <div className="va-glass-card p-8 text-center">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-8 text-center">
           <Heart className="w-12 h-12 va-nav-inactive mx-auto mb-4" strokeWidth={1.5} />
           <p className="va-muted mb-4">
             {filterCategory === 'all' 
@@ -2318,6 +2368,7 @@ setTimeout(() => setSavedResponse(false), 2000);
               : `No prayers in this category yet.`}
           </p>
           <p className="text-sm va-muted">Share a prayer request with the community!</p>
+          </div>
         </div>
       ) : (
         filteredCommunityPrayers.map((prayer) => {
@@ -2327,16 +2378,22 @@ setTimeout(() => setSavedResponse(false), 2000);
           return (
             <div
               key={prayer.id}
-              className={`va-glass-card p-6 transition-all rounded-2xl ${
-                isAnswered
-                  ? 'border-emerald-500/30 hover:border-emerald-500/50'
-                  : 'hover:border-[rgba(166,110,232,0.25)]'
-              }`}
+              style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}
             >
+              <div
+                style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }}
+                className={`p-6 transition-all rounded-2xl ${
+                  isAnswered
+                    ? 'border-emerald-500/30 hover:border-emerald-500/50'
+                    : 'hover:border-[rgba(166,110,232,0.25)]'
+                }`}
+              >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 va-glass-card rounded-full flex items-center justify-center">
+                  <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '50%' }}>
+                    <div style={{ background: '#0d0a1a', borderRadius: '50%' }} className="w-8 h-8 rounded-full flex items-center justify-center">
                     <User className="w-4 h-4 text-[#a66ee8]" strokeWidth={1.5} />
+                    </div>
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white/90 va-font-nunito">Anonymous</p>
@@ -2364,7 +2421,8 @@ setTimeout(() => setSavedResponse(false), 2000);
               <p className="text-white/90 mb-4 leading-relaxed va-font-nunito">{prayer.text}</p>
 
               {isStillBelievingEligible(prayer) && (
-                <div className="mb-4 p-3 va-glass-card rounded-xl">
+                <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                  <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="mb-4 p-3 rounded-xl">
                   <p className="text-xs va-muted mb-2">Your prayer has been on the wall for 6 months. Extend it for another year?</p>
                   <button
                     type="button"
@@ -2373,6 +2431,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                   >
                     Still Believing
                   </button>
+                  </div>
                 </div>
               )}
 
@@ -2391,6 +2450,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 <span className="text-sm va-muted font-medium">
                   {prayer.prayerCount ?? 0} {(prayer.prayerCount ?? 0) === 1 ? 'person' : 'people'} praying
                 </span>
+              </div>
               </div>
             </div>
           );
@@ -2424,14 +2484,17 @@ setTimeout(() => setSavedResponse(false), 2000);
       )}
 
       {loadingBible && (
-        <div className="va-glass-card p-12 text-center">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-12 text-center">
           <Loader2 className="w-12 h-12 animate-spin text-[#7b42d4] mx-auto mb-4" strokeWidth={1.5} />
           <p className="va-muted font-medium">Loading Bible chapter...</p>
+          </div>
         </div>
       )}
 
       {!loadingBible && !bibleText && (
-        <div className="va-glass-card p-6">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6">
           <h2 className="text-3xl font-bold va-heading mb-2">Read the Bible</h2>
           <p className="text-sm va-muted mb-4">
             Choose a book and chapter to read from the World English Version. Tap verses in answers to jump straight here.
@@ -2504,12 +2567,14 @@ setTimeout(() => setSavedResponse(false), 2000);
               </div>
             </>
           )}
+          </div>
         </div>
       )}
 
       {!loadingBible && bibleText && (
         <>
-          <div className="va-glass-card p-6">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-2xl font-bold va-heading">
                 {bibleText.book} {bibleText.chapter} <span className="text-sm font-normal va-muted">(World English Version)</span>
@@ -2651,6 +2716,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 </div>
               )}
             </div>
+            </div>
           </div>
 
         </>
@@ -2711,7 +2777,8 @@ setTimeout(() => setSavedResponse(false), 2000);
 
         {!selectedPerson && (
           <>
-        <div className="va-glass-card p-4">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-4">
           <input
             type="text"
             value={searchTerm}
@@ -2724,9 +2791,11 @@ setTimeout(() => setSavedResponse(false), 2000);
             placeholder="Search by name..."
             className="w-full px-4 py-3 rounded-xl text-white placeholder-white bg-transparent border border-white border-opacity-20"
           />
+          </div>
         </div>
 
-        <div className="va-glass-card p-4 max-h-[320px] overflow-y-auto">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-4 max-h-[320px] overflow-y-auto">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {filteredFigures.map((name) => (
               <button
@@ -2738,6 +2807,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 {name}
               </button>
             ))}
+          </div>
           </div>
         </div>
           </>
@@ -2759,113 +2829,169 @@ setTimeout(() => setSavedResponse(false), 2000);
         )}
 
         {loadingPeopleProfile && (
-          <div className="va-glass-card p-12 text-center">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-12 text-center">
             <Loader2 className="w-12 h-12 animate-spin text-[#7b42d4] mx-auto mb-4" strokeWidth={1.5} />
             <p className="va-muted font-medium">Loading profile...</p>
+            </div>
           </div>
         )}
 
         {!loadingPeopleProfile && profile && (
-          <div className="va-glass-card p-6 space-y-6">
-            <h3 className="text-2xl font-bold va-heading border-b border-[rgba(255,255,255,0.12)] pb-3">{profile.name || selectedPerson}</h3>
-
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Testament</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.testament)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Category</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.category)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Hometown</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.hometown)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Parents</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.parents)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Siblings</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.siblings)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Children</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.children)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Spouse</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.spouse)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Summary</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.summary)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Story</h4>
-              <p className="va-font-nunito text-white/90 whitespace-pre-wrap">{na(profile.story)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Interactions with God</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.interactions_with_god)}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Key Scriptures</h4>
-              <div className="space-y-2">
-                {Array.isArray(profile.key_scriptures) && profile.key_scriptures.length > 0
-                  ? profile.key_scriptures.map((ref, i) => (
-                      <p key={i} className="va-font-nunito text-white/90 text-sm va-scripture pl-2 border-l-2 border-[rgba(232,169,48,0.4)]">{ref}</p>
-                    ))
-                  : <p className="va-font-nunito text-white/90">{na(null)}</p>}
+          <div className="space-y-4">
+            {/* ROW 1 - Full width: Name */}
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                <h3 className="text-2xl sm:text-3xl font-bold va-heading text-center">{profile.name || selectedPerson}</h3>
               </div>
             </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e8a930] mb-1 va-font-nunito">Significance</h4>
-              <p className="va-font-nunito text-white/90">{na(profile.significance)}</p>
+
+            {/* ROW 2 - Testament, Category */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                  <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Testament</p>
+                  <p className="va-font-nunito text-white text-sm text-center">{na(profile.testament)}</p>
+                </div>
+              </div>
+              <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                  <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Category</p>
+                  <p className="va-font-nunito text-white text-sm text-center">{na(profile.category)}</p>
+                </div>
+              </div>
             </div>
 
-            <div className="pt-4 border-t border-[rgba(255,255,255,0.12)]">
-              <button
-                type="button"
-                onClick={() => setPeopleQuestionExpanded(!peopleQuestionExpanded)}
-                className="va-btn-primary w-full py-3 rounded-xl flex items-center justify-center gap-2 va-font-nunito"
-              >
-                <MessageCircle className="w-5 h-5" strokeWidth={1.5} />
-                Have a question about {profile.name || selectedPerson}?
-              </button>
-              {peopleQuestionExpanded && (
-                <div className="mt-4 space-y-3">
-                  <PeopleQuestionInput
-                    onSubmit={(questionText) => submitPeopleQuestion(questionText)}
-                    placeholder="Ask anything about this figure..."
-                    disabled={loadingPeopleAnswer}
-                  />
-                  {peopleAnswers.length > 0 && (
-                    <div className="space-y-4 mt-4">
+            {/* ROW 3 - Hometown, Spouse */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                  <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Hometown</p>
+                  <p className="va-font-nunito text-white text-sm text-center">{na(profile.hometown)}</p>
+                </div>
+              </div>
+              <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                  <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Spouse</p>
+                  <p className="va-font-nunito text-white text-sm text-center">{na(profile.spouse)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 4 - Parents, Siblings */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                  <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Parents</p>
+                  <p className="va-font-nunito text-white text-sm text-center">{na(profile.parents)}</p>
+                </div>
+              </div>
+              <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                  <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Siblings</p>
+                  <p className="va-font-nunito text-white text-sm text-center">{na(profile.siblings)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 5 - Full width individual boxes */}
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Children</p>
+                <p className="va-font-nunito text-white text-sm text-center">{na(profile.children)}</p>
+              </div>
+            </div>
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Summary</p>
+                <p className="va-font-nunito text-white text-sm text-center">{na(profile.summary)}</p>
+              </div>
+            </div>
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Story</p>
+                <p className="va-font-nunito text-white text-sm text-center whitespace-pre-wrap">{na(profile.story)}</p>
+              </div>
+            </div>
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Interactions with God & Jesus</p>
+                <p className="va-font-nunito text-white text-sm text-center">{na(profile.interactions_with_god)}</p>
+              </div>
+            </div>
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Key Scriptures</p>
+                <div className="space-y-2 mt-1">
+                  {Array.isArray(profile.key_scriptures) && profile.key_scriptures.length > 0
+                    ? profile.key_scriptures.map((ref, i) => (
+                        <p key={i} className="va-font-nunito text-white text-sm text-center va-scripture va-bible-verse-text pl-2 border-l-2 border-[rgba(232,169,48,0.4)]">{ref}</p>
+                      ))
+                    : <p className="va-font-nunito text-white text-sm text-center va-bible-verse-text">{na(null)}</p>}
+                </div>
+              </div>
+            </div>
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                <p className="text-base font-semibold text-[#e8a930] mb-1 va-font-nunito text-center">Significance</p>
+                <p className="va-font-nunito text-white text-sm text-center">{na(profile.significance)}</p>
+              </div>
+            </div>
+
+            {/* Disclaimer - subtle box */}
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                <p className="text-xs text-white/50 va-font-nunito text-center">
+                  All information is drawn from Scripture. Details not recorded in the Bible are noted as such.
+                </p>
+              </div>
+            </div>
+
+            {/* Have a question section */}
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%', padding: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setPeopleQuestionExpanded(!peopleQuestionExpanded)}
+                  className="va-btn-primary w-full py-3 rounded-xl flex items-center justify-center gap-2 va-font-nunito"
+                >
+                  <MessageCircle className="w-5 h-5" strokeWidth={1.5} />
+                  Have a question about {profile.name || selectedPerson}?
+                </button>
+                {peopleQuestionExpanded && (
+                  <div className="mt-4 space-y-3">
+                    <PeopleQuestionInput
+                      onSubmit={(questionText) => submitPeopleQuestion(questionText)}
+                      placeholder="Ask anything about this figure..."
+                      disabled={loadingPeopleAnswer}
+                    />
+                    {peopleAnswers.length > 0 && (
+                      <div className="space-y-4 mt-4">
                       {peopleAnswers.map((item, i) => (
-                        <div key={i} className="va-glass-card p-4 rounded-xl">
+                        <div key={i} style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-4 rounded-xl">
                           <p className="text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Q: {item.question}</p>
                           <p className="va-font-nunito text-white/90 text-sm whitespace-pre-wrap">{item.answer}</p>
+                          </div>
                         </div>
                       ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-
-            <p className="text-xs text-white/50 va-font-nunito mt-6 pt-4">
-              All information is drawn from Scripture. Details not recorded in the Bible are noted as such.
-            </p>
           </div>
         )}
 
         {!loadingPeopleProfile && peopleProfile && peopleProfile.error && (
-          <div className="va-glass-card p-6 text-center">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 text-center">
             <p className="va-muted">{peopleProfile.error}</p>
             <button type="button" onClick={() => fetchPeopleProfile(selectedPerson)} className="va-btn-primary mt-4 px-4 py-2 rounded-xl">
               Try again
             </button>
+            </div>
           </div>
         )}
       </div>
@@ -2880,11 +3006,13 @@ setTimeout(() => setSavedResponse(false), 2000);
 
     return (
       <div className="space-y-6">
-        <div className="va-glass-card p-6">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6">
           <h2 className="text-3xl font-bold va-heading mb-2">Bible in a Year</h2>
           <p className="text-white/90 mb-4 va-font-nunito">Complete the entire Bible in 365 days</p>
           
-          <div className="va-glass-card rounded-xl p-4 mb-4">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="rounded-xl p-4 mb-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-bold text-white/90 va-font-nunito">Progress</span>
               <span className="text-sm va-muted font-medium">
@@ -2901,6 +3029,8 @@ setTimeout(() => setSavedResponse(false), 2000);
                 }}
               />
             </div>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -2911,7 +3041,8 @@ setTimeout(() => setSavedResponse(false), 2000);
           const dayOfYearForTitle = selectedPlanDay != null ? selectedPlanDay : dayOfYear;
           const isToday = selectedPlanDay == null || selectedPlanDay === dayOfYear;
           return planToShow ? (
-          <div className="va-glass-card p-6">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold va-heading">
                 Day {dayOfYearForTitle} — {isToday ? "Today's Reading" : 'Reading'}
@@ -2930,7 +3061,8 @@ setTimeout(() => setSavedResponse(false), 2000);
               {planToShow.readings.map((reading, idx) => {
                 const isComplete = isReadingComplete(planToShow.day, reading);
                 return (
-                  <div key={idx} className="flex items-center justify-between p-3 va-glass-card rounded-xl">
+                  <div key={idx} style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                    <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="flex items-center justify-between p-3 rounded-xl">
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
@@ -2961,15 +3093,18 @@ setTimeout(() => setSavedResponse(false), 2000);
                     >
                       Read
                     </button>
+                    </div>
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
           ) : null;
         })()}
 
-        <div className="va-glass-card p-6">
+        <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+          <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6">
           <h3 className="text-xl font-bold va-heading mb-4">All Days</h3>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {readingPlan.map((day, idx) => {
@@ -2978,12 +3113,16 @@ setTimeout(() => setSavedResponse(false), 2000);
               return (
                 <div
                   key={idx}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedPlanDay(day.day)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPlanDay(day.day); } }}
-                  className={`p-3 rounded-xl border cursor-pointer transition-colors va-font-nunito ${dayComplete ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'va-glass-card hover:border-[rgba(166,110,232,0.25)]'}`}
+                  style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}
                 >
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedPlanDay(day.day)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPlanDay(day.day); } }}
+                    style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }}
+                    className={`p-3 rounded-xl border cursor-pointer transition-colors va-font-nunito ${dayComplete ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'hover:border-[rgba(166,110,232,0.25)]'}`}
+                  >
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex-1 min-w-0">
                       <div className="font-bold text-white/90 mb-1">
@@ -3020,9 +3159,11 @@ setTimeout(() => setSavedResponse(false), 2000);
                       </button>
                     )}
                   </div>
+                  </div>
                 </div>
               );
             })}
+          </div>
           </div>
         </div>
       </div>
@@ -3030,7 +3171,7 @@ setTimeout(() => setSavedResponse(false), 2000);
   };
 
   return (
-    <div className="min-h-screen va-app-bg va-font-nunito text-white">
+    <><div className="min-h-screen va-app-bg va-font-nunito text-white">
       <header className="va-glass-card border-b border-[rgba(255,255,255,0.12)] sticky top-0 z-50 backdrop-blur-md rounded-none">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
@@ -3118,7 +3259,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                   currentView === 'journal' ? 'va-btn-primary text-white' : 'va-nav-inactive hover:text-[#a66ee8]'
                 }`}
               >
-                <BookMarked className="w-4 h-4" strokeWidth={1.5} />
+                <Hand className="w-4 h-4" strokeWidth={1.5} fill="none" />
                 My Prayers {(userTier === 'free') && <Lock className="w-3 h-3" />}
               </button>
               <button
@@ -3127,7 +3268,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                   currentView === 'community' ? 'va-btn-primary text-white' : 'va-nav-inactive hover:text-[#a66ee8]'
                 }`}
               >
-                <Heart className="w-4 h-4" strokeWidth={1.5} />
+                <Globe className="w-4 h-4" strokeWidth={1.5} />
                 Prayer Wall {(userTier === 'free') && <Lock className="w-3 h-3" />}
               </button>
               <button
@@ -3194,7 +3335,8 @@ setTimeout(() => setSavedResponse(false), 2000);
 
       {showAuthModal && (
         <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
-          <div className="va-glass-modal p-6 max-w-md w-full">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold va-heading">
                 {showForgotPassword ? 'Reset Password' : (authMode === 'login' ? 'Sign In' : 'Create Account')}
@@ -3371,13 +3513,15 @@ setTimeout(() => setSavedResponse(false), 2000);
                 </div>
               </form>
             )}
+            </div>
           </div>
         </div>
       )}
 
       {showUpgradeModal && (
         <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="relative va-glass-modal p-6 w-full md:w-1/2 max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="relative p-6 w-full md:w-1/2 max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
             <button onClick={() => setShowUpgradeModal(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full va-btn-glass z-10">
               <X className="w-5 h-5" strokeWidth={1.5} />
             </button>
@@ -3388,7 +3532,8 @@ setTimeout(() => setSavedResponse(false), 2000);
             </div>
 
             <div className="grid md:grid-cols-2 gap-5">
-              <div className="va-glass-card p-5 hover:border-[rgba(166,110,232,0.4)] transition-all">
+              <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-5 hover:border-[rgba(166,110,232,0.4)] transition-all">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-10 h-10 rounded-full va-btn-primary flex items-center justify-center">
                     <Crown className="w-5 h-5 text-white" strokeWidth={1.5} />
@@ -3473,9 +3618,11 @@ setTimeout(() => setSavedResponse(false), 2000);
                     <strong className="text-white/80">Important:</strong> Your card will be automatically charged after the 3-day trial unless you cancel before the trial ends. You can cancel your subscription anytime from the link in your Stripe email receipt or by contacting support. Lifetime purchases are one-time payments with no recurring charges.
                   </p>
                 </div>
+                </div>
               </div>
 
-              <div className="va-glass-card p-5 hover:border-[rgba(166,110,232,0.4)] transition-all">
+              <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+                <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-5 hover:border-[rgba(166,110,232,0.4)] transition-all">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-10 h-10 rounded-full va-btn-primary flex items-center justify-center">
                     <Users className="w-5 h-5 text-white" strokeWidth={1.5} />
@@ -3513,7 +3660,9 @@ setTimeout(() => setSavedResponse(false), 2000);
                 >
                   Request Information
                 </button>
+                </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
@@ -3521,7 +3670,8 @@ setTimeout(() => setSavedResponse(false), 2000);
       
 {showSettingsModal && (
   <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto">
-    <div className="va-glass-modal p-6 max-w-lg w-full my-8">
+    <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+      <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 max-w-lg w-full my-8">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold va-heading">Account Settings</h2>
         <button onClick={() => { setShowSettingsModal(false); setSettingsMessage(''); setSettingsError(''); }} className="va-muted hover:text-white">
@@ -3628,7 +3778,8 @@ setTimeout(() => setSavedResponse(false), 2000);
 
       {settingsTab === 'subscription' && (
         <div className="space-y-5">
-          <div className="va-glass-card p-4 rounded-xl">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-4 rounded-xl">
             <p className="text-sm font-semibold va-muted mb-1">Current Plan</p>
             {userTier === 'premium' ? (
               <div className="flex items-center gap-2">
@@ -3646,6 +3797,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 </button>
               </div>
             )}
+            </div>
           </div>
 
           {userTier === 'premium' && (
@@ -3708,13 +3860,15 @@ setTimeout(() => setSavedResponse(false), 2000);
           )}
         </div>
       )}
+      </div>
     </div>
   </div>
 )}
 
       {showContactForm && (
         <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="va-glass-modal p-6 max-w-lg w-full my-8">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 max-w-lg w-full my-8">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-2xl font-bold va-heading">Church Edition Inquiry</h2>
@@ -3777,12 +3931,14 @@ setTimeout(() => setSavedResponse(false), 2000);
                 Submit Request
               </button>
             </div>
+            </div>
           </div>
         </div>
       )}
 {showPrayerModal && (
         <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
-          <div className="va-glass-modal p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold va-heading mb-4">Add Prayer Request</h3>
             
             <div className="mb-4">
@@ -3813,7 +3969,8 @@ setTimeout(() => setSavedResponse(false), 2000);
               spellCheck="false"
             />
             
-            <div className="mb-4 p-4 va-glass-card rounded-xl">
+            <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+              <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="mb-4 p-4 rounded-xl">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -3828,6 +3985,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                   </p>
                 </div>
               </label>
+              </div>
             </div>
             
             <div className="flex gap-3">
@@ -3849,13 +4007,15 @@ setTimeout(() => setSavedResponse(false), 2000);
                 Cancel
               </button>
             </div>
+            </div>
           </div>
         </div>
       )}
 
       {deletePrayerConfirmId !== null && (
         <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
-          <div className="va-glass-modal p-6 max-w-md w-full shadow-xl">
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px' }}>
+            <div style={{ background: '#0d0a1a', borderRadius: '11px', height: '100%' }} className="p-6 max-w-md w-full shadow-xl">
             <div className="flex items-start gap-4 mb-5">
               <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-6 h-6 text-amber-400" strokeWidth={1.5} />
@@ -3881,9 +4041,11 @@ setTimeout(() => setSavedResponse(false), 2000);
                 Delete
               </button>
             </div>
+            </div>
           </div>
         </div>
       )}
+    </div>
 
 <footer className="border-t border-[rgba(255,255,255,0.1)] py-12 mt-20">
   <div className="max-w-7xl mx-auto px-6 text-center">
@@ -3897,6 +4059,6 @@ setTimeout(() => setSavedResponse(false), 2000);
     </div>
   </div>
 </footer>
-    </div>
+    </>
   );
 }
