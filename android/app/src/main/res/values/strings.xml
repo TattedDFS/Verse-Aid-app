@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VerseAid</string>
+    <string name="title_activity_main">VerseAid</string>
+    <string name="package_name">ai.verseaid.app</string>
+    <string name="custom_url_scheme">ai.verseaid.app</string>
+</resources>
