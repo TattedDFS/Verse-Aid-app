@@ -3853,7 +3853,7 @@ setTimeout(() => setSavedResponse(false), 2000);
 
         {isLoggedIn && (
           <div className={`${showMenu ? 'block' : 'hidden'} md:block border-t border-[rgba(255,255,255,0.08)]`}>
-            <div className="max-w-7xl mx-auto px-6 py-2 flex gap-2 overflow-x-auto">
+            <div className="max-w-7xl mx-auto px-6 py-2 flex gap-2 overflow-x-auto justify-center">
               <button
                 onClick={() => { setCurrentView('home'); setShowMenu(false); }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap font-semibold text-sm transition-all ${
