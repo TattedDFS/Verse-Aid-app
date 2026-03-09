@@ -31,18 +31,14 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const isProduction = process.env.NODE_ENV === 'production';
 
-  if (isProduction && !webhookSecret) {
-    console.error('STRIPE_WEBHOOK_SECRET is required in production. Set it in .env.');
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET is not set. Set it in .env before receiving webhooks.');
     return res.status(500).send('Webhook not configured');
   }
 
   let event;
   try {
-    if (webhookSecret) {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } else {
-      event = JSON.parse(req.body.toString());
-    }
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -83,12 +79,20 @@ app.post('/create-checkout-session', async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!priceId) {
-      return res.status(400).json({ error: 'priceId is required' });
+    if (!priceId || typeof priceId !== 'string' || !priceId.trim()) {
+      return res.status(400).json({ error: 'priceId must be a non-empty string' });
     }
 
     if (!username) {
       return res.status(400).json({ error: 'username is required' });
+    }
+
+    const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+    if (successUrl && !successUrl.startsWith(allowedOrigin)) {
+      return res.status(400).json({ error: 'Invalid successUrl' });
+    }
+    if (cancelUrl && !cancelUrl.startsWith(allowedOrigin)) {
+      return res.status(400).json({ error: 'Invalid cancelUrl' });
     }
 
     // Build session parameters
@@ -121,7 +125,10 @@ app.post('/create-checkout-session', async (req, res) => {
       };
 
       // Add trial period if specified
-      if (trialPeriodDays && trialPeriodDays > 0) {
+      if (trialPeriodDays !== undefined && trialPeriodDays !== null) {
+        if (!Number.isInteger(trialPeriodDays) || trialPeriodDays <= 0) {
+          return res.status(400).json({ error: 'trialPeriodDays must be a positive integer' });
+        }
         sessionParams.subscription_data.trial_period_days = trialPeriodDays;
       }
     }

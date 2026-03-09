@@ -76,8 +76,7 @@ export default function BiblicalGuidanceApp() {
    
   const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
 
-  // Use VITE_STRIPE_PUBLISHABLE_KEY in .env for production (pk_live_...). Fallback for local dev.
-  const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51SmIRvPn2XQV6iQ882R9uaUcXXaMyIlRkQF7VdQQKU8dFa6Ldn8Sp7Ix8DFgLiLOR5hQB9Y87uhrxW69pzMPSteZ00MzZhLbkj';
+  const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
   const STRIPE_PRICE_ID_MONTHLY = 'price_1Szfd1Pn2XQV6iQ8St63dVyE';
   const STRIPE_PRICE_ID_ANNUAL = 'price_1SzfduPn2XQV6iQ8cXTCWHci';
   const STRIPE_PRICE_ID_LIFETIME = 'price_1SzfeXPn2XQV6iQ8hEOpG9cQ';
@@ -262,7 +261,7 @@ export default function BiblicalGuidanceApp() {
       try {
         setSavedResponses(JSON.parse(savedData.value));
       } catch (err) {
-        console.error('Error parsing saved responses for user', username, err);
+        console.error('Error parsing saved responses', err);
       }
     }
     try {
@@ -334,14 +333,14 @@ export default function BiblicalGuidanceApp() {
       try {
         setPrayerJournal(JSON.parse(journalData.value));
       } catch (err) {
-        console.error('Error parsing journal for user', username, err);
+        console.error('Error parsing journal', err);
       }
     }
     if (readingsData && readingsData.value && !readingProgressFromSupabase) {
       try {
         setCompletedReadings(JSON.parse(readingsData.value));
       } catch (err) {
-        console.error('Error parsing completed readings for user', username, err);
+        console.error('Error parsing completed readings', err);
       }
     }
     if (userData && userData.value) {
@@ -367,7 +366,7 @@ export default function BiblicalGuidanceApp() {
         setChurchCode(parsed.churchCode || '');
         setChurchName(parsed.churchName || '');
       } catch (err) {
-        console.error('Error parsing user data for user', username, err);
+        console.error('Error parsing user data', err);
       }
     } else {
       // No user data found - check for user-specific premium storage (using window.storage API)
@@ -948,10 +947,18 @@ export default function BiblicalGuidanceApp() {
       setError('Please enter your password');
       return;
     }
+    if (authPassword.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
 
     if (authMode === 'signup') {
       if (!authEmail.trim()) {
         setError('Please enter your email address');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authEmail.trim())) {
+        setError('Please enter a valid email address');
         return;
       }
       if (!authUsername.trim()) {
@@ -992,6 +999,10 @@ export default function BiblicalGuidanceApp() {
     } else {
       if (!authEmail.trim()) {
         setError('Please enter your email address');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authEmail.trim())) {
+        setError('Please enter a valid email address');
         return;
       }
 
@@ -1376,7 +1387,7 @@ export default function BiblicalGuidanceApp() {
 
   const submitPeopleQuestion = async (q) => {
     if (!q || !q.trim() || !selectedPerson || loadingPeopleAnswer) return;
-    const questionText = q.trim();
+    const questionText = q.trim().replace(/`/g, "'").replace(/\$\{/g, '${').slice(0, 500);
     setLoadingPeopleAnswer(true);
     try {
       const res = await anthropicRequest({
@@ -1485,13 +1496,15 @@ For any unknown field use null. Return valid JSON only.`
     setError('');
     setResponse(null);
 
+    const sanitizedQuestion = question.trim().replace(/`/g, "'").replace(/\$\{/g, '${').slice(0, 500);
+
     const makeRequest = async (attempt = 1) => {
-      try { 
+      try {
         const apiResponse = await anthropicRequest({
         maxTokens: 1000,
         messages: [{
           role: 'user',
-          content: `You are a compassionate spiritual guide using the World English Version (WEV) of the Bible. Please respond in ${toneDescription} tone that is easy to understand. The person is asking: "${question}". Provide a JSON response with: 1) "compassionateResponse": a short, empathetic answer, 2) "verses": an array of 2-3 relevant Bible verses from the World English Version with "reference" and "text", 3) "wwjd": what Jesus might do or invite them to do, 4) "encouragement": a hopeful closing thought. Format as JSON only: {"compassionateResponse": "", "verses": [{"reference": "", "text": ""}], "wwjd": "", "encouragement": ""}`
+          content: `You are a compassionate spiritual guide using the World English Version (WEV) of the Bible. Please respond in ${toneDescription} tone that is easy to understand. The person is asking: "${sanitizedQuestion}". Provide a JSON response with: 1) "compassionateResponse": a short, empathetic answer, 2) "verses": an array of 2-3 relevant Bible verses from the World English Version with "reference" and "text", 3) "wwjd": what Jesus might do or invite them to do, 4) "encouragement": a hopeful closing thought. Format as JSON only: {"compassionateResponse": "", "verses": [{"reference": "", "text": ""}], "wwjd": "", "encouragement": ""}`
         }]
       });
 
@@ -1730,8 +1743,9 @@ setTimeout(() => setSavedResponse(false), 2000);
   };
 
   const extendPrayerOnWall = async (communityPrayerId) => {
-    if (!currentUserId) return;
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       const prayer = communityPrayers.find(p => p.id === communityPrayerId);
       if (!prayer?.expiration_date) return;
       const newExpiration = new Date(new Date(prayer.expiration_date).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
@@ -1739,7 +1753,7 @@ setTimeout(() => setSavedResponse(false), 2000);
       const { error } = await supabase.from('community_prayers').update({
         expiration_date: newExpiration,
         last_extended_at: nowIso
-      }).eq('id', communityPrayerId).eq('user_id', currentUserId);
+      }).eq('id', communityPrayerId).eq('user_id', user.id);
       if (!error) {
         setCommunityPrayers(prev => prev.map(p => p.id === communityPrayerId ? { ...p, expiration_date: newExpiration, last_extended_at: nowIso } : p));
         loadUserData();
@@ -1916,6 +1930,7 @@ setTimeout(() => setSavedResponse(false), 2000);
               placeholder="Share your question, concern, or situation..."
               className="va-input w-full px-6 py-4 rounded-xl resize-none"
               rows="5"
+              maxLength={500}
             />
           </div>
 
@@ -4419,7 +4434,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                 if (!supabase) { setSettingsError('Account settings are not configured.'); return; }
                 const { error } = await supabase.auth.updateUser({ email: newEmail });
                 if (error) { setSettingsError(error.message); return; }
-                await supabase.from('profiles').update({ email: newEmail }).eq('email', username);
+                await supabase.from('profiles').update({ email: newEmail }).eq('id', currentUserId);
                 setSettingsMessage('Confirmation sent to your new email address. Please check your inbox.');
                 setNewEmail('');
               }}
@@ -4517,6 +4532,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                     setSettingsError('');
                     try {
                       const { data: { user } } = await supabase.auth.getUser();
+                      const { data: { session } } = await supabase.auth.getSession();
                       const { data: profile } = await supabase
                         .from('profiles')
                         .select('subscription_id')
@@ -4529,7 +4545,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                       }
                       const response = await fetch('/api/cancel-subscription', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
                         body: JSON.stringify({ subscriptionId: profile.subscription_id })
                       });
                       if (!response.ok) throw new Error('Failed to cancel');
@@ -4612,6 +4628,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                   placeholder="Tell us about your church..."
                   className="va-input w-full px-4 py-3 rounded-lg resize-none"
                   rows="3"
+                  maxLength={1000}
                 />
               </div>
 
@@ -4655,6 +4672,7 @@ setTimeout(() => setSavedResponse(false), 2000);
               className="va-input w-full px-4 py-3 rounded-xl mb-4 resize-none"
               rows="4"
               autoComplete="off"
+              maxLength={1000}
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck="false"

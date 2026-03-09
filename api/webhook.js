@@ -60,7 +60,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Database update failed' });
     }
 
-    console.log(`Premium activated for ${customerEmail} - tier: ${tier}`);
+    console.log(`Premium activated for [redacted] - tier: ${tier}`);
   }
 
   if (event.type === 'customer.subscription.deleted') {
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
       console.error('Supabase cancel error:', error.message);
     }
 
-    console.log(`Subscription cancelled for customer: ${customerId}`);
+    console.log(`Subscription cancelled for customer: [redacted]`);
   }
 
   res.status(200).json({ received: true });
