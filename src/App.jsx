@@ -2023,7 +2023,7 @@ setTimeout(() => setSavedResponse(false), 2000);
           </div>
 
           <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}>
-            <div style={{ background: '#0d0a1a', borderRadius: '11px' }} className="p-8 rounded-xl flex items-start gap-4">
+            <div style={{ background: '#0d0a1a' }} className="p-8 rounded-xl flex items-start gap-4">
               <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
                 <Heart className="w-6 h-6 text-white" strokeWidth={1.5} />
               </div>
@@ -2035,7 +2035,7 @@ setTimeout(() => setSavedResponse(false), 2000);
           </div>
 
           <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}>
-            <div style={{ background: '#0d0a1a', borderRadius: '11px' }} className="p-8 rounded-xl flex items-start gap-4">
+            <div style={{ background: '#0d0a1a' }} className="p-8 rounded-xl flex items-start gap-4">
               <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
                 <BookOpen className="w-6 h-6 text-white" strokeWidth={1.5} />
               </div>
