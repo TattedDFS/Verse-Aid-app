@@ -2022,7 +2022,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             </button>
           </div>
 
-          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }} className="hover:border-[rgba(166,110,232,0.25)] transition-all">
+          <div className="border border-[rgba(255,255,255,0.12)] rounded-xl hover:border-[rgba(166,110,232,0.25)] transition-all">
             <div className="p-8 rounded-xl flex items-start gap-4 mb-4" style={{ background: '#0d0a1a' }}>
               <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
                 <Heart className="w-6 h-6 text-white" strokeWidth={1.5} />
@@ -2034,7 +2034,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             </div>
             </div>
 
-          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}>
+          <div className="border border-[rgba(255,255,255,0.12)] rounded-xl">
             <div className="p-8 rounded-xl flex items-start gap-4 mb-6" style={{ background: '#0d0a1a' }}>
               <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
                 <BookOpen className="w-6 h-6 text-white" strokeWidth={1.5} />
