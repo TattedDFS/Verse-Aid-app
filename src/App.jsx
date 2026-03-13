@@ -2022,44 +2022,48 @@ setTimeout(() => setSavedResponse(false), 2000);
             </button>
           </div>
 
-          <div className="rounded-xl overflow-hidden">
-            <div className="p-8 rounded-xl flex items-start gap-4 mb-4 border border-[rgba(255,255,255,0.12)] hover:border-[rgba(166,110,232,0.25)] transition-all" style={{ background: '#0d0a1a' }}>
-              <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
-                <Heart className="w-6 h-6 text-white" strokeWidth={1.5} />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold va-heading mb-3">A Word of Understanding</h2>
-                <p className="text-white/90 leading-relaxed va-font-nunito">{response.compassionateResponse}</p>
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}>
+            <div className="rounded-xl overflow-hidden">
+              <div className="p-8 rounded-xl flex items-start gap-4 mb-4 border border-[rgba(255,255,255,0.12)] hover:border-[rgba(166,110,232,0.25)] transition-all" style={{ background: '#0d0a1a' }}>
+                <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
+                  <Heart className="w-6 h-6 text-white" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold va-heading mb-3">A Word of Understanding</h2>
+                  <p className="text-white/90 leading-relaxed va-font-nunito">{response.compassionateResponse}</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl overflow-hidden">
-            <div className="p-8 rounded-xl flex items-start gap-4 mb-6 border border-[rgba(255,255,255,0.12)]" style={{ background: '#0d0a1a' }}>
-              <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-6 h-6 text-white" strokeWidth={1.5} />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold va-heading mb-4">Scripture for Your Journey</h2>
-                <div className="space-y-4">
-                  {response.verses.map((verse, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => goToVerse(verse.reference)}
-                      style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}
-                      className="rounded-xl cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
-                    >
-                        <div style={{ background: '#0d0a1a' }} className="p-6 rounded-xl">
-                        <p className="va-scripture va-bible-verse-text text-white/95 mb-3">"{verse.text}"</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <p className="text-sm va-verse-ref">— {verse.reference}</p>
-                          <span className="text-xs va-muted">
-                            Tap to open in Bible reader →
-                          </span>
-                        </div>
-                        </div>
-                    </div>
-                  ))}
+          <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}>
+            <div className="rounded-xl overflow-hidden">
+              <div className="p-8 rounded-xl flex items-start gap-4 mb-6 border border-[rgba(255,255,255,0.12)]" style={{ background: '#0d0a1a' }}>
+                <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-6 h-6 text-white" strokeWidth={1.5} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold va-heading mb-4">Scripture for Your Journey</h2>
+                  <div className="space-y-4">
+                    {response.verses.map((verse, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => goToVerse(verse.reference)}
+                        style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}
+                        className="rounded-xl cursor-pointer hover:border-[rgba(166,110,232,0.3)] transition-all"
+                      >
+                          <div style={{ background: '#0d0a1a' }} className="p-6 rounded-xl">
+                          <p className="va-scripture va-bible-verse-text text-white/95 mb-3">"{verse.text}"</p>
+                          <div className="flex items-center justify-between mt-1">
+                            <p className="text-sm va-verse-ref">— {verse.reference}</p>
+                            <span className="text-xs va-muted">
+                              Tap to open in Bible reader →
+                            </span>
+                          </div>
+                          </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
