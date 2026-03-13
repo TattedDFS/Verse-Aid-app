@@ -2022,8 +2022,8 @@ setTimeout(() => setSavedResponse(false), 2000);
             </button>
           </div>
 
-          <div className="border border-[rgba(255,255,255,0.12)] rounded-xl hover:border-[rgba(166,110,232,0.25)] transition-all">
-            <div className="p-8 rounded-xl flex items-start gap-4 mb-4" style={{ background: '#0d0a1a' }}>
+          <div className="rounded-xl overflow-hidden">
+            <div className="p-8 rounded-xl flex items-start gap-4 mb-4 border border-[rgba(255,255,255,0.12)] hover:border-[rgba(166,110,232,0.25)] transition-all" style={{ background: '#0d0a1a' }}>
               <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
                 <Heart className="w-6 h-6 text-white" strokeWidth={1.5} />
               </div>
@@ -2032,10 +2032,10 @@ setTimeout(() => setSavedResponse(false), 2000);
                 <p className="text-white/90 leading-relaxed va-font-nunito">{response.compassionateResponse}</p>
               </div>
             </div>
-            </div>
+          </div>
 
-          <div className="border border-[rgba(255,255,255,0.12)] rounded-xl">
-            <div className="p-8 rounded-xl flex items-start gap-4 mb-6" style={{ background: '#0d0a1a' }}>
+          <div className="rounded-xl overflow-hidden">
+            <div className="p-8 rounded-xl flex items-start gap-4 mb-6 border border-[rgba(255,255,255,0.12)]" style={{ background: '#0d0a1a' }}>
               <div className="w-12 h-12 rounded-full va-btn-primary flex items-center justify-center flex-shrink-0">
                 <BookOpen className="w-6 h-6 text-white" strokeWidth={1.5} />
               </div>
