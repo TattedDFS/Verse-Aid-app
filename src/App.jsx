@@ -4689,6 +4689,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                       setUserTier('free');
                       setCurrentView('home');
                     } catch (err) {
+                      console.error('Delete account error:', err.message);
                       setSettingsError('Error deleting account. Please contact support at contact@verseaid.ai');
                     }
                   }}
