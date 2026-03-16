@@ -60,6 +60,7 @@ export default function BiblicalGuidanceApp() {
   const [churchCode, setChurchCode] = useState('');
   const [churchName, setChurchName] = useState('');
   const [showContactForm, setShowContactForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [contactInfo, setContactInfo] = useState({
     name: '', email: '', phone: '', churchName: '', message: ''
   });
@@ -4569,27 +4570,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             <label className="block text-sm font-semibold text-red-400 mb-2">Delete Account</label>
             <p className="text-xs va-muted mb-3">Permanently delete your account and all associated data. This action cannot be undone.</p>
             <button
-              onClick={async () => {
-                if (!window.confirm('Are you sure you want to permanently delete your account? This cannot be undone and all your data will be lost.')) return;
-                if (!supabase) { setSettingsError('Not configured.'); return; }
-                setSettingsError('');
-                try {
-                  const { data: { user } } = await supabase.auth.getUser();
-                  const { data: { session } } = await supabase.auth.getSession();
-                  const response = await fetch('/api/delete-account', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-                    body: JSON.stringify({ userId: user.id })
-                  });
-                  if (!response.ok) throw new Error('Failed to delete account');
-                  await supabase.auth.signOut();
-                  setCurrentUser(null);
-                  setUserTier('free');
-                  setCurrentView('home');
-                } catch (err) {
-                  setSettingsError('Error deleting account. Please contact support at contact@verseaid.ai');
-                }
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
               className="w-full bg-red-900/20 border border-red-500/30 text-red-400 font-bold py-2 rounded-lg hover:bg-red-900/40 transition-all"
             >
               Delete Account
@@ -4673,6 +4654,54 @@ setTimeout(() => setSavedResponse(false), 2000);
             </div>
           </section>
       )}
+
+      {showDeleteConfirm && (
+        <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
+          <article style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }} className="max-w-md w-full shadow-xl">
+            <div style={{ background: '#0d0a1a' }} className="p-6 rounded-xl">
+              <h3 className="text-xl font-bold va-heading mb-2">Delete Account</h3>
+              <p className="va-muted text-sm leading-relaxed mb-6">
+                Are you sure you want to permanently delete your account? This cannot be undone and all your data will be lost.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 va-btn-glass font-bold rounded-xl py-3"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    setShowDeleteConfirm(false);
+                    if (!supabase) { setSettingsError('Not configured.'); return; }
+                    setSettingsError('');
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      const { data: { session } } = await supabase.auth.getSession();
+                      const response = await fetch('/api/delete-account', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                        body: JSON.stringify({ userId: user.id })
+                      });
+                      if (!response.ok) throw new Error('Failed to delete account');
+                      try { await supabase.auth.signOut(); } catch (_) {}
+                      setCurrentUser(null);
+                      setUserTier('free');
+                      setCurrentView('home');
+                    } catch (err) {
+                      setSettingsError('Error deleting account. Please contact support at contact@verseaid.ai');
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl border border-red-500/50 hover:shadow-lg hover:shadow-red-500/20 transition-all"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      )}
+
 {showPrayerModal && (
         <section className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
             <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }} className="max-w-md w-full">
