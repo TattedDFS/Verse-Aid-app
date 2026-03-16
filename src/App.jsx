@@ -49,6 +49,7 @@ export default function BiblicalGuidanceApp() {
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [recaptchaVerified, setRecaptchaVerified] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
@@ -944,6 +945,9 @@ export default function BiblicalGuidanceApp() {
     }
   };
 
+  window.onRecaptchaSuccess = () => setRecaptchaVerified(true);
+  window.onRecaptchaExpired = () => setRecaptchaVerified(false);
+
   const handleAuth = async () => {
     if (!authPassword.trim()) {
       setError('Please enter your password');
@@ -970,6 +974,11 @@ export default function BiblicalGuidanceApp() {
 
       if (authPassword !== confirmPassword) {
         setError('Passwords do not match');
+        return;
+      }
+
+      if (!recaptchaVerified) {
+        setError('Please complete the reCAPTCHA verification');
         return;
       }
 
@@ -1079,6 +1088,7 @@ export default function BiblicalGuidanceApp() {
     setAuthUsername('');
     setAuthPassword('');
     setConfirmPassword('');
+    setRecaptchaVerified(false);
     setAuthEmail('');
   };
 
@@ -4198,6 +4208,15 @@ setTimeout(() => setSavedResponse(false), 2000);
                         />
                       </div>
                     </div>
+                  )}
+
+                  {authMode === 'signup' && (
+                    <div
+                      className="g-recaptcha"
+                      data-sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                      data-callback="onRecaptchaSuccess"
+                      data-expired-callback="onRecaptchaExpired"
+                    />
                   )}
 
                   {error && (
