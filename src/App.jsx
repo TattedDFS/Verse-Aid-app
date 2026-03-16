@@ -4686,7 +4686,10 @@ setTimeout(() => setSavedResponse(false), 2000);
                       if (!response.ok) throw new Error('Failed to delete account');
                       try { await supabase.auth.signOut(); } catch (_) {}
                       setCurrentUserId(null);
+                      setIsLoggedIn(false);
+                      setUsername('');
                       setUserTier('free');
+                      setShowSettingsModal(false);
                       setCurrentView('home');
                     } catch (err) {
                       console.error('Delete account error:', err.message);
