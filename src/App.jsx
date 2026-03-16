@@ -945,8 +945,17 @@ export default function BiblicalGuidanceApp() {
     }
   };
 
-  window.onRecaptchaSuccess = () => setRecaptchaVerified(true);
-  window.onRecaptchaExpired = () => setRecaptchaVerified(false);
+  useEffect(() => {
+    if (authMode === 'signup') {
+      const script = document.createElement('script');
+      script.src = 'https://www.google.com/recaptcha/api.js';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+      window.onRecaptchaSuccess = () => setRecaptchaVerified(true);
+      window.onRecaptchaExpired = () => setRecaptchaVerified(false);
+    }
+  }, [authMode]);
 
   const handleAuth = async () => {
     if (!authPassword.trim()) {
@@ -4185,6 +4194,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
+                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}
                         className="text-sm text-[#e8a930] font-bold hover:text-[#f5c842]"
                       >
                         {showPassword ? 'HIDE' : 'SHOW'}
