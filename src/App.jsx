@@ -4565,6 +4565,36 @@ setTimeout(() => setSavedResponse(false), 2000);
               </div>
             </>
           )}
+          <div className="pt-4 border-t border-red-500/20">
+            <label className="block text-sm font-semibold text-red-400 mb-2">Delete Account</label>
+            <p className="text-xs va-muted mb-3">Permanently delete your account and all associated data. This action cannot be undone.</p>
+            <button
+              onClick={async () => {
+                if (!window.confirm('Are you sure you want to permanently delete your account? This cannot be undone and all your data will be lost.')) return;
+                if (!supabase) { setSettingsError('Not configured.'); return; }
+                setSettingsError('');
+                try {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  const { data: { session } } = await supabase.auth.getSession();
+                  const response = await fetch('/api/delete-account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                    body: JSON.stringify({ userId: user.id })
+                  });
+                  if (!response.ok) throw new Error('Failed to delete account');
+                  await supabase.auth.signOut();
+                  setCurrentUser(null);
+                  setUserTier('free');
+                  setCurrentView('home');
+                } catch (err) {
+                  setSettingsError('Error deleting account. Please contact support at contact@verseaid.ai');
+                }
+              }}
+              className="w-full bg-red-900/20 border border-red-500/30 text-red-400 font-bold py-2 rounded-lg hover:bg-red-900/40 transition-all"
+            >
+              Delete Account
+            </button>
+          </div>
         </div>
       )}
       </div>
