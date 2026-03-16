@@ -48,6 +48,7 @@ export default function BiblicalGuidanceApp() {
   const [authMode, setAuthMode] = useState('login');
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
@@ -967,6 +968,11 @@ export default function BiblicalGuidanceApp() {
         return;
       }
 
+      if (authPassword !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: authEmail,
         password: authPassword,
@@ -1072,6 +1078,7 @@ export default function BiblicalGuidanceApp() {
     setError('');
     setAuthUsername('');
     setAuthPassword('');
+    setConfirmPassword('');
     setAuthEmail('');
   };
 
@@ -4174,6 +4181,24 @@ setTimeout(() => setSavedResponse(false), 2000);
                       </button>
                     </div>
                   </div>
+
+                  {authMode === 'signup' && (
+                    <div>
+                      <label htmlFor="auth-confirm-password" className="block text-sm font-semibold text-[#e8a930] mb-1">Confirm Password</label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          id="auth-confirm-password"
+                          name="confirm-password"
+                          autoComplete="new-password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="va-input w-full px-4 py-2 rounded-lg"
+                          placeholder="Confirm password"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {error && (
                     <div className="bg-red-900/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
