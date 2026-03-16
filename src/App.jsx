@@ -4224,6 +4224,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                     <div
                       className="g-recaptcha"
                       data-sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                      data-theme="dark"
                       data-callback="onRecaptchaSuccess"
                       data-expired-callback="onRecaptchaExpired"
                     />
