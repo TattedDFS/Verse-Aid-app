@@ -4570,7 +4570,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             <label className="block text-sm font-semibold text-red-400 mb-2">Delete Account</label>
             <p className="text-xs va-muted mb-3">Permanently delete your account and all associated data. This action cannot be undone.</p>
             <button
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={() => { setShowDeleteConfirm(true); setSettingsError(''); }}
               className="w-full bg-red-900/20 border border-red-500/30 text-red-400 font-bold py-2 rounded-lg hover:bg-red-900/40 transition-all"
             >
               Delete Account
