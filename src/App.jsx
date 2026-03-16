@@ -3,6 +3,8 @@ import { BookOpen, Send, Loader2, Heart, User, Calendar, Share2, Star, BookMarke
 import { anthropicRequest as anthropicRequestBase } from './utils/anthropicClient';
 import { safeStorageGet, safeStorageSet } from './utils/storage';
 import { supabase } from './supabaseClient';
+import { Capacitor } from '@capacitor/core';
+import { Purchases, LOG_LEVEL } from '@revenuecat/purchases-capacitor';
 
 const PeopleQuestionInput = React.memo(({ onSubmit, placeholder, disabled }) => {
   const [value, setValue] = useState('');
@@ -61,6 +63,7 @@ export default function BiblicalGuidanceApp() {
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [churchCode, setChurchCode] = useState('');
   const [churchName, setChurchName] = useState('');
+  const [isNativePlatform, setIsNativePlatform] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [contactInfo, setContactInfo] = useState({
@@ -210,6 +213,18 @@ export default function BiblicalGuidanceApp() {
     { name: '2 Peter', chapters: 3 }, { name: '1 John', chapters: 5 }, { name: '2 John', chapters: 1 },
     { name: '3 John', chapters: 1 }, { name: 'Jude', chapters: 1 }, { name: 'Revelation', chapters: 22 }
   ];
+
+  useEffect(() => {
+    const initRevenueCat = async () => {
+      const platform = Capacitor.getPlatform();
+      if (platform === 'ios' || platform === 'android') {
+        setIsNativePlatform(true);
+        await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+        await Purchases.configure({ apiKey: import.meta.env.VITE_REVENUECAT_API_KEY });
+      }
+    };
+    initRevenueCat();
+  }, []);
 
   useEffect(() => {
     loadUserData();
@@ -1261,6 +1276,32 @@ export default function BiblicalGuidanceApp() {
       alert('Unable to process payment: ' + (err.message || 'Please try again. Make sure the backend server is running.'));
     } finally {
       setStripeLoading(false);
+    }
+  };
+
+  const handleAppleIAP = async (productId, planName) => {
+    try {
+      const offerings = await Purchases.getOfferings();
+      if (!offerings.current) {
+        alert('No offerings available. Please try again later.');
+        return;
+      }
+      const packages = offerings.current.availablePackages;
+      const pkg = packages.find(p => p.product.identifier === productId);
+      if (!pkg) {
+        alert('Product not found. Please try again later.');
+        return;
+      }
+      const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
+      if (customerInfo.entitlements.active['VerseAid Pro']) {
+        setUserTier('premium');
+        setShowUpgradeModal(false);
+        alert(`Welcome to ${planName}! Your premium access is now active.`);
+      }
+    } catch (err) {
+      if (err.code !== 'PURCHASE_CANCELLED') {
+        alert('Purchase failed. Please try again.');
+      }
     }
   };
 
@@ -4344,36 +4385,63 @@ setTimeout(() => setSavedResponse(false), 2000);
                   </li>
                 </ul>
 
-                <button
-                  onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_MONTHLY, true, 'Monthly Premium')}
-                  disabled={stripeLoading}
-                  className="w-full va-btn-primary py-2.5 rounded-xl mb-2 text-sm disabled:opacity-60"
-                >
-                  {stripeLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Start 3-Day Trial - Monthly $4.99/mo'
-                  )}
-                </button>
+                {isNativePlatform ? (
+                  <button
+                    onClick={() => handleAppleIAP('ai.verseaid.app.monthly', 'Monthly Premium')}
+                    className="w-full va-btn-primary py-2.5 rounded-xl mb-2 text-sm"
+                  >
+                    Subscribe Monthly - $4.99/mo
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_MONTHLY, true, 'Monthly Premium')}
+                    disabled={stripeLoading}
+                    className="w-full va-btn-primary py-2.5 rounded-xl mb-2 text-sm disabled:opacity-60"
+                  >
+                    {stripeLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Start 3-Day Trial - Monthly $4.99/mo'
+                    )}
+                  </button>
+                )}
 
-                <button
-                  onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_ANNUAL, true, 'Annual Premium')}
-                  disabled={stripeLoading}
-                  className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all mb-2 text-sm disabled:opacity-50"
-                >
-                  Start 3-Day Trial - Annual $49.99/yr
-                </button>
+                {isNativePlatform ? (
+                  <button
+                    onClick={() => handleAppleIAP('ai.verseaid.app.annual', 'Annual Premium')}
+                    className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all mb-2 text-sm"
+                  >
+                    Subscribe Annual - $49.99/yr
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_ANNUAL, true, 'Annual Premium')}
+                    disabled={stripeLoading}
+                    className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all mb-2 text-sm disabled:opacity-50"
+                  >
+                    Start 3-Day Trial - Annual $49.99/yr
+                  </button>
+                )}
 
-                <button
-                  onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_LIFETIME, false, 'Lifetime Premium')}
-                  disabled={stripeLoading}
-                  className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm disabled:opacity-50"
-                >
-                  Lifetime Premium - $89.99 once
-                </button>
+                {isNativePlatform ? (
+                  <button
+                    onClick={() => handleAppleIAP('ai.verseaid.app.lifetime', 'Lifetime Premium')}
+                    className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm"
+                  >
+                    Lifetime Premium - $89.99
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_LIFETIME, false, 'Lifetime Premium')}
+                    disabled={stripeLoading}
+                    className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm disabled:opacity-50"
+                  >
+                    Lifetime Premium - $89.99 once
+                  </button>
+                )}
 
                 <div className="mt-4 pt-3 border-t border-[rgba(255,255,255,0.1)]">
                   <p className="text-xs va-muted text-center leading-relaxed">
