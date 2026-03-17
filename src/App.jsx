@@ -3879,7 +3879,7 @@ setTimeout(() => setSavedResponse(false), 2000);
 
   return (
     <div className="min-h-screen va-app-bg va-font-nunito text-white">
-      <header className="va-glass-card border-b border-[rgba(255,255,255,0.12)] sticky top-0 z-50 backdrop-blur-md rounded-none">
+      <header className="va-glass-card border-b border-[rgba(255,255,255,0.12)] sticky top-0 z-50 backdrop-blur-md rounded-none" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
