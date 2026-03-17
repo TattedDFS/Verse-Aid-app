@@ -4443,6 +4443,27 @@ setTimeout(() => setSavedResponse(false), 2000);
                   </button>
                 )}
 
+                {isNativePlatform && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { customerInfo } = await Purchases.restorePurchases();
+                        if (customerInfo.entitlements.active['VerseAid Pro']) {
+                          setUserTier('premium');
+                          setShowUpgradeModal(false);
+                        } else {
+                          alert('No active purchases found to restore.');
+                        }
+                      } catch (err) {
+                        alert('Failed to restore purchases. Please try again.');
+                      }
+                    }}
+                    className="w-full mt-2 text-white/50 hover:text-white/80 text-xs underline transition-colors"
+                  >
+                    Restore Purchases
+                  </button>
+                )}
+
                 <div className="mt-4 pt-3 border-t border-[rgba(255,255,255,0.1)]">
                   <p className="text-xs va-muted text-center leading-relaxed">
                     <strong className="text-white/80">Important:</strong> Your card will be automatically charged after the 3-day trial unless you cancel before the trial ends. You can cancel your subscription anytime from the link in your Stripe email receipt or by contacting support. Lifetime purchases are one-time payments with no recurring charges.
