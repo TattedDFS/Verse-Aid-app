@@ -133,6 +133,7 @@ export default function BiblicalGuidanceApp() {
   const [bibleBookmark, setBibleBookmark] = useState(null);
   const [biblePopup, setBiblePopup] = useState(null);
   const [bibleReturnPos, setBibleReturnPos] = useState(null);
+  const [bibleReturnView, setBibleReturnView] = useState(null);
   const [placesReturnPerson, setPlacesReturnPerson] = useState(null);
 
   const [selectedPerson, setSelectedPerson] = useState(null);
@@ -543,6 +544,7 @@ export default function BiblicalGuidanceApp() {
     const match = reference.match(/^(.+?)\s+(\d+):(\d+)/);
     if (match) {
       const [, book, chapter, verse] = match;
+      setBibleReturnView(currentView);
       setBibleBook(book);
       setBibleChapter(parseInt(chapter));
       setHighlightedVerse(parseInt(verse));
@@ -1994,13 +1996,30 @@ setTimeout(() => setSavedResponse(false), 2000);
              value={question}
              onChange={(e) => setQuestion(e.target.value)}
              key="main-question-textarea"
-              autoFocus
               placeholder="Share your question, concern, or situation..."
               className="va-input w-full px-6 py-4 rounded-xl resize-none"
               rows="5"
               maxLength={500}
             />
           </div>
+
+          {(question.trim() || response) && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setQuestion('');
+                  setResponse(null);
+                  setError('');
+                  setSavedResponse(false);
+                }}
+                className="va-btn-glass px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 va-font-nunito"
+              >
+                <X className="w-3.5 h-3.5" strokeWidth={1.5} />
+                Clear
+              </button>
+            </div>
+          )}
 
           <div className="mt-3">
             <p className="text-xs font-semibold va-muted mb-2">
@@ -2510,7 +2529,7 @@ setTimeout(() => setSavedResponse(false), 2000);
           </div>
         </div>
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap mb-2">
           <button
             onClick={() => setFilterCategory('all')}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all va-font-nunito ${
@@ -2536,6 +2555,7 @@ setTimeout(() => setSavedResponse(false), 2000);
           ))}
         </div>
 
+      <div className="mt-6"></div>
       {filteredCommunityPrayers.length === 0 ? (
         <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}>
           <div style={{ background: '#0d0a1a' }} className="p-8 rounded-xl text-center">
@@ -2683,6 +2703,19 @@ setTimeout(() => setSavedResponse(false), 2000);
 
   const BibleView = () => (
     <div className="space-y-6">
+      {bibleReturnView && bibleReturnView !== 'bible' && (
+        <button
+          type="button"
+          onClick={() => {
+            const returnTo = bibleReturnView;
+            setBibleReturnView(null);
+            setCurrentView(returnTo);
+          }}
+          className="va-btn-glass px-4 py-2 rounded-xl text-sm font-medium va-font-nunito flex items-center gap-2 hover:border-[rgba(166,110,232,0.3)] transition-colors"
+        >
+          ← Back to {bibleReturnView === 'saved' ? 'Saved Responses' : bibleReturnView === 'home' ? 'Home' : bibleReturnView.charAt(0).toUpperCase() + bibleReturnView.slice(1)}
+        </button>
+      )}
       {bibleBookmark && (
         <button
           type="button"
@@ -3065,7 +3098,7 @@ setTimeout(() => setSavedResponse(false), 2000);
           </div>
 
           <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}>
-          <div style={{ background: '#0d0a1a' }} className="p-4 rounded-xl max-h-[320px] overflow-y-auto">
+          <div style={{ background: '#0d0a1a' }} className="p-4 rounded-xl max-h-[calc(100vh-340px)] overflow-y-auto">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {filteredFigures.map((name) => (
               <button
@@ -3444,7 +3477,7 @@ setTimeout(() => setSavedResponse(false), 2000);
             </div>
 
             <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}>
-              <div style={{ background: '#0d0a1a' }} className="p-4 rounded-xl max-h-[320px] overflow-y-auto">
+              <div style={{ background: '#0d0a1a' }} className="p-4 rounded-xl max-h-[calc(100vh-340px)] overflow-y-auto">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {filteredPlaces.map((name) => (
                     <button
@@ -3815,7 +3848,7 @@ setTimeout(() => setSavedResponse(false), 2000);
         <section style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }}>
           <div style={{ background: '#0d0a1a' }} className="p-6 rounded-xl">
           <h3 className="text-xl font-bold va-heading mb-4">All Days</h3>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
             {readingPlan.map((day, idx) => {
               const dayComplete = day.readings.every(r => isReadingComplete(day.day, r));
               const firstReading = day.readings[0];
@@ -4097,15 +4130,6 @@ setTimeout(() => setSavedResponse(false), 2000);
         {currentView === 'people' && <PeopleView />}
         {currentView === 'places' && <PlacesView />}
       </div>
-
-      <button
-        type="button"
-        onClick={() => { setCurrentView('home'); }}
-        className="va-floating-btn fixed bottom-20 right-6 z-40"
-        title="Ask AI"
-      >
-        ✦
-      </button>
 
       {showAuthModal && (
         <section className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
