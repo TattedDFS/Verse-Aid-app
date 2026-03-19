@@ -2000,6 +2000,9 @@ setTimeout(() => setSavedResponse(false), 2000);
               className="va-input w-full px-6 py-4 rounded-xl resize-none"
               rows="5"
               maxLength={500}
+              spellCheck={true}
+              autoCorrect="on"
+              autoCapitalize="sentences"
             />
           </div>
 
@@ -4904,9 +4907,9 @@ setTimeout(() => setSavedResponse(false), 2000);
               rows="4"
               autoComplete="off"
               maxLength={1000}
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
+              autoCorrect="on"
+              autoCapitalize="sentences"
+              spellCheck={true}
             />
             
             <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }} className="mb-4">
