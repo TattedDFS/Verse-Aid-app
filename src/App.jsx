@@ -4005,7 +4005,7 @@ setTimeout(() => setSavedResponse(false), 2000);
                       Upgrade
                     </button>
                   )}
-                  <span className="hidden md:inline va-muted text-sm">Hi, <span className="text-[#e8a930] font-semibold">{username}</span></span>
+                  <span className="inline va-muted text-xs md:text-sm">Hi, <span className="text-[#e8a930] font-semibold">{username}</span></span>
                   <button
                     onClick={() => { setShowSettingsModal(true); setSettingsError(''); setSettingsMessage(''); }}
                     className="va-nav-inactive hover:text-[#a66ee8] transition-colors p-1"
