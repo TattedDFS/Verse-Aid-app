@@ -4739,61 +4739,76 @@ setTimeout(() => setSavedResponse(false), 2000);
 
           {userTier === 'premium' && (
             <>
-              <div>
-                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Update Payment Method</label>
-                <p className="text-xs va-muted mb-3">You'll be redirected to Stripe to securely update your card information.</p>
-                <button
-                  onClick={() => {
-                    window.open('https://billing.stripe.com/p/login/test_00g000000000000', '_blank');
-                  }}
-                  className="w-full va-btn-primary py-2 rounded-xl"
-                >
-                  Manage Payment Method
-                </button>
-              </div>
+              {isNativePlatform ? (
+                <div>
+                  <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Manage Subscription</label>
+                  <button
+                    onClick={() => window.open('https://apps.apple.com/account/subscriptions', '_blank')}
+                    className="w-full va-btn-primary py-2 rounded-xl"
+                  >
+                    Manage Subscription
+                  </button>
+                  <p className="text-xs va-muted mt-2">Manage your subscription through Apple Settings</p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Update Payment Method</label>
+                    <p className="text-xs va-muted mb-3">You'll be redirected to Stripe to securely update your card information.</p>
+                    <button
+                      onClick={() => {
+                        window.open('https://billing.stripe.com/p/login/test_00g000000000000', '_blank');
+                      }}
+                      className="w-full va-btn-primary py-2 rounded-xl"
+                    >
+                      Manage Payment Method
+                    </button>
+                  </div>
 
-              <div className="pt-4 border-t border-red-500/20">
-                <label className="block text-sm font-semibold text-red-400 mb-2">Cancel Subscription</label>
-                <p className="text-xs va-muted mb-3">Your premium access will remain until the end of your current billing period.</p>
-                <button
-                  onClick={async () => {
-                    if (!window.confirm('Are you sure you want to cancel your subscription? You will keep premium access until the end of your billing period.')) return;
-                    if (!supabase) { setSettingsError('Not configured.'); setCancellingSubscription(false); return; }
-                    setCancellingSubscription(true);
-                    setSettingsError('');
-                    try {
-                      const { data: { user } } = await supabase.auth.getUser();
-                      const { data: { session } } = await supabase.auth.getSession();
-                      const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('subscription_id')
-                        .eq('id', user.id)
-                        .single();
-                      if (!profile?.subscription_id) {
-                        setSettingsError('No active subscription found. Please contact support.');
-                        setCancellingSubscription(false);
-                        return;
-                      }
-                      const response = await fetch('/api/cancel-subscription', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-                        body: JSON.stringify({ subscriptionId: profile.subscription_id })
-                      });
-                      if (!response.ok) throw new Error('Failed to cancel');
-                      setSettingsMessage('Subscription cancelled. You keep premium access until your billing period ends.');
-                      setUserTier('free');
-                    } catch (err) {
-                      setSettingsError('Error cancelling subscription. Please contact support at contact@verseaid.ai');
-                    } finally {
-                      setCancellingSubscription(false);
-                    }
-                  }}
-                  disabled={cancellingSubscription}
-                  className="w-full bg-red-900/20 border border-red-500/30 text-red-400 font-bold py-2 rounded-lg hover:bg-red-900/40 transition-all disabled:opacity-50"
-                >
-                  {cancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
-                </button>
-              </div>
+                  <div className="pt-4 border-t border-red-500/20">
+                    <label className="block text-sm font-semibold text-red-400 mb-2">Cancel Subscription</label>
+                    <p className="text-xs va-muted mb-3">Your premium access will remain until the end of your current billing period.</p>
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm('Are you sure you want to cancel your subscription? You will keep premium access until the end of your billing period.')) return;
+                        if (!supabase) { setSettingsError('Not configured.'); setCancellingSubscription(false); return; }
+                        setCancellingSubscription(true);
+                        setSettingsError('');
+                        try {
+                          const { data: { user } } = await supabase.auth.getUser();
+                          const { data: { session } } = await supabase.auth.getSession();
+                          const { data: profile } = await supabase
+                            .from('profiles')
+                            .select('subscription_id')
+                            .eq('id', user.id)
+                            .single();
+                          if (!profile?.subscription_id) {
+                            setSettingsError('No active subscription found. Please contact support.');
+                            setCancellingSubscription(false);
+                            return;
+                          }
+                          const response = await fetch('/api/cancel-subscription', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                            body: JSON.stringify({ subscriptionId: profile.subscription_id })
+                          });
+                          if (!response.ok) throw new Error('Failed to cancel');
+                          setSettingsMessage('Subscription cancelled. You keep premium access until your billing period ends.');
+                          setUserTier('free');
+                        } catch (err) {
+                          setSettingsError('Error cancelling subscription. Please contact support at contact@verseaid.ai');
+                        } finally {
+                          setCancellingSubscription(false);
+                        }
+                      }}
+                      disabled={cancellingSubscription}
+                      className="w-full bg-red-900/20 border border-red-500/30 text-red-400 font-bold py-2 rounded-lg hover:bg-red-900/40 transition-all disabled:opacity-50"
+                    >
+                      {cancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
+                    </button>
+                  </div>
+                </>
+              )}
             </>
           )}
           <div className="pt-4 border-t border-red-500/20">
