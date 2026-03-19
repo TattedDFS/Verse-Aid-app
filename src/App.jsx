@@ -227,6 +227,70 @@ export default function BiblicalGuidanceApp() {
     initRevenueCat();
   }, []);
 
+  // Auto-restore Supabase session on app load
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const user = session.user;
+          const displayName = user.user_metadata?.full_name || user.email;
+          setUsername(displayName);
+          setIsLoggedIn(true);
+
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_tier, subscription_status, saved_responses, reading_plan_progress, reading_plan_day')
+            .eq('id', user.id)
+            .single();
+
+          if (profile) {
+            const isActive = profile.subscription_status === 'active';
+            const isPaidTier = ['monthly', 'yearly', 'lifetime'].includes(profile.subscription_tier);
+            setUserTier(isActive && isPaidTier ? 'premium' : 'free');
+
+            if (profile.saved_responses) {
+              try {
+                setSavedResponses(JSON.parse(profile.saved_responses));
+              } catch (err) {
+                console.error('Error loading saved responses:', err);
+              }
+            }
+
+            if (profile.reading_plan_progress != null) {
+              const raw = profile.reading_plan_progress;
+              const progress = typeof raw === 'string' ? JSON.parse(raw) : raw;
+              const keys = planProgressToCompletedReadings(progress);
+              setCompletedReadings(keys);
+            }
+            if (profile.reading_plan_day != null && profile.reading_plan_day !== '') {
+              setSelectedPlanDay(Number(profile.reading_plan_day));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Session restore error:', err);
+      }
+    };
+    restoreSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const displayName = session.user.user_metadata?.full_name || session.user.email;
+        setUsername(displayName);
+        setIsLoggedIn(true);
+      } else if (event === 'SIGNED_OUT') {
+        setIsLoggedIn(false);
+        setUsername('');
+        setUserTier('free');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     loadUserData();
     loadCommunityPrayers();
@@ -3916,47 +3980,42 @@ setTimeout(() => setSavedResponse(false), 2000);
   return (
     <div className="min-h-screen va-app-bg va-font-nunito text-white">
       <header className="va-glass-card border-b border-[rgba(255,255,255,0.12)] sticky top-0 z-50 backdrop-blur-md rounded-none" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-3 md:px-6 py-3 md:py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <BookOpen className="w-10 h-10 va-nav-active flex-shrink-0" strokeWidth={1.5} />
-              <h1 className="text-3xl font-bold va-logo-text va-font-playfair flex items-center gap-1">
+            <div className="flex items-center gap-2 md:gap-3">
+              <BookOpen className="w-7 h-7 md:w-10 md:h-10 va-nav-active flex-shrink-0" strokeWidth={1.5} />
+              <h1 className="text-xl md:text-3xl font-bold va-logo-text va-font-playfair flex items-center gap-1">
                 <span className="va-logo-text">VerseAid</span>
                 <span className="text-white/90">✦</span>
               </h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               {isLoggedIn ? (
                 <>
-                  <button onClick={() => setShowMenu(!showMenu)} className="md:hidden text-[#a66ee8]">
-                    <Menu className="w-6 h-6" strokeWidth={1.5} />
+                  {(userTier === 'premium' || userTier === 'church') && (
+                    <span className="va-btn-primary text-[10px] md:text-xs px-2 md:px-4 py-1 md:py-1.5 rounded-full">
+                      {userTier === 'premium' ? 'PREMIUM' : churchName.toUpperCase()}
+                    </span>
+                  )}
+                  {userTier === 'free' && (
+                    <button
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="va-btn-primary text-[10px] md:text-xs px-2 md:px-4 py-1 md:py-1.5 rounded-full"
+                    >
+                      Upgrade
+                    </button>
+                  )}
+                  <span className="hidden md:inline va-muted text-sm">Hi, <span className="text-[#e8a930] font-semibold">{username}</span></span>
+                  <button
+                    onClick={() => { setShowSettingsModal(true); setSettingsError(''); setSettingsMessage(''); }}
+                    className="va-nav-inactive hover:text-[#a66ee8] transition-colors p-1"
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4 md:w-5 md:h-5" strokeWidth={1.5} />
                   </button>
-                  <div className="hidden md:flex items-center gap-4">
-                    {(userTier === 'premium' || userTier === 'church') && (
-                      <span className="va-btn-primary text-xs px-4 py-1.5 rounded-full">
-                        {userTier === 'premium' ? 'PREMIUM' : churchName.toUpperCase()}
-                      </span>
-                    )}
-                    {userTier === 'free' && (
-                      <button
-                        onClick={() => setShowUpgradeModal(true)}
-                        className="va-btn-primary text-xs px-4 py-1.5 rounded-full"
-                      >
-                        Upgrade 
-                      </button>
-                    )}
-                    <span className="va-muted text-sm">Hi, <span className="text-[#e8a930] font-semibold">{username}</span></span>
-<button
-  onClick={() => { setShowSettingsModal(true); setSettingsError(''); setSettingsMessage(''); }}
-  className="va-nav-inactive hover:text-[#a66ee8] transition-colors p-1"
-  title="Settings"
->
-  <Settings className="w-5 h-5" strokeWidth={1.5} />
-</button>
-<button onClick={handleLogout} className="text-[#e8a930] hover:text-[#f5c842] font-semibold text-sm">
-  Sign Out
-</button>
-                  </div>
+                  <button onClick={handleLogout} className="text-[#e8a930] hover:text-[#f5c842] font-semibold text-[11px] md:text-sm">
+                    Sign Out
+                  </button>
                 </>
               ) : (
                 <button
@@ -3971,7 +4030,7 @@ setTimeout(() => setSavedResponse(false), 2000);
         </div>
 
         {isLoggedIn && (
-          <div className={`${showMenu ? 'block' : 'hidden'} md:block border-t border-[rgba(255,255,255,0.08)]`}>
+          <div className="border-t border-[rgba(255,255,255,0.08)]">
             <div className="max-w-7xl mx-auto px-6 py-2 flex gap-2 overflow-x-auto justify-center">
               <button
                 onClick={() => { setCurrentView('home'); setShowMenu(false); }}
