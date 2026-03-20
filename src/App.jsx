@@ -69,7 +69,6 @@ export default function BiblicalGuidanceApp() {
   const [contactInfo, setContactInfo] = useState({
     name: '', email: '', phone: '', churchName: '', message: ''
   });
-  const [stripeLoading, setStripeLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
    const [settingsTab, setSettingsTab] = useState('account');
@@ -78,14 +77,8 @@ export default function BiblicalGuidanceApp() {
    const [confirmNewPassword, setConfirmNewPassword] = useState('');
    const [settingsMessage, setSettingsMessage] = useState('');
    const [settingsError, setSettingsError] = useState('');
-   const [cancellingSubscription, setCancellingSubscription] = useState(false);
    
   const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
-
-  const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  const STRIPE_PRICE_ID_MONTHLY = 'price_1Szfd1Pn2XQV6iQ8St63dVyE';
-  const STRIPE_PRICE_ID_ANNUAL = 'price_1SzfduPn2XQV6iQ8cXTCWHci';
-  const STRIPE_PRICE_ID_LIFETIME = 'price_1SzfeXPn2XQV6iQ8hEOpG9cQ';
 
   const anthropicRequest = ({ messages, maxTokens }) =>
     anthropicRequestBase({ apiKey: ANTHROPIC_API_KEY, messages, maxTokens });
@@ -1257,94 +1250,6 @@ export default function BiblicalGuidanceApp() {
     alert('Premium activated! You now have unlimited questions and advanced features.');
   };
 
-  const handleStripeCheckout = async (priceId, isSubscription = true, planName = 'Premium') => {
-    // Require authentication before allowing payment
-    if (!isLoggedIn || !username) {
-      alert('Please sign in before making a payment. This ensures your premium status is saved to your account.');
-      setShowAuthModal(true);
-      return;
-    }
-
-    setStripeLoading(true);
-    try {
-      // Check if Stripe.js is loaded
-      if (typeof window.Stripe === 'undefined') {
-        alert('Stripe is not loaded. Please refresh the page and try again.');
-        setStripeLoading(false);
-        return;
-      }
-
-      const stripe = window.Stripe(STRIPE_PUBLISHABLE_KEY);
-      
-      // Check if Stripe initialized correctly
-      if (!stripe) {
-        alert('Failed to initialize Stripe. Please check your API key.');
-        setStripeLoading(false);
-        return;
-      }
-
-      // Get backend API URL from environment variable
-      const envBackendUrl = import.meta.env.VITE_STRIPE_API_URL;
-      const backendUrl = envBackendUrl || 'http://localhost:3001';
-      
-      // Warn if using default in production (but still allow it for development)
-      if (!envBackendUrl && import.meta.env.PROD) {
-        console.warn('VITE_STRIPE_API_URL not set. Using default localhost URL. This may not work in production.');
-      }
-
-      // Verify payment backend is reachable before attempting checkout (avoids generic network errors)
-      try {
-        const healthRes = await fetch(`${backendUrl}/health`, { method: 'GET' });
-        if (!healthRes.ok) {
-          throw new Error(`Backend returned ${healthRes.status}`);
-        }
-      } catch (err) {
-        const hint = !envBackendUrl
-          ? ' Start the backend server (e.g. run the server in this project) or set VITE_STRIPE_API_URL in .env to your payment API URL.'
-          : ` Ensure the server at ${backendUrl} is running.`;
-        alert('Payment server is unreachable.' + hint);
-        setStripeLoading(false);
-        return;
-      }
-
-      // Create checkout session via backend API
-      const response = await fetch(`${backendUrl}/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId,
-          isSubscription,
-          planName,
-          username: username,
-          successUrl: `${window.location.origin}?payment=success&type=${isSubscription ? 'subscription' : 'payment'}&session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}?payment=cancel`,
-          trialPeriodDays: isSubscription ? 3 : undefined
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || errorData.message || 'Failed to create checkout session');
-      }
-
-      const { sessionId, url } = await response.json();
-      
-      if (!url) {
-        throw new Error('No checkout URL returned from server');
-      }
-      
-      // Redirect to Stripe hosted Checkout (redirectToCheckout was removed in Stripe.js Sept 2025)
-      window.location.href = url;
-    } catch (err) {
-      console.error('Stripe checkout error:', err);
-      alert('Unable to process payment: ' + (err.message || 'Please try again. Make sure the backend server is running.'));
-    } finally {
-      setStripeLoading(false);
-    }
-  };
-
   const handleAppleIAP = async (productId, planName) => {
     try {
       const offerings = await Purchases.getOfferings();
@@ -1383,7 +1288,7 @@ export default function BiblicalGuidanceApp() {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
     const purchaseType = urlParams.get('type');
-    // Stripe replaces {CHECKOUT_SESSION_ID} in success_url when redirecting; treat literal placeholder as missing
+    // Treat literal placeholder as missing session ID
     let sessionId = urlParams.get('session_id');
     if (sessionId === '{CHECKOUT_SESSION_ID}' || !sessionId) sessionId = null;
 
@@ -1436,7 +1341,7 @@ export default function BiblicalGuidanceApp() {
         if (isLoggedIn && username === intendedUsername) {
           setUserTier('premium');
           if (purchaseType === 'subscription') {
-            alert('Welcome to Premium! Your 3-day free trial has started. You\'ll have full access immediately, and your card will be charged after the trial ends unless you cancel. Check your email for your Stripe receipt with cancellation instructions.');
+            alert('Welcome to Premium! Your subscription is now active. You\'ll have full access immediately. You can manage or cancel your subscription anytime in your Apple ID settings.');
           } else if (purchaseType === 'payment') {
             alert('Welcome to Premium! Your Lifetime Premium purchase is complete. You now have unlimited access to all features with no recurring charges. Thank you for your support!');
           } else {
@@ -4471,90 +4376,45 @@ setTimeout(() => setSavedResponse(false), 2000);
                   </li>
                 </ul>
 
-                {isNativePlatform ? (
-                  <button
-                    onClick={() => handleAppleIAP('ai.verseaid.app.monthly', 'Monthly Premium')}
-                    className="w-full va-btn-primary py-2.5 rounded-xl mb-2 text-sm"
-                  >
-                    Subscribe Monthly - $4.99/mo
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_MONTHLY, true, 'Monthly Premium')}
-                    disabled={stripeLoading}
-                    className="w-full va-btn-primary py-2.5 rounded-xl mb-2 text-sm disabled:opacity-60"
-                  >
-                    {stripeLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Start 3-Day Trial - Monthly $4.99/mo'
-                    )}
-                  </button>
-                )}
+                <button
+                  onClick={() => handleAppleIAP('ai.verseaid.app.monthly', 'Monthly Premium')}
+                  className="w-full va-btn-primary py-2.5 rounded-xl mb-2 text-sm"
+                >
+                  Subscribe Monthly - $4.99/mo
+                </button>
 
-                {isNativePlatform ? (
-                  <button
-                    onClick={() => handleAppleIAP('ai.verseaid.app.annual', 'Annual Premium')}
-                    className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all mb-2 text-sm"
-                  >
-                    Subscribe Annual - $49.99/yr
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_ANNUAL, true, 'Annual Premium')}
-                    disabled={stripeLoading}
-                    className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all mb-2 text-sm disabled:opacity-50"
-                  >
-                    Start 3-Day Trial - Annual $49.99/yr
-                  </button>
-                )}
+                <button
+                  onClick={() => handleAppleIAP('ai.verseaid.app.annual', 'Annual Premium')}
+                  className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all mb-2 text-sm"
+                >
+                  Subscribe Annual - $49.99/yr
+                </button>
 
-                {isNativePlatform ? (
-                  <button
-                    onClick={() => handleAppleIAP('ai.verseaid.app.lifetime', 'Lifetime Premium')}
-                    className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm"
-                  >
-                    Lifetime Premium - $89.99
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleStripeCheckout(STRIPE_PRICE_ID_LIFETIME, false, 'Lifetime Premium')}
-                    disabled={stripeLoading}
-                    className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm disabled:opacity-50"
-                  >
-                    Lifetime Premium - $89.99 once
-                  </button>
-                )}
+                <button
+                  onClick={() => handleAppleIAP('ai.verseaid.app.lifetime', 'Lifetime Premium')}
+                  className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm"
+                >
+                  Lifetime Premium - $89.99
+                </button>
 
-                {isNativePlatform && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        const { customerInfo } = await Purchases.restorePurchases();
-                        if (customerInfo.entitlements.active['VerseAid Pro']) {
-                          setUserTier('premium');
-                          setShowUpgradeModal(false);
-                        } else {
-                          alert('No active purchases found to restore.');
-                        }
-                      } catch (err) {
-                        alert('Failed to restore purchases. Please try again.');
+                <button
+                  onClick={async () => {
+                    try {
+                      const { customerInfo } = await Purchases.restorePurchases();
+                      if (customerInfo.entitlements.active['VerseAid Pro']) {
+                        setUserTier('premium');
+                        setShowUpgradeModal(false);
+                      } else {
+                        alert('No active purchases found to restore.');
                       }
-                    }}
-                    className="w-full mt-2 text-white/50 hover:text-white/80 text-xs underline transition-colors"
-                  >
-                    Restore Purchases
-                  </button>
-                )}
-
-                <div className="mt-4 pt-3 border-t border-[rgba(255,255,255,0.1)]">
-                  <p className="text-xs va-muted text-center leading-relaxed">
-                    <strong className="text-white/80">Important:</strong> Your card will be automatically charged after the 3-day trial unless you cancel before the trial ends. You can cancel your subscription anytime from the link in your Stripe email receipt or by contacting support. Lifetime purchases are one-time payments with no recurring charges.
-                  </p>
-                </div>
+                    } catch (err) {
+                      alert('Failed to restore purchases. Please try again.');
+                    }
+                  }}
+                  className="w-full mt-2 text-white/50 hover:text-white/80 text-xs underline transition-colors"
+                >
+                  Restore Purchases
+                </button>
                 </div>
                 </div>
 
@@ -4739,76 +4599,16 @@ setTimeout(() => setSavedResponse(false), 2000);
 
           {userTier === 'premium' && (
             <>
-              {isNativePlatform ? (
-                <div>
-                  <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Manage Subscription</label>
-                  <button
-                    onClick={() => window.open('https://apps.apple.com/account/subscriptions', '_blank')}
-                    className="w-full va-btn-primary py-2 rounded-xl"
-                  >
-                    Manage Subscription
-                  </button>
-                  <p className="text-xs va-muted mt-2">Manage your subscription through Apple Settings</p>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Update Payment Method</label>
-                    <p className="text-xs va-muted mb-3">You'll be redirected to Stripe to securely update your card information.</p>
-                    <button
-                      onClick={() => {
-                        window.open('https://billing.stripe.com/p/login/test_00g000000000000', '_blank');
-                      }}
-                      className="w-full va-btn-primary py-2 rounded-xl"
-                    >
-                      Manage Payment Method
-                    </button>
-                  </div>
-
-                  <div className="pt-4 border-t border-red-500/20">
-                    <label className="block text-sm font-semibold text-red-400 mb-2">Cancel Subscription</label>
-                    <p className="text-xs va-muted mb-3">Your premium access will remain until the end of your current billing period.</p>
-                    <button
-                      onClick={async () => {
-                        if (!window.confirm('Are you sure you want to cancel your subscription? You will keep premium access until the end of your billing period.')) return;
-                        if (!supabase) { setSettingsError('Not configured.'); setCancellingSubscription(false); return; }
-                        setCancellingSubscription(true);
-                        setSettingsError('');
-                        try {
-                          const { data: { user } } = await supabase.auth.getUser();
-                          const { data: { session } } = await supabase.auth.getSession();
-                          const { data: profile } = await supabase
-                            .from('profiles')
-                            .select('subscription_id')
-                            .eq('id', user.id)
-                            .single();
-                          if (!profile?.subscription_id) {
-                            setSettingsError('No active subscription found. Please contact support.');
-                            setCancellingSubscription(false);
-                            return;
-                          }
-                          const response = await fetch('/api/cancel-subscription', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-                            body: JSON.stringify({ subscriptionId: profile.subscription_id })
-                          });
-                          if (!response.ok) throw new Error('Failed to cancel');
-                          setSettingsMessage('Subscription cancelled. You keep premium access until your billing period ends.');
-                          setUserTier('free');
-                        } catch (err) {
-                          setSettingsError('Error cancelling subscription. Please contact support at contact@verseaid.ai');
-                        } finally {
-                          setCancellingSubscription(false);
-                        }
-                      }}
-                      disabled={cancellingSubscription}
-                      className="w-full bg-red-900/20 border border-red-500/30 text-red-400 font-bold py-2 rounded-lg hover:bg-red-900/40 transition-all disabled:opacity-50"
-                    >
-                      {cancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
-                    </button>
-                  </div>
-                </>
-              )}
+              <div>
+                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Manage Subscription</label>
+                <button
+                  onClick={() => window.open('https://apps.apple.com/account/subscriptions', '_blank')}
+                  className="w-full va-btn-primary py-2 rounded-xl"
+                >
+                  Manage Subscription
+                </button>
+                <p className="text-xs va-muted mt-2">Manage your subscription through Apple Settings</p>
+              </div>
             </>
           )}
           <div className="pt-4 border-t border-red-500/20">
