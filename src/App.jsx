@@ -4404,6 +4404,11 @@ setTimeout(() => setSavedResponse(false), 2000);
                 >
                   Restore Purchases
                 </button>
+                <p className="mt-4 text-center text-[10px] text-white/30">
+                  <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#e8a930] transition-colors">Privacy Policy</a>
+                  <span className="mx-1">·</span>
+                  <a href="/terms-of-service.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#e8a930] transition-colors">Terms of Service</a>
+                </p>
                 </div>
                 </div>
 
