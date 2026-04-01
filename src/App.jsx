@@ -61,13 +61,11 @@ export default function BiblicalGuidanceApp() {
   const [lastQuestionDate, setLastQuestionDate] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('monthly');
-  const [churchCode, setChurchCode] = useState('');
-  const [churchName, setChurchName] = useState('');
   const [isNativePlatform, setIsNativePlatform] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [contactInfo, setContactInfo] = useState({
-    name: '', email: '', phone: '', churchName: '', message: ''
+    name: '', email: '', phone: '', message: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -439,8 +437,6 @@ export default function BiblicalGuidanceApp() {
         setUserTier(tier);
         setQuestionsToday(parsed.questionsToday || 0);
         setLastQuestionDate(parsed.lastQuestionDate || '');
-        setChurchCode(parsed.churchCode || '');
-        setChurchName(parsed.churchName || '');
       } catch (err) {
         console.error('Error parsing user data', err);
       }
@@ -850,10 +846,10 @@ export default function BiblicalGuidanceApp() {
       safeStorageSet(`journal_${username}`, JSON.stringify(prayerJournal)),
       safeStorageSet(`completed_readings_${username}`, JSON.stringify(completedReadings)),
       safeStorageSet(`user_data_${username}`, JSON.stringify({
-        tier: tierToSave, questionsToday, lastQuestionDate, churchCode, churchName
+        tier: tierToSave, questionsToday, lastQuestionDate
       }))
     ]);
-  }, [isLoggedIn, username, savedResponses, prayerJournal, completedReadings, userTier, questionsToday, lastQuestionDate, churchCode, churchName]);
+  }, [isLoggedIn, username, savedResponses, prayerJournal, completedReadings, userTier, questionsToday, lastQuestionDate]);
 
   const saveReadingProgressToSupabase = React.useCallback(async () => {
     try {
@@ -913,7 +909,7 @@ export default function BiblicalGuidanceApp() {
     if (isLoggedIn && username) {
       saveUserDataRef.current();
     }
-  }, [savedResponses, prayerJournal, completedReadings, userTier, questionsToday, lastQuestionDate, churchCode, churchName, isLoggedIn, username]);
+  }, [savedResponses, prayerJournal, completedReadings, userTier, questionsToday, lastQuestionDate, isLoggedIn, username]);
 
   const checkDailyVerse = async () => {
     const today = new Date().toDateString();
@@ -1236,7 +1232,7 @@ export default function BiblicalGuidanceApp() {
       setLastQuestionDate(today);
       return true;
     }
-    if (userTier === 'premium' || userTier === 'church') return true;
+    if (userTier === 'premium') return true;
     if (questionsToday >= 3) {
       setShowUpgradeModal(true);
       return false;
@@ -1382,14 +1378,14 @@ export default function BiblicalGuidanceApp() {
       alert('Thank you! We will contact you within 24 hours.');
       setShowContactForm(false);
       setShowUpgradeModal(false);
-      setContactInfo({ name: '', email: '', phone: '', churchName: '', message: '' });
+      setContactInfo({ name: '', email: '', phone: '', message: '' });
     } catch (err) {
       alert('There was an error. Please email us directly.');
     }
   };
 
   const checkFeatureAccess = (feature) => {
-    if (userTier === 'premium' || userTier === 'church') return true;
+    if (userTier === 'premium') return true;
     const premiumFeatures = ['community', 'journal', 'reading-plan', 'people'];
     if (premiumFeatures.includes(feature)) {
       setShowUpgradeModal(true);
@@ -2430,7 +2426,7 @@ setTimeout(() => setSavedResponse(false), 2000);
   );
 
   const CommunityView = () => {
-    const isPremium = userTier === 'premium' || userTier === 'church';
+    const isPremium = userTier === 'premium';
     if (!isPremium) {
       return (
         <div className="space-y-4">
@@ -2952,7 +2948,7 @@ setTimeout(() => setSavedResponse(false), 2000);
 
   const PeopleView = () => {
     const [searchTerm, setSearchTerm] = useState('');
-    const isPremium = userTier === 'premium' || userTier === 'church';
+    const isPremium = userTier === 'premium';
     if (!isPremium) {
       return (
         <div className="space-y-4">
@@ -3293,7 +3289,7 @@ setTimeout(() => setSavedResponse(false), 2000);
     const mapRef = useRef(null);
     const leafletMapRef = useRef(null);
     const markersLayerRef = useRef(null);
-    const isPremium = userTier === 'premium' || userTier === 'church';
+    const isPremium = userTier === 'premium';
 
     if (!isPremium) {
       return (
@@ -3897,9 +3893,9 @@ setTimeout(() => setSavedResponse(false), 2000);
             <div className="flex items-center gap-2 md:gap-4">
               {isLoggedIn ? (
                 <>
-                  {(userTier === 'premium' || userTier === 'church') && (
+                  {userTier === 'premium' && (
                     <span className="va-btn-primary text-[10px] md:text-xs px-2 md:px-4 py-1 md:py-1.5 rounded-full">
-                      {userTier === 'premium' ? 'PREMIUM' : churchName.toUpperCase()}
+                      PREMIUM
                     </span>
                   )}
                   {userTier === 'free' && (
@@ -4335,13 +4331,6 @@ setTimeout(() => setSavedResponse(false), 2000);
                   <h3 className="text-2xl font-bold va-heading">Premium</h3>
                 </div>
 
-                <div className="mb-4 p-3 va-premium-banner rounded-xl">
-                  <p className="text-sm font-bold text-[#e8a930] mb-1">3-Day Free Trial</p>
-                  <p className="text-xs text-white/80 leading-relaxed va-font-nunito">
-                    Start your 3-day free trial today. Enter your payment information at checkout—you won't be charged until after the trial ends. Cancel anytime before the trial ends to avoid charges.
-                  </p>
-                </div>
-
                 <div className="space-y-2 mb-4">
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold text-[#e8a930]">$4.99</span>
@@ -4418,47 +4407,6 @@ setTimeout(() => setSavedResponse(false), 2000);
                 </div>
                 </div>
 
-                <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }} className="hover:border-[rgba(166,110,232,0.4)] transition-all">
-                <div style={{ background: '#0d0a1a' }} className="p-5 rounded-xl">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-10 h-10 rounded-full va-btn-primary flex items-center justify-center">
-                    <Users className="w-5 h-5 text-white" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-2xl font-bold va-heading">Church</h3>
-                </div>
-
-                <div className="mb-6">
-                  <span className="text-2xl font-bold text-[#e8a930]">Custom Pricing</span>
-                  <p className="va-muted text-sm mt-2">For churches & ministries</p>
-                </div>
-
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
-                    <span className="text-[#e8a930]">✓</span>
-                    <span><strong className="text-white">All Premium features</strong> for unlimited members</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
-                    <span className="text-[#e8a930]">✓</span>
-                    <span>Custom branding with church logo</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
-                    <span className="text-[#e8a930]">✓</span>
-                    <span>Private church prayer wall</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-white/90 text-sm va-font-nunito">
-                    <span className="text-[#e8a930]">✓</span>
-                    <span>Admin dashboard & analytics</span>
-                  </li>
-                </ul>
-
-                <button
-                  onClick={() => setShowContactForm(true)}
-                  className="w-full border-2 border-[#7b42d4] text-[#a66ee8] hover:bg-[#7b42d4] hover:text-white font-bold py-3 rounded-xl transition-all"
-                >
-                  Request Information
-                </button>
-                </div>
-                </div>
               </div>
             </div>
             </section>
@@ -4628,77 +4576,6 @@ setTimeout(() => setSavedResponse(false), 2000);
     </section>
   )}
 
-      {showContactForm && (
-        <section className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div style={{ background: 'linear-gradient(to right, #7b42d4, #c98d1a)', padding: '1px', borderRadius: '12px', boxShadow: '0 0 0 1px #7b42d4', outline: '1px solid #c98d1a' }} className="max-w-lg w-full my-8">
-            <div style={{ background: '#0d0a1a' }} className="p-6 rounded-xl">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-bold va-heading">Church Edition Inquiry</h2>
-                <p className="text-sm va-muted mt-1">We'll contact you within 24 hours</p>
-              </div>
-              <button onClick={() => setShowContactForm(false)} className="va-muted hover:text-white">
-                <X className="w-6 h-6" strokeWidth={1.5} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Your Name *</label>
-                <input
-                  type="text"
-                  value={contactInfo.name}
-                  onChange={(e) => setContactInfo({...contactInfo, name: e.target.value})}
-                  placeholder="John Smith"
-                  className="w-full px-4 py-2 va-input rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Email Address *</label>
-                <input
-                  type="email"
-                  value={contactInfo.email}
-                  onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
-                  placeholder="john@church.com"
-                  className="w-full px-4 py-2 va-input rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Church/Ministry Name</label>
-                <input
-                  type="text"
-                  value={contactInfo.churchName}
-                  onChange={(e) => setContactInfo({...contactInfo, churchName: e.target.value})}
-                  placeholder="Grace Community Church"
-                  className="w-full px-4 py-2 va-input rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[#e8a930] mb-2 va-font-nunito">Message (Optional)</label>
-                <textarea
-                  value={contactInfo.message}
-                  onChange={(e) => setContactInfo({...contactInfo, message: e.target.value})}
-                  placeholder="Tell us about your church..."
-                  className="va-input w-full px-4 py-3 rounded-lg resize-none"
-                  rows="3"
-                  maxLength={1000}
-                />
-              </div>
-
-              <button
-                onClick={submitContactForm}
-                className="w-full va-btn-primary py-3 rounded-lg"
-              >
-                Submit Request
-              </button>
-            </div>
-            </div>
-            </div>
-          </section>
-      )}
 
       {showDeleteConfirm && (
         <div className="va-modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
