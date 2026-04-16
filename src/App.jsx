@@ -4753,7 +4753,7 @@ setTimeout(() => setSavedResponse(false), 2000);
       <span className="va-muted">•</span>
       <a href="/terms-of-service.html" className="text-[#e8a930] hover:text-[#f5c842]">Terms of Service</a>
       <span className="va-muted">•</span>
-      <a href="mailto:verseaid.ai@gmail.com" className="text-[#e8a930] hover:text-[#f5c842]">Contact</a>
+      <a href="mailto:hello@risenworks.app" className="text-[#e8a930] hover:text-[#f5c842]">Contact</a>
     </div>
   </div>
 </footer>
@@ -4826,7 +4826,7 @@ function PrivacyPolicyPage() {
 
         <Section title="Contact Us">
           For privacy questions or data deletion requests, contact us at{' '}
-          <a href="mailto:verseaid.ai@gmail.com" style={{ color: '#e8a930' }}>verseaid.ai@gmail.com</a>.
+          <a href="mailto:hello@risenworks.app" style={{ color: '#e8a930' }}>hello@risenworks.app</a>.
         </Section>
       </div>
     </div>
@@ -4900,7 +4900,7 @@ function TermsOfServicePage() {
 
         <Section title="Contact">
           Questions about these terms? Email us at{' '}
-          <a href="mailto:verseaid.ai@gmail.com" style={{ color: '#e8a930' }}>verseaid.ai@gmail.com</a>.
+          <a href="mailto:hello@risenworks.app" style={{ color: '#e8a930' }}>hello@risenworks.app</a>.
         </Section>
       </div>
     </div>
