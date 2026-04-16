@@ -38,7 +38,7 @@ const PeopleQuestionInput = React.memo(({ onSubmit, placeholder, disabled }) => 
 
 PeopleQuestionInput.displayName = 'PeopleQuestionInput';
 
-export default function BiblicalGuidanceApp() {
+function BiblicalGuidanceApp() {
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -4759,4 +4759,166 @@ setTimeout(() => setSavedResponse(false), 2000);
 </footer>
 </div>
   );
+}
+
+function PrivacyPolicyPage() {
+  return (
+    <div style={{ background: '#0d0a1a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px' }}>
+        <button
+          onClick={() => window.history.back()}
+          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 10, padding: '8px 18px', cursor: 'pointer', marginBottom: 32, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
+        >
+          ← Back
+        </button>
+        <h1 style={{ fontFamily: 'Playfair Display, serif', color: '#e8a930', fontSize: 36, marginBottom: 8 }}>Privacy Policy</h1>
+        <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 40, fontSize: 14 }}>Last updated: April 2025</p>
+
+        <Section title="Overview">
+          VerseAid (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information when you use the VerseAid app and website.
+        </Section>
+
+        <Section title="Information We Collect">
+          <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
+            <li><strong>Account information:</strong> Email address and display name when you register.</li>
+            <li><strong>Usage data:</strong> Questions asked, saved verses, prayer journal entries, and reading plan progress.</li>
+            <li><strong>Device information:</strong> Platform type (iOS/web) for feature delivery.</li>
+            <li><strong>Payment data:</strong> Subscription status managed through Apple In-App Purchase and RevenueCat — we never store your payment card details.</li>
+          </ul>
+        </Section>
+
+        <Section title="Authentication — Supabase">
+          User accounts are powered by Supabase, a secure cloud database and auth platform. Your credentials are encrypted and never stored in plain text. Supabase processes data in accordance with GDPR and SOC 2 standards.
+        </Section>
+
+        <Section title="AI Features — Anthropic">
+          VerseAid uses Anthropic&apos;s Claude AI to generate scripture-based responses, daily verses, and Bible content. Your questions are sent to Anthropic&apos;s API to generate answers. Anthropic may retain API request data per their own privacy policy. We do not share your personal identity with Anthropic — requests are sent without identifying information beyond the content of your question.
+        </Section>
+
+        <Section title="Payments — RevenueCat & Apple">
+          Subscription billing on iOS is handled through Apple In-App Purchase via RevenueCat. RevenueCat manages entitlements and subscription state. We receive your subscription status but not your payment card or financial details. Apple&apos;s privacy policy governs the payment transaction itself.
+        </Section>
+
+        <Section title="How We Use Your Information">
+          <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
+            <li>To provide and personalize the VerseAid experience</li>
+            <li>To save your journal entries, verses, and reading progress</li>
+            <li>To manage your subscription and feature access</li>
+            <li>To respond to support inquiries</li>
+          </ul>
+        </Section>
+
+        <Section title="We Do Not Sell Your Data">
+          We do not sell, rent, or trade your personal information to third parties for marketing purposes. Ever.
+        </Section>
+
+        <Section title="Data Retention">
+          Your data is retained as long as your account is active. You may request deletion of your account and associated data at any time by contacting us.
+        </Section>
+
+        <Section title="Children's Privacy">
+          VerseAid is not directed to children under 13. We do not knowingly collect personal information from children under 13.
+        </Section>
+
+        <Section title="Changes to This Policy">
+          We may update this policy periodically. We will notify you of significant changes via the app or email.
+        </Section>
+
+        <Section title="Contact Us">
+          For privacy questions or data deletion requests, contact us at{' '}
+          <a href="mailto:verseaid.ai@gmail.com" style={{ color: '#e8a930' }}>verseaid.ai@gmail.com</a>.
+        </Section>
+      </div>
+    </div>
+  );
+}
+
+function TermsOfServicePage() {
+  return (
+    <div style={{ background: '#0d0a1a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px' }}>
+        <button
+          onClick={() => window.history.back()}
+          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 10, padding: '8px 18px', cursor: 'pointer', marginBottom: 32, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
+        >
+          ← Back
+        </button>
+        <h1 style={{ fontFamily: 'Playfair Display, serif', color: '#e8a930', fontSize: 36, marginBottom: 8 }}>Terms of Service</h1>
+        <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 40, fontSize: 14 }}>Last updated: April 2025</p>
+
+        <Section title="Acceptance of Terms">
+          By accessing or using VerseAid, you agree to be bound by these Terms of Service. If you do not agree, please do not use the app.
+        </Section>
+
+        <Section title="Description of Service">
+          VerseAid is a Biblical guidance application that uses AI to provide scripture-based responses, daily verses, a prayer journal, community prayer sharing, Bible reading, and a 365-day reading plan. Content is AI-generated and is intended for personal spiritual encouragement — it is not a substitute for professional pastoral, legal, medical, or financial advice.
+        </Section>
+
+        <Section title="Subscription Plans">
+          <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
+            <li><strong>Free tier:</strong> 3 AI questions per day, access to Bible reader and saved verses.</li>
+            <li><strong>Premium Monthly:</strong> $4.99/month — unlimited questions, prayer journal, community wall, 365-day reading plan.</li>
+            <li><strong>Premium Annual:</strong> $49.99/year — same premium features at a discounted rate.</li>
+            <li><strong>Premium Lifetime:</strong> $89.99 one-time — permanent access to all premium features.</li>
+          </ul>
+          Prices are listed in USD and may vary by region. Subscriptions are managed through Apple In-App Purchase on iOS.
+        </Section>
+
+        <Section title="Billing & Renewal">
+          Monthly and annual subscriptions automatically renew unless cancelled at least 24 hours before the end of the current billing period. Your Apple ID account will be charged upon confirmation of purchase and at the start of each renewal period.
+        </Section>
+
+        <Section title="Cancellation Policy">
+          You may cancel your subscription at any time through your Apple ID account settings (Settings → Apple ID → Subscriptions). Cancellation takes effect at the end of your current billing period — you retain premium access until that date. We do not offer refunds for partial periods except as required by applicable law.
+        </Section>
+
+        <Section title="User Content">
+          You retain ownership of content you create within VerseAid (journal entries, prayer requests). By sharing a prayer to the community wall, you grant VerseAid a non-exclusive license to display that content to other users within the app. You are responsible for ensuring your content does not violate these terms.
+        </Section>
+
+        <Section title="Acceptable Use">
+          You agree not to:
+          <ul style={{ paddingLeft: 20, lineHeight: 2, marginTop: 8 }}>
+            <li>Use the app for any unlawful purpose</li>
+            <li>Share content that is abusive, hateful, or harassing</li>
+            <li>Attempt to circumvent subscription or access controls</li>
+            <li>Reverse-engineer or scrape the app or its API</li>
+          </ul>
+        </Section>
+
+        <Section title="AI-Generated Content Disclaimer">
+          Responses generated by VerseAid are produced by Anthropic&apos;s Claude AI and are not statements of doctrine or professional advice. Always consult your pastor, church, or qualified professional for important life decisions.
+        </Section>
+
+        <Section title="Limitation of Liability">
+          VerseAid is provided &quot;as is&quot; without warranties of any kind. To the maximum extent permitted by law, we are not liable for any indirect, incidental, or consequential damages arising from your use of the app.
+        </Section>
+
+        <Section title="Changes to Terms">
+          We may modify these terms at any time. Continued use of the app after changes constitutes acceptance of the updated terms.
+        </Section>
+
+        <Section title="Contact">
+          Questions about these terms? Email us at{' '}
+          <a href="mailto:verseaid.ai@gmail.com" style={{ color: '#e8a930' }}>verseaid.ai@gmail.com</a>.
+        </Section>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div style={{ marginBottom: 36 }}>
+      <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#e8a930', fontSize: 20, marginBottom: 12 }}>{title}</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: 15 }}>{children}</div>
+    </div>
+  );
+}
+
+export default function App() {
+  const path = window.location.pathname;
+  if (path === '/privacy-policy' || path === '/privacy-policy.html') return <PrivacyPolicyPage />;
+  if (path === '/terms-of-service' || path === '/terms-of-service.html') return <TermsOfServicePage />;
+  return <BiblicalGuidanceApp />;
 }
