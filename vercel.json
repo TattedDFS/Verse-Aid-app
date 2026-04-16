@@ -1,7 +1,10 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/((?!api/|privacy-policy\\.html|terms-of-service\\.html).*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/privacy-policy.html", "dest": "/privacy-policy.html" },
+    { "src": "/terms-of-service.html", "dest": "/terms-of-service.html" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
