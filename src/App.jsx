@@ -51,7 +51,6 @@ function BiblicalGuidanceApp() {
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [recaptchaVerified, setRecaptchaVerified] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
@@ -1015,18 +1014,6 @@ function BiblicalGuidanceApp() {
     }
   };
 
-  useEffect(() => {
-    if (authMode === 'signup') {
-      const script = document.createElement('script');
-      script.src = 'https://www.google.com/recaptcha/api.js';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-      window.onRecaptchaSuccess = () => setRecaptchaVerified(true);
-      window.onRecaptchaExpired = () => setRecaptchaVerified(false);
-    }
-  }, [authMode]);
-
   const handleAuth = async () => {
     if (!authPassword.trim()) {
       setError('Please enter your password');
@@ -1053,11 +1040,6 @@ function BiblicalGuidanceApp() {
 
       if (authPassword !== confirmPassword) {
         setError('Passwords do not match');
-        return;
-      }
-
-      if (!recaptchaVerified) {
-        setError('Please complete the reCAPTCHA verification');
         return;
       }
 
@@ -1167,7 +1149,6 @@ function BiblicalGuidanceApp() {
     setAuthUsername('');
     setAuthPassword('');
     setConfirmPassword('');
-    setRecaptchaVerified(false);
     setAuthEmail('');
   };
 
@@ -4246,16 +4227,6 @@ setTimeout(() => setSavedResponse(false), 2000);
                         />
                       </div>
                     </div>
-                  )}
-
-                  {authMode === 'signup' && (
-                    <div
-                      className="g-recaptcha"
-                      data-sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                      data-theme="dark"
-                      data-callback="onRecaptchaSuccess"
-                      data-expired-callback="onRecaptchaExpired"
-                    />
                   )}
 
                   {error && (
